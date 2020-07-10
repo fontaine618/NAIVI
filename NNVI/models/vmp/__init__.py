@@ -1,1 +1,2 @@
 from .adjacency_model import InnerProductLatentSpaceModel
+from .joint_model import JointModel

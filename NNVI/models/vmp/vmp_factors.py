@@ -19,6 +19,21 @@ class Prior(VMPFactor):
         return self.message_to_x
 
 
+class GaussianComparison(VMPFactor):
+    # this is basically the same as prior but the other way around and with a different structure
+    # maybe at some point it would be good to merge them
+    # dimension Nxp
+    # N(mean, variance) where variance is constant per column
+
+    def __init__(self, shape):
+        self.message_to_mean = GaussianArray.uniform(shape)
+
+    def to_mean(self, X, variance):
+        variance = variance * tf.ones_like(X)
+        self.message_to_mean = GaussianArray.from_array(X, variance)
+        return self.message_to_mean
+
+
 class Sum(VMPFactor):
 
     # sum over last dimension
