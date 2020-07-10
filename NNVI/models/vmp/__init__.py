@@ -1,0 +1,1 @@
+from .adjacency_model import InnerProductLatentSpaceModel
