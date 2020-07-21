@@ -4,9 +4,17 @@ from NNVI.models.gaussian import GaussianArray
 import tensorflow_probability as tfp
 
 
+# TODO:
+# restructure so that the parents and child are attributes?
+
+
+
 class VMPFactor:
 
     def __init__(self):
+        pass
+
+    def contribution_to_elbo(self):
         pass
 
 

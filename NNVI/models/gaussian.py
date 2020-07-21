@@ -1,10 +1,12 @@
 import tensorflow as tf
 import numpy as np
+from .distribution import Distribution
 
 
-class GaussianArray:
+class GaussianArray(Distribution):
 
     def __init__(self, precision, mean_times_precision):
+        super().__init__()
         self._precision = precision
         self._mean_times_precision = mean_times_precision
 
@@ -46,6 +48,10 @@ class GaussianArray:
             tf.reduce_sum(self._mean_times_precision, dim)
         )
 
+    def entropy(self):
+        entropy = - 0.5 * tf.math.log(2. * np.pi * self.variance()) + 1.
+        return tf.reduce_sum(tf.where(self.is_point_mass(), 0., entropy))
+
     @classmethod
     def from_array(cls, mean, variance):
         p = 1.0 / variance
@@ -71,6 +77,12 @@ class GaussianArray:
     @classmethod
     def uniform(cls, shape):
         return cls.from_shape_natural(shape, 0.0, 0.0)
+
+    @classmethod
+    def observed(cls, point):
+        m = point
+        v = tf.zeros_like(m)
+        return cls.from_array(m, v)
 
     def __mul__(self, other):
         if not isinstance(other, GaussianArray):
@@ -110,7 +122,4 @@ class GaussianArray:
         out += "Mean=\n" + str(self.mean()) + "\n"
         out += "Variance=\n" + str(self.variance())
         return out
-
-    def __repr__(self):
-        return str(self)
 

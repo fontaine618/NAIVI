@@ -7,7 +7,7 @@ from NNVI.models.gaussian import GaussianArray
 
 tf.random.set_seed(1)
 # problem dimension
-N = 100
+N = 10
 K = 1
 p = 1
 var_adj = 1.
@@ -31,6 +31,7 @@ self = JointModel(N, K, A, X)
 
 self._break_symmetry()
 self.initialize_latent()
+
 for _ in range(10):
     self.forward_adjacency()
     self.backward_adjacency()
@@ -43,19 +44,7 @@ for _ in range(10):
 tf.concat([Z, self.nodes["latent"].mean()], 1)
 tf.concat([alpha, self.nodes["heterogeneity"].mean()], 1)
 
-
-#
-self.nodes["latent"]
-self.nodes["heterogeneity"].mean() * alpha
-
-tf.matmul(self.nodes["heterogeneity"].mean(), self.nodes["heterogeneity"].mean(), transpose_b=True)
-
-self.factors["noise"].message_to_x.mean()
-tf.reduce_sum(tf.where(self.nodes["noisy_linear_predictor"].mean() > 0., 1, 0) - A)
-tf.reduce_sum(tf.where(self.factors["noise"].message_to_x.mean() > 0., 1, 0) - A)
-
-x = self.nodes["vector"]
-sum = self.nodes["linear_predictor"]
+tf.concat([self.factors["weighted_sum"].message_to_result.mean(), X], 1)
 
 
 # factor tests --------------------------------
