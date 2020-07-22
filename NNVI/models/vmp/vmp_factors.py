@@ -8,23 +8,40 @@ import tensorflow_probability as tfp
 # restructure so that the parents and child are attributes?
 
 
-
 class VMPFactor:
 
     def __init__(self):
-        pass
+        super().__init__()
+        self._deterministic = True
 
-    def contribution_to_elbo(self):
-        pass
+    def to_elbo(self, **kwargs):
+        if self._deterministic:
+            # if not defined in child, we assume deterministic node
+            # and the contribution is 0
+            return 0.
+        else:
+            # otherwise it must be implementedin the child class
+            raise NotImplementedError("to_elbo not implemented for this stochastic factor")
 
 
 class Prior(VMPFactor):
 
     def __init__(self, prior):
+        super().__init__()
+        self._deterministic = False
         self.message_to_x = prior
 
     def to_x(self):
         return self.message_to_x
+
+    def to_elbo(self, x):
+        elbo = self.message_to_x.variance() + self.message_to_x.mean() ** 2
+        elbo += x.variance() + x.mean() ** 2
+        elbo += -2. * x.mean() * self.message_to_x.mean()
+        elbo /= self.message_to_x.variance()
+        elbo += tf.math.log(2 * np.pi)
+        elbo += tf.math.log(self.message_to_x.variance())
+        return -.5 * tf.reduce_sum(elbo)
 
 
 class GaussianComparison(VMPFactor):
@@ -32,14 +49,29 @@ class GaussianComparison(VMPFactor):
     # maybe at some point it would be good to merge them
     # dimension Nxp
     # N(mean, variance) where variance is constant per column
+    # TODO: put variance as an attribute
 
     def __init__(self, shape):
+        super().__init__()
+        self._deterministic = False
         self.message_to_mean = GaussianArray.uniform(shape)
 
-    def to_mean(self, X, variance):
-        variance = variance * tf.ones_like(X)
-        self.message_to_mean = GaussianArray.from_array(X, variance)
+    def to_mean(self, x, variance):
+        x = x.mean()  # assumes X is observed, need to change when including missing values
+        variance = variance * tf.ones_like(x)
+        self.message_to_mean = GaussianArray.from_array(x, variance)
         return self.message_to_mean
+
+    def to_elbo(self, mean, x, variance):
+        variance = variance * tf.ones_like(x._precision)
+
+        elbo = mean.variance() + mean.mean() ** 2
+        elbo += x.variance() + x.mean() ** 2 # first term should always be 0.
+        elbo += -2. * x.mean() * mean.mean()
+        elbo /= variance
+        elbo += tf.math.log(2 * np.pi)
+        elbo += tf.math.log(variance)
+        return -.5 * tf.reduce_sum(elbo)
 
 
 class Sum(VMPFactor):
@@ -47,6 +79,7 @@ class Sum(VMPFactor):
     # sum over last dimension
 
     def __init__(self, shape_in, shape_out):
+        super().__init__()
         self.message_to_sum = GaussianArray.uniform(shape_out)
         self.message_to_x = GaussianArray.uniform(shape_in)
 
@@ -75,6 +108,7 @@ class Product(VMPFactor):
     # all pairwise products in the first dimension (N, ...) => (N, N, ...)
 
     def __init__(self, shape_in, shape_out):
+        super().__init__()
         self.message_to_x = GaussianArray.uniform(shape_in)
         self.message_to_product = GaussianArray.uniform(shape_out)
 
@@ -115,6 +149,7 @@ class WeightedSum(VMPFactor):
     # result is NxP
 
     def __init__(self, shape_in, shape_out):
+        super().__init__()
         self.message_to_x = GaussianArray.uniform(shape_in)
         self.message_to_result = GaussianArray.uniform(shape_out)
 
@@ -140,11 +175,13 @@ class WeightedSum(VMPFactor):
 
 
 class AddVariance(VMPFactor):
-
+    # TODO: this is identical to GaussianComparison
     # Stochastic node: N(Gaussian mean, fixed variance)
     # i.e. increases the variance
 
     def __init__(self, shape):
+        super().__init__()
+        self._deterministic = False
         self.message_to_x = GaussianArray.uniform(shape)
         self.message_to_mean = GaussianArray.uniform(shape)
 
@@ -162,14 +199,27 @@ class AddVariance(VMPFactor):
         self.message_to_mean = GaussianArray.from_array(m, v)
         return self.message_to_mean
 
+    def to_elbo(self, mean, x, variance):
+        variance = variance * tf.ones_like(x._precision)
+
+        elbo = mean.variance() + mean.mean() ** 2
+        elbo += x.variance() + x.mean() ** 2 # first term should always be 0.
+        elbo += -2. * x.mean() * mean.mean()
+        elbo /= variance
+        elbo += tf.math.log(2 * np.pi)
+        elbo += tf.math.log(variance)
+        return -.5 * tf.reduce_sum(elbo)
+
 
 class Probit(VMPFactor):
 
     def __init__(self, shape):
+        super().__init__()
         self.message_to_x = GaussianArray.uniform(shape)
 
     def to_x(self, x, A):
         x = x / self.message_to_x
+        A = A._proba # assumes 0/1 only, need to fix later with missing values
         stnr = x.mean() * tf.math.sqrt(x.precision()) * tf.cast(2*A - 1, tf.float32)
         vf = tfp.distributions.Normal(0., 1.).prob(stnr) / tfp.distributions.Normal(0., 1.).cdf(stnr)
         wf = vf * (stnr + vf)
@@ -182,6 +232,7 @@ class Probit(VMPFactor):
 class Concatenate(VMPFactor):
 
     def __init__(self, shape_in, shape_out):
+        super().__init__()
         d = len(shape_out)
         self.message_to_x = {k: GaussianArray.uniform(s) for k, s in shape_in.items()}
         self.message_to_v = GaussianArray.uniform(shape_out)

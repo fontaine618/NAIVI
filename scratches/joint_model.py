@@ -9,7 +9,7 @@ tf.random.set_seed(1)
 # problem dimension
 N = 10
 K = 1
-p = 1
+p = 3
 var_adj = 1.
 var_cov = 1.
 
@@ -32,11 +32,12 @@ self = JointModel(N, K, A, X)
 self._break_symmetry()
 self.initialize_latent()
 
-for _ in range(10):
+for i in range(10):
     self.forward_adjacency()
     self.backward_adjacency()
     self.forward_covariate()
     self.backward_covariate()
+    print(i + 1, self.elbo())
 
 
 

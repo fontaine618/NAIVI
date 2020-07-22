@@ -1,5 +1,6 @@
 import tensorflow as tf
 from NNVI.models.gaussian import GaussianArray
+from NNVI.models.bernoulli import BernoulliArray
 from NNVI.models.parameter import ParameterArray
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
     Concatenate, WeightedSum, GaussianComparison
@@ -9,8 +10,8 @@ import tensorflow_probability as tfp
 class JointModel:
 
     def __init__(self, N, K, A, X):
-        self.A = A
-        self.X = X
+        #self.A = A
+        #self.X = X
         self.N = N
         self.K = K
         self.p = X.shape[1]
@@ -27,8 +28,10 @@ class JointModel:
             "vector": GaussianArray.uniform((N, N, K+2)),
             "linear_predictor_adjacency": GaussianArray.uniform((N, N)),
             "noisy_linear_predictor_adjacency": GaussianArray.uniform((N, N)),
-            "links": tf.zeros((N, N)),
-            "linear_predictor_covariate": GaussianArray.uniform((N, self.p))
+            #"links": tf.zeros((N, N)),
+            "links": BernoulliArray.uniform((N, N)),
+            "linear_predictor_covariate": GaussianArray.uniform((N, self.p)),
+            "covariates_continuous": GaussianArray.observed(X)
         }
         self.factors = {
             "latent_prior": Prior(GaussianArray.from_shape((N, K), 0., 1.)),
@@ -91,7 +94,7 @@ class JointModel:
     def backward_adjacency(self):
         # noisy linear predictors
         self.nodes["noisy_linear_predictor_adjacency"] = \
-            self.factors["adjacency"].to_x(self.nodes["noisy_linear_predictor_adjacency"], self.A) * \
+            self.factors["adjacency"].to_x(self.nodes["noisy_linear_predictor_adjacency"], self.nodes["links"]) * \
             self.factors["noise"].message_to_x
         # linear predictors
         self.nodes["linear_predictor_adjacency"] = \
@@ -127,7 +130,7 @@ class JointModel:
     def backward_covariate(self):
         self.nodes["linear_predictor_covariate"] = \
             self.factors["comparison_gaussian"].to_mean(
-                X=self.X,
+                x=self.nodes["covariates_continuous"],
                 variance=self.parameters["noise_covariate"].value
             ) * self.factors["weighted_sum"].message_to_result
         self.nodes["latent"] = \
@@ -139,3 +142,23 @@ class JointModel:
                 B=self.parameters["B"].value,
                 B0=self.parameters["B0"].value
             )
+
+    def elbo(self):
+        elbo = 0.
+        elbo += self.factors["latent_prior"].to_elbo(self.nodes["latent"])
+        elbo += self.factors["heterogeneity_prior"].to_elbo(self.nodes["heterogeneity"])
+        elbo += self.factors["noise"].to_elbo(
+            mean=self.nodes["linear_predictor_adjacency"],
+            x=self.nodes["noisy_linear_predictor_adjacency"],
+            variance=self.parameters["noise_adjacency"].value
+        )
+        elbo += self.factors["comparison_gaussian"].to_elbo(
+            mean=self.nodes["linear_predictor_covariate"],
+            x=self.nodes["covariates_continuous"],
+            variance=self.parameters["noise_covariate"].value
+        )
+        elbo += self.nodes["latent"].negative_entropy()
+        elbo += self.nodes["heterogeneity"].negative_entropy()
+        elbo += self.nodes["noisy_linear_predictor_adjacency"].negative_entropy()
+        elbo += self.nodes["covariates_continuous"].negative_entropy()
+        return elbo
