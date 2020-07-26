@@ -4,10 +4,6 @@ from NNVI.models.gaussian import GaussianArray
 import tensorflow_probability as tfp
 
 
-# TODO:
-# restructure so that the parents and child are attributes?
-
-
 class VMPFactor:
 
     def __init__(self):
@@ -24,6 +20,7 @@ class VMPFactor:
 
 
 class Prior(VMPFactor):
+    # TODO: merge with other two Gaussian factors
 
     def __init__(self, prior):
         super().__init__()
@@ -71,7 +68,6 @@ class GaussianComparison(VMPFactor):
 
     def to_elbo(self, mean, x, variance):
         v = variance * tf.ones_like(x._precision)
-
         elbo = mean.variance() + mean.mean() ** 2
         elbo += x.variance() + x.mean() ** 2
         elbo += -2. * x.mean() * mean.mean()
@@ -79,12 +75,13 @@ class GaussianComparison(VMPFactor):
         elbo += tf.math.log(2 * np.pi)
         elbo += tf.math.log(v)
         # remove unobserved values
+        # TODO: make safe for gradient (I think elbo is infinite)
         return -.5 * tf.reduce_sum(tf.where(x.is_uniform(), 0.0, elbo))
 
 
 class Sum(VMPFactor):
 
-    # sum over last dimension
+    # sum over last dimension (could be expanded to and dim by replacing -1 <- dim with argument)
 
     def __init__(self, shape_in, shape_out):
         super().__init__()
@@ -135,12 +132,12 @@ class Product(VMPFactor):
         product = product / self.message_to_product
         x = x / self.message_to_x
         # here x contains the message from the other term in the product
-        # message to x0
+        # message to x0 using x as the message from c1
         p = product.precision() * tf.expand_dims(x.variance() + x.mean() ** 2, 1)
         mtp = product.mean_times_precision() * tf.expand_dims(x.mean(), 1)
         p0 = tf.math.reduce_sum(p, 1)
         mtp0 = tf.math.reduce_sum(mtp, 1)
-        # message to x1
+        # message to x1 using x as the message from x0
         p = product.precision() * tf.expand_dims(x.variance() + x.mean() ** 2, 0)
         mtp = product.mean_times_precision() * tf.expand_dims(x.mean(), 0)
         p1 = tf.math.reduce_sum(p, 0)
@@ -211,7 +208,7 @@ class AddVariance(VMPFactor):
         variance = variance * tf.ones_like(x._precision)
 
         elbo = mean.variance() + mean.mean() ** 2
-        elbo += x.variance() + x.mean() ** 2 # first term should always be 0.
+        elbo += x.variance() + x.mean() ** 2 # first term should always be 0.?
         elbo += -2. * x.mean() * mean.mean()
         elbo /= variance
         elbo += tf.math.log(2 * np.pi)
@@ -226,8 +223,9 @@ class Probit(VMPFactor):
         self.message_to_x = GaussianArray.uniform(shape)
 
     def to_x(self, x, A):
+        # TODO: assumes 0/1 only, need to fix later with missing values
         x = x / self.message_to_x
-        A = A._proba # assumes 0/1 only, need to fix later with missing values
+        A = A._proba
         stnr = x.mean() * tf.math.sqrt(x.precision()) * tf.cast(2*A - 1, tf.float32)
         vf = tfp.distributions.Normal(0., 1.).prob(stnr) / tfp.distributions.Normal(0., 1.).cdf(stnr)
         wf = vf * (stnr + vf)

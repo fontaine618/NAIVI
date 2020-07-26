@@ -91,7 +91,7 @@ class InnerProductLatentSpaceModel:
         # noizy linear predictor
         self.nodes["noisy_linear_predictor"] = self.factors["noise"].to_x(
             mean=self.nodes["linear_predictor"],
-            variance=self.parameters["noise"].value
+            variance=self.parameters["noise"]._value
         ) * self.factors["adjacency"].message_to_x
 
     def backward(self):
@@ -101,7 +101,7 @@ class InnerProductLatentSpaceModel:
             self.factors["noise"].message_to_x
         # linear predictors
         self.nodes["linear_predictor"] = \
-            self.factors["noise"].to_mean(self.nodes["noisy_linear_predictor"], self.parameters["noise"].value) * \
+            self.factors["noise"].to_mean(self.nodes["noisy_linear_predictor"], self.parameters["noise"]._value) * \
             self.factors["sum"].message_to_sum
         # sum
         self.nodes["vector"] = \

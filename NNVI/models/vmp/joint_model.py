@@ -1,7 +1,7 @@
 import tensorflow as tf
 from NNVI.models.gaussian import GaussianArray
 from NNVI.models.bernoulli import BernoulliArray
-from NNVI.models.parameter import ParameterArray
+from NNVI.models.parameter import ParameterArray, ParameterArrayLogScale
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
     Concatenate, WeightedSum, GaussianComparison
 import tensorflow_probability as tfp
@@ -16,10 +16,10 @@ class JointModel:
         self.K = K
         self.p = p
         self.parameters = {
-            "noise_adjacency": ParameterArray(1. * tf.ones((1, 1))),
+            "noise_adjacency": ParameterArrayLogScale(1. * tf.ones((1, 1))),
             "B": ParameterArray(tf.ones((K, p))),
             "B0": ParameterArray(0. * tf.ones((1, p))),
-            "noise_covariate": ParameterArray(tf.ones((1, p)))
+            "noise_covariate": ParameterArrayLogScale(tf.ones((1, p)))
         }
         self.nodes = {
             "latent": GaussianArray.uniform((N, K)),
@@ -87,7 +87,7 @@ class JointModel:
         # noizy linear predictor
         self.nodes["noisy_linear_predictor_adjacency"] = self.factors["noise"].to_x(
             mean=self.nodes["linear_predictor_adjacency"],
-            variance=self.parameters["noise_adjacency"].value
+            variance=self.parameters["noise_adjacency"].value()
         ) * self.factors["adjacency"].message_to_x
 
     def backward_adjacency(self):
@@ -99,7 +99,7 @@ class JointModel:
         self.nodes["linear_predictor_adjacency"] = \
             self.factors["noise"].to_mean(
                 self.nodes["noisy_linear_predictor_adjacency"],
-                self.parameters["noise_adjacency"].value
+                self.parameters["noise_adjacency"].value()
             ) * self.factors["sum"].message_to_sum
         # sum
         self.nodes["vector"] = \
@@ -122,15 +122,15 @@ class JointModel:
         self.nodes["linear_predictor_covariate"] = \
             self.factors["weighted_sum"].to_result(
                 x=self.nodes["latent"],
-                B=self.parameters["B"].value,
-                B0=self.parameters["B0"].value
+                B=self.parameters["B"].value(),
+                B0=self.parameters["B0"].value()
             ) * self.factors["comparison_gaussian"].message_to_mean
 
     def backward_covariate(self):
         self.nodes["linear_predictor_covariate"] = \
             self.factors["comparison_gaussian"].to_mean(
                 x=self.nodes["covariates_continuous"],
-                variance=self.parameters["noise_covariate"].value
+                variance=self.parameters["noise_covariate"].value()
             ) * self.factors["weighted_sum"].message_to_result
         self.nodes["latent"] = \
             self.nodes["latent"] / \
@@ -138,8 +138,8 @@ class JointModel:
             self.factors["weighted_sum"].to_x(
                 x=self.nodes["latent"],
                 result=self.nodes["linear_predictor_covariate"],
-                B=self.parameters["B"].value,
-                B0=self.parameters["B0"].value
+                B=self.parameters["B"].value(),
+                B0=self.parameters["B0"].value()
             )
 
     def elbo(self):
@@ -149,12 +149,12 @@ class JointModel:
         elbo_factors += self.factors["noise"].to_elbo(
             mean=self.nodes["linear_predictor_adjacency"],
             x=self.nodes["noisy_linear_predictor_adjacency"],
-            variance=self.parameters["noise_adjacency"].value
+            variance=self.parameters["noise_adjacency"].value()
         )
         elbo_factors += self.factors["comparison_gaussian"].to_elbo(
             mean=self.nodes["linear_predictor_covariate"],
             x=self.nodes["covariates_continuous"],
-            variance=self.parameters["noise_covariate"].value
+            variance=self.parameters["noise_covariate"].value()
         )
         elbo_nodes = 0.0
         elbo_nodes += self.nodes["latent"].negative_entropy()
@@ -163,13 +163,21 @@ class JointModel:
         elbo_nodes += self.nodes["covariates_continuous"].negative_entropy()
         elbo = elbo_nodes + elbo_factors
         print("{:<4f}    {:<4f}    {:<4f}".format(elbo_factors, elbo_nodes, elbo))
-        return
+        return elbo
+
+    def pass_and_elbo(self):
+        for _ in range(5):
+            self.forward_adjacency()
+            self.backward_adjacency()
+            self.forward_covariate()
+            self.backward_covariate()
+        return self.elbo()
 
     def predict_covariates(self):
         # might want to add the variance
         return self.factors["comparison_gaussian"].to_x(
             mean=self.nodes["linear_predictor_covariate"],
-            variance=self.parameters["noise_covariate"].value
+            variance=self.parameters["noise_covariate"].value()
         )
 
     def links_proba(self):
@@ -178,3 +186,9 @@ class JointModel:
             self.factors["noise"].message_to_x.variance()
         ).cdf(0.0)
         return prob
+
+    def _parameters(self):
+        return {
+            name: parameter._value
+            for name, parameter in self.parameters.items()
+        }

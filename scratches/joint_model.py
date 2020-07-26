@@ -8,22 +8,22 @@ from NNVI.models.gaussian import GaussianArray
 
 tf.random.set_seed(1)
 # problem dimension
-N = 5
+N = 100
 K = 1
 p = 3
 var_adj = 1.
 var_cov = 1.
-missing_rate = 0.3
+missing_rate = 0.0
 
 #-------------------------------------------------
 # latent variables
 Z = tf.random.normal((N, K), 0.0, 1.0, tf.float32)
 alpha = tf.random.normal((N, 1), 0.0, 1.0, tf.float32)
 # regression matrix
-B = tf.ones((K, p))
-B0 = 0. * tf.ones((1, p))
+B = tf.ones((K, p)) * 3.
+B0 = -1. * tf.ones((1, p))
 # covariate model
-Theta_X = tf.matmul(Z, B)
+Theta_X = tf.matmul(Z, B) + B0
 X_complete = Theta_X + tf.random.normal((N, p), 0.0, var_cov, tf.float32)
 # missing values
 missing = tf.random.uniform(X_complete.shape) < missing_rate
@@ -37,6 +37,29 @@ self = JointModel(K, A, X)
 self._break_symmetry()
 self.initialize_latent()
 
+lr = 0.0001
+
+for _ in range(10):
+
+    with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
+        g.watch(self._parameters())
+        target = self.pass_and_elbo()
+
+    grad = g.gradient(target, self._parameters())
+    for k, v in grad.items():
+        #print("=" * 60)
+        #print(k)
+        #print("gradient", v)
+        self.parameters[k]._value.assign_add(v * lr)
+        #print("new value", self.parameters[k]._value)
+
+
+for k, v in self.parameters.items():
+    print(k, v.value())
+
+
+
+
 for i in range(100):
     self.forward_adjacency()
     self.backward_adjacency()
@@ -44,8 +67,6 @@ for i in range(100):
     self.backward_covariate()
     self.elbo()
 
-
-    print(i + 1, self.elbo())
 
 
 
@@ -62,6 +83,8 @@ missing
 tf.where(missing, self.nodes["linear_predictor_covariate"].mean(), 0.)
 tf.where(missing, self.factors["weighted_sum"].message_to_result.mean(), 0.)
 tf.where(missing, X_complete, 0.)
+
+
 # factor tests --------------------------------
 # gaussian comparison
 variance = tf.random.normal((1, p), 0., 1.) ** 2

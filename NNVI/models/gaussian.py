@@ -49,6 +49,7 @@ class GaussianArray(Distribution):
         )
 
     def entropy(self):
+        # TODO: make safe for gradient
         entropy = - 0.5 * tf.math.log(2. * np.pi * self.variance()) + 1.
         return tf.reduce_sum(tf.where(tf.math.logical_or(self.is_point_mass(), self.is_uniform()), 0., entropy))
 
