@@ -64,9 +64,7 @@ class BernoulliArray(Distribution):
 
     @classmethod
     def observed(cls, point):
-        m = point
-        v = tf.zeros_like(m)
-        return cls.from_array(m, v)
+        return cls.from_array(point)
 
     def __str__(self):
         out = "BernoulliArray{}\n".format(self.shape())

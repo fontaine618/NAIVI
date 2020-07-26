@@ -9,17 +9,17 @@ import tensorflow_probability as tfp
 
 class JointModel:
 
-    def __init__(self, N, K, A, X):
-        #self.A = A
-        #self.X = X
+    def __init__(self, K, A, X):
+        N = A.shape[0]
+        p = X.shape[1]
         self.N = N
         self.K = K
-        self.p = X.shape[1]
+        self.p = p
         self.parameters = {
             "noise_adjacency": ParameterArray(1. * tf.ones((1, 1))),
-            "B": ParameterArray(tf.ones((self.K, self.p))),
-            "B0": ParameterArray(tf.ones((1, self.p))),
-            "noise_covariate": ParameterArray(tf.ones((1, self.p)))
+            "B": ParameterArray(tf.ones((K, p))),
+            "B0": ParameterArray(0. * tf.ones((1, p))),
+            "noise_covariate": ParameterArray(tf.ones((1, p)))
         }
         self.nodes = {
             "latent": GaussianArray.uniform((N, K)),
@@ -28,9 +28,8 @@ class JointModel:
             "vector": GaussianArray.uniform((N, N, K+2)),
             "linear_predictor_adjacency": GaussianArray.uniform((N, N)),
             "noisy_linear_predictor_adjacency": GaussianArray.uniform((N, N)),
-            #"links": tf.zeros((N, N)),
-            "links": BernoulliArray.uniform((N, N)),
-            "linear_predictor_covariate": GaussianArray.uniform((N, self.p)),
+            "links": BernoulliArray.observed(A),
+            "linear_predictor_covariate": GaussianArray.uniform((N, p)),
             "covariates_continuous": GaussianArray.observed(X)
         }
         self.factors = {
@@ -41,8 +40,8 @@ class JointModel:
             "sum": Sum((N, N, K+2), (N, N)),
             "noise": AddVariance((N, N)),
             "adjacency": Probit((N, N)),
-            "weighted_sum": WeightedSum((N, K), (N, self.p)),
-            "comparison_gaussian": GaussianComparison((N, self.p))
+            "weighted_sum": WeightedSum((N, K), (N, p)),
+            "comparison_gaussian": GaussianComparison((N, p))
         }
 
     def _break_symmetry(self):
@@ -144,21 +143,38 @@ class JointModel:
             )
 
     def elbo(self):
-        elbo = 0.
-        elbo += self.factors["latent_prior"].to_elbo(self.nodes["latent"])
-        elbo += self.factors["heterogeneity_prior"].to_elbo(self.nodes["heterogeneity"])
-        elbo += self.factors["noise"].to_elbo(
+        elbo_factors = 0.
+        elbo_factors += self.factors["latent_prior"].to_elbo(self.nodes["latent"])
+        elbo_factors += self.factors["heterogeneity_prior"].to_elbo(self.nodes["heterogeneity"])
+        elbo_factors += self.factors["noise"].to_elbo(
             mean=self.nodes["linear_predictor_adjacency"],
             x=self.nodes["noisy_linear_predictor_adjacency"],
             variance=self.parameters["noise_adjacency"].value
         )
-        elbo += self.factors["comparison_gaussian"].to_elbo(
+        elbo_factors += self.factors["comparison_gaussian"].to_elbo(
             mean=self.nodes["linear_predictor_covariate"],
             x=self.nodes["covariates_continuous"],
             variance=self.parameters["noise_covariate"].value
         )
-        elbo += self.nodes["latent"].negative_entropy()
-        elbo += self.nodes["heterogeneity"].negative_entropy()
-        elbo += self.nodes["noisy_linear_predictor_adjacency"].negative_entropy()
-        elbo += self.nodes["covariates_continuous"].negative_entropy()
-        return elbo
+        elbo_nodes = 0.0
+        elbo_nodes += self.nodes["latent"].negative_entropy()
+        elbo_nodes += self.nodes["heterogeneity"].negative_entropy()
+        elbo_nodes += self.nodes["noisy_linear_predictor_adjacency"].negative_entropy()
+        elbo_nodes += self.nodes["covariates_continuous"].negative_entropy()
+        elbo = elbo_nodes + elbo_factors
+        print("{:<4f}    {:<4f}    {:<4f}".format(elbo_factors, elbo_nodes, elbo))
+        return
+
+    def predict_covariates(self):
+        # might want to add the variance
+        return self.factors["comparison_gaussian"].to_x(
+            mean=self.nodes["linear_predictor_covariate"],
+            variance=self.parameters["noise_covariate"].value
+        )
+
+    def links_proba(self):
+        prob = tfp.distributions.Normal(
+            self.factors["noise"].message_to_x.mean(),
+            self.factors["noise"].message_to_x.variance()
+        ).cdf(0.0)
+        return prob

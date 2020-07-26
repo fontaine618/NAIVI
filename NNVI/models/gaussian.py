@@ -50,7 +50,7 @@ class GaussianArray(Distribution):
 
     def entropy(self):
         entropy = - 0.5 * tf.math.log(2. * np.pi * self.variance()) + 1.
-        return tf.reduce_sum(tf.where(self.is_point_mass(), 0., entropy))
+        return tf.reduce_sum(tf.where(tf.math.logical_or(self.is_point_mass(), self.is_uniform()), 0., entropy))
 
     @classmethod
     def from_array(cls, mean, variance):
@@ -80,8 +80,8 @@ class GaussianArray(Distribution):
 
     @classmethod
     def observed(cls, point):
-        m = point
-        v = tf.zeros_like(m)
+        m = tf.where(tf.math.is_nan(point), 0.0, point)
+        v = tf.where(tf.math.is_nan(point), np.inf, 0.0)
         return cls.from_array(m, v)
 
     def __mul__(self, other):

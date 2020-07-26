@@ -11,7 +11,6 @@ import tensorflow_probability as tfp
 class VMPFactor:
 
     def __init__(self):
-        super().__init__()
         self._deterministic = True
 
     def to_elbo(self, **kwargs):
@@ -55,23 +54,32 @@ class GaussianComparison(VMPFactor):
         super().__init__()
         self._deterministic = False
         self.message_to_mean = GaussianArray.uniform(shape)
+        self.message_to_x = GaussianArray.uniform(shape)
 
     def to_mean(self, x, variance):
-        x = x.mean()  # assumes X is observed, need to change when including missing values
-        variance = variance * tf.ones_like(x)
-        self.message_to_mean = GaussianArray.from_array(x, variance)
+        m = x.mean()
+        v = variance * tf.ones_like(m) + x.variance()
+        self.message_to_mean = GaussianArray.from_array(m, v)
         return self.message_to_mean
 
+    def to_x(self, mean, variance):
+        mean = mean / self.message_to_mean
+        m = mean.mean()
+        v = mean.variance() + variance
+        self.message_to_x = GaussianArray.from_array(m, v)
+        return self.message_to_x
+
     def to_elbo(self, mean, x, variance):
-        variance = variance * tf.ones_like(x._precision)
+        v = variance * tf.ones_like(x._precision)
 
         elbo = mean.variance() + mean.mean() ** 2
-        elbo += x.variance() + x.mean() ** 2 # first term should always be 0.
+        elbo += x.variance() + x.mean() ** 2
         elbo += -2. * x.mean() * mean.mean()
-        elbo /= variance
+        elbo /= v
         elbo += tf.math.log(2 * np.pi)
-        elbo += tf.math.log(variance)
-        return -.5 * tf.reduce_sum(elbo)
+        elbo += tf.math.log(v)
+        # remove unobserved values
+        return -.5 * tf.reduce_sum(tf.where(x.is_uniform(), 0.0, elbo))
 
 
 class Sum(VMPFactor):
