@@ -33,13 +33,17 @@ class Prior(VMPFactor):
         return self._prior
 
     def to_elbo(self, x):
+        # model contribution
         elbo = self.message_to_x.variance() + self.message_to_x.mean() ** 2
         elbo += x.variance() + x.mean() ** 2
         elbo += -2. * x.mean() * self.message_to_x.mean()
         elbo /= self.message_to_x.variance()
         # elbo += tf.math.log(2 * np.pi)
         elbo += tf.math.log(self.message_to_x.variance())
-        return -.5 * tf.reduce_sum(elbo)
+        elbo = -.5 * tf.reduce_sum(elbo)
+        # node contribution
+        elbo += x.negative_entropy()
+        return elbo
 
 
 class GaussianComparison(VMPFactor):
@@ -70,6 +74,7 @@ class GaussianComparison(VMPFactor):
         return self.message_to_x
 
     def to_elbo(self, mean, x, variance):
+        # model contribution
         v = variance * tf.ones(x.shape())
         elbo = mean.variance() + mean.mean() ** 2
         elbo += x.variance_safe() + x.mean() ** 2
@@ -79,7 +84,11 @@ class GaussianComparison(VMPFactor):
         elbo += tf.math.log(v)
         # remove unobserved values
         # TODO: make safe for gradient when missing values
-        return -.5 * tf.reduce_sum(tf.where(x.is_uniform(), 0.0, elbo))
+        elbo = -.5 * tf.reduce_sum(tf.where(x.is_uniform(), 0.0, elbo))
+
+        # node contribution (non-zero only for missing values)
+        elbo += x.negative_entropy()
+        return elbo
 
 
 class Sum(VMPFactor):
@@ -210,15 +219,18 @@ class AddVariance(VMPFactor):
         return self.message_to_mean
 
     def to_elbo(self, mean, x, variance):
+        # model contribution
         variance = variance * tf.ones_like(x.precision())
-
         elbo = mean.variance() + mean.mean() ** 2
         elbo += x.variance() + x.mean() ** 2  # first term should always be 0.?
         elbo += -2. * x.mean() * mean.mean()
         elbo /= variance
         # elbo += tf.math.log(2 * np.pi)
         elbo += tf.math.log(variance)
-        return -.5 * tf.reduce_sum(elbo)
+        elbo = -.5 * tf.reduce_sum(elbo)
+        # node contribution
+        elbo += x.negative_entropy()
+        return elbo
 
 
 class Probit(VMPFactor):

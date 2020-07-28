@@ -160,30 +160,19 @@ class JointModel:
             )
 
     def elbo(self):
-        elbo_factors = 0.
-        elbo_factors += self.factors["latent_prior"].to_elbo(self.nodes["latent"])
-        elbo_factors += self.factors["heterogeneity_prior"].to_elbo(self.nodes["heterogeneity"])
-        # elbo_factors += self.factors["adjacency"].to_elbo(
-        #     x=self.nodes["linear_predictor_adjacency"],
-        #     A=self.nodes["links"]
-        # )
-        elbo_factors += self.factors["noise"].to_elbo(
+        elbo = 0.
+        elbo += self.factors["latent_prior"].to_elbo(self.nodes["latent"])
+        elbo += self.factors["heterogeneity_prior"].to_elbo(self.nodes["heterogeneity"])
+        elbo += self.factors["noise"].to_elbo(
             mean=self.nodes["linear_predictor_adjacency"],
             x=self.nodes["noisy_linear_predictor_adjacency"],
             variance=self.parameters["noise_adjacency"].value()
         )
-        elbo_factors += self.factors["comparison_gaussian"].to_elbo(
+        elbo += self.factors["comparison_gaussian"].to_elbo(
             mean=self.nodes["linear_predictor_covariate"],
             x=self.nodes["covariates_continuous"],
             variance=self.parameters["noise_covariate"].value()
         )
-        elbo_nodes = 0.0
-        elbo_nodes += self.nodes["latent"].negative_entropy()
-        elbo_nodes += self.nodes["heterogeneity"].negative_entropy()
-        elbo_nodes += self.nodes["noisy_linear_predictor_adjacency"].negative_entropy()
-        elbo_nodes += self.nodes["covariates_continuous"].negative_entropy()
-        elbo = elbo_nodes + elbo_factors
-        print("{:<4f}    {:<4f}    {:<4f}".format(elbo_factors, elbo_nodes, elbo))
         return elbo
 
     def pass_and_elbo(self):

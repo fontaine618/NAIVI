@@ -52,8 +52,9 @@ for _ in range(10):
 
     grad = g.gradient(target, self._parameters())
     for k, v in grad.items():
-        self.parameters[k].assign_add(v * lr)
-
+        self.parameters[k].grad = v
+        self.parameters[k].step(lr)
+    print(target)
     lr *= 0.9999
 
 
