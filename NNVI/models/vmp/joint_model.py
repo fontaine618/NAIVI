@@ -3,7 +3,7 @@ from NNVI.models.gaussianarray import GaussianArray
 from NNVI.models.bernoulliarray import BernoulliArray
 from NNVI.models.parameter import ParameterArray, ParameterArrayLogScale
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
-    Concatenate, WeightedSum, GaussianComparison
+    Concatenate, WeightedSum, GaussianComparison, ProbitNoisy
 import tensorflow_probability as tfp
 
 
@@ -40,6 +40,7 @@ class JointModel:
             "sum": Sum((N, N, K+2), (N, N)),
             "noise": AddVariance((N, N)),
             "adjacency": Probit((N, N)),
+            # "adjacency": ProbitNoisy((N, N), self.parameters["noise_adjacency"]),
             "weighted_sum": WeightedSum((N, K), (N, p)),
             "comparison_gaussian": GaussianComparison((N, p))
         }
@@ -80,6 +81,15 @@ class JointModel:
         }
         self.nodes["vector"] = self.factors["concatenate"].to_v(x) * \
             self.factors["sum"].to_x(self.nodes["vector"], self.nodes["linear_predictor_adjacency"])
+
+
+        # # linear predictor
+        # self.nodes["linear_predictor_adjacency"] = \
+        #     self.factors["sum"].to_sum(self.nodes["vector"]) * \
+        #     self.factors["adjacency"].message_to_x
+        # # adjacency (not necessary, but useful if we need to return a value)
+        # return self.factors["adjacency"].to_result(self.nodes["linear_predictor_adjacency"])
+
         # linear predictor
         self.nodes["linear_predictor_adjacency"] = \
             self.factors["sum"].to_sum(self.nodes["vector"]) * \
@@ -91,6 +101,11 @@ class JointModel:
         ) * self.factors["adjacency"].message_to_x
 
     def backward_adjacency(self):
+        # # adjacency
+        # self.nodes["linear_predictor_adjacency"] = \
+        #     self.factors["adjacency"].to_x(self.nodes["linear_predictor_adjacency"], self.nodes["links"]) * \
+        #     self.factors["sum"].message_to_sum
+
         # noisy linear predictors
         self.nodes["noisy_linear_predictor_adjacency"] = \
             self.factors["adjacency"].to_x(self.nodes["noisy_linear_predictor_adjacency"], self.nodes["links"]) * \
@@ -101,6 +116,8 @@ class JointModel:
                 self.nodes["noisy_linear_predictor_adjacency"],
                 self.parameters["noise_adjacency"].value()
             ) * self.factors["sum"].message_to_sum
+
+
         # sum
         self.nodes["vector"] = \
             self.factors["sum"].to_x(self.nodes["vector"], self.nodes["linear_predictor_adjacency"]) * \
@@ -122,8 +139,8 @@ class JointModel:
         self.nodes["linear_predictor_covariate"] = \
             self.factors["weighted_sum"].to_result(
                 x=self.nodes["latent"],
-                B=self.parameters["B"].value(),
-                B0=self.parameters["B0"].value()
+                weight=self.parameters["B"].value(),
+                bias=self.parameters["B0"].value()
             ) * self.factors["comparison_gaussian"].message_to_mean
 
     def backward_covariate(self):
@@ -138,14 +155,18 @@ class JointModel:
             self.factors["weighted_sum"].to_x(
                 x=self.nodes["latent"],
                 result=self.nodes["linear_predictor_covariate"],
-                B=self.parameters["B"].value(),
-                B0=self.parameters["B0"].value()
+                weight=self.parameters["B"].value(),
+                bias=self.parameters["B0"].value()
             )
 
     def elbo(self):
         elbo_factors = 0.
         elbo_factors += self.factors["latent_prior"].to_elbo(self.nodes["latent"])
         elbo_factors += self.factors["heterogeneity_prior"].to_elbo(self.nodes["heterogeneity"])
+        # elbo_factors += self.factors["adjacency"].to_elbo(
+        #     x=self.nodes["linear_predictor_adjacency"],
+        #     A=self.nodes["links"]
+        # )
         elbo_factors += self.factors["noise"].to_elbo(
             mean=self.nodes["linear_predictor_adjacency"],
             x=self.nodes["noisy_linear_predictor_adjacency"],

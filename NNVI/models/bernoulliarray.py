@@ -15,7 +15,7 @@ class BernoulliArray(DistributionArray):
         return self._proba == 0.5
 
     def mean(self):
-        return self.proba
+        return self._proba
 
     def variance(self):
         return self.proba * (1. - self.proba)
@@ -40,7 +40,7 @@ class BernoulliArray(DistributionArray):
         return self._proba.shape
 
     def entropy(self):
-        # TODO: make safe for gradient, could use a tf-builtin function
+        # TODO: make safe for gradient
         p = self._proba
         entropy = p * tf.math.log(p) + (1. - p) * tf.math.log(1. - p)
         return tf.reduce_sum(tf.where(tf.math.is_nan(entropy), 0., entropy))
@@ -48,6 +48,9 @@ class BernoulliArray(DistributionArray):
     def logit(self):
         p = self._proba
         return tf.math.log(p) - tf.math.log(1. - p)
+
+    def proba(self):
+        return self._proba
 
     @classmethod
     def from_array(cls, proba):

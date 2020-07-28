@@ -9,7 +9,7 @@ from NNVI.models.gaussianarray import GaussianArray
 
 tf.random.set_seed(1)
 # problem dimension
-N = 5
+N = 50
 K = 1
 p = 1
 var_adj = 1.
@@ -42,9 +42,9 @@ self.initialize_latent()
 for I in range(10):
     self.pass_and_elbo()
 
-lr = 0.0001
+lr = 0.001
 
-for _ in range(100):
+for _ in range(10):
 
     with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
         g.watch(self._parameters())
