@@ -1,5 +1,5 @@
 import tensorflow as tf
-from NNVI.models.gaussian import GaussianArray
+from NNVI.models.gaussianarray import GaussianArray
 from NNVI.models.parameter import ParameterArray
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, Concatenate
 import tensorflow_probability as tfp

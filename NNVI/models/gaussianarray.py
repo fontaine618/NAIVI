@@ -1,9 +1,9 @@
 import tensorflow as tf
 import numpy as np
-from .distribution import Distribution
+from .distributionarray import DistributionArray
 
 
-class GaussianArray(Distribution):
+class GaussianArray(DistributionArray):
 
     def __init__(self, precision, mean_times_precision):
         super().__init__()
@@ -33,6 +33,12 @@ class GaussianArray(Distribution):
     def variance(self):
         return tf.where(self.precision() > 0.0, 1.0 / self._precision, np.inf)
 
+    def precision_safe(self):
+        return tf.clip_by_value(self._precision, 1.0e-10, 1.0e10)
+
+    def variance_safe(self):
+        return 1.0 / self.precision_safe()
+
     def mean_and_variance(self):
         return self.mean(), self.variance()
 
@@ -50,7 +56,8 @@ class GaussianArray(Distribution):
 
     def entropy(self):
         # TODO: make safe for gradient
-        entropy = - 0.5 * tf.math.log(2. * np.pi * self.variance()) + 1.
+        # entropy = 0.5 * tf.math.log(2. * np.pi * self.precision_safe()) + 1.
+        entropy = 0.5 * tf.math.log(self.precision_safe())
         return tf.reduce_sum(tf.where(tf.math.logical_or(self.is_point_mass(), self.is_uniform()), 0., entropy))
 
     @classmethod

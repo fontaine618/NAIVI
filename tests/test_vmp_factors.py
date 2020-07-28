@@ -1,7 +1,7 @@
 from unittest import TestCase
 import tensorflow as tf
 
-from NNVI.models.gaussian import GaussianArray
+from NNVI.models.gaussianarray import GaussianArray
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit
 from NNVI.models.vmp.vmp_factors import Sum, AddVariance, Concatenate, WeightedSum
 

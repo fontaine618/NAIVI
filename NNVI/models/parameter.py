@@ -13,6 +13,9 @@ class ParameterArray:
     def value(self):
         return self._value
 
+    def assign_add(self, v):
+        self._value.assign_add(v)
+
 
 class ParameterArrayLogScale:
 
@@ -21,5 +24,8 @@ class ParameterArrayLogScale:
 
     def value(self):
         return tf.math.exp(self._value)
+
+    def assign_add(self, v):
+        self._value.assign_add(v)
 
 

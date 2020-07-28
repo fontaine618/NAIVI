@@ -1,8 +1,8 @@
 import tensorflow as tf
-from .distribution import Distribution
+from .distributionarray import DistributionArray
 
 
-class BernoulliArray(Distribution):
+class BernoulliArray(DistributionArray):
 
     def __init__(self, proba):
         super().__init__()
@@ -40,7 +40,7 @@ class BernoulliArray(Distribution):
         return self._proba.shape
 
     def entropy(self):
-        # TODO: make safe for gradient
+        # TODO: make safe for gradient, could use a tf-builtin function
         p = self._proba
         entropy = p * tf.math.log(p) + (1. - p) * tf.math.log(1. - p)
         return tf.reduce_sum(tf.where(tf.math.is_nan(entropy), 0., entropy))

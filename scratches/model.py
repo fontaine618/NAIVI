@@ -2,7 +2,7 @@ import tensorflow as tf
 import tensorflow_probability as tfp
 from NNVI.models.vmp import InnerProductLatentSpaceModel
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, Concatenate, WeightedSum
-from NNVI.models.gaussian import GaussianArray
+from NNVI.models.gaussianarray import GaussianArray
 
 
 tf.random.set_seed(1)

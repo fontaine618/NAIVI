@@ -1,4 +1,4 @@
-class Distribution:
+class DistributionArray:
 
     def __init__(self):
         pass

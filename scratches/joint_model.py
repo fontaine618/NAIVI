@@ -2,15 +2,16 @@ import tensorflow as tf
 import numpy as np
 import tensorflow_probability as tfp
 from NNVI.models.vmp import JointModel
-from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, Concatenate, WeightedSum, GaussianComparison
-from NNVI.models.gaussian import GaussianArray
+from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
+    Concatenate, WeightedSum, GaussianComparison
+from NNVI.models.gaussianarray import GaussianArray
 
 
 tf.random.set_seed(1)
 # problem dimension
-N = 100
+N = 5
 K = 1
-p = 3
+p = 1
 var_adj = 1.
 var_cov = 1.
 missing_rate = 0.0
@@ -37,9 +38,13 @@ self = JointModel(K, A, X)
 self._break_symmetry()
 self.initialize_latent()
 
+# run once to get decent messages
+for I in range(10):
+    self.pass_and_elbo()
+
 lr = 0.0001
 
-for _ in range(10):
+for _ in range(100):
 
     with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
         g.watch(self._parameters())
@@ -47,11 +52,9 @@ for _ in range(10):
 
     grad = g.gradient(target, self._parameters())
     for k, v in grad.items():
-        #print("=" * 60)
-        #print(k)
-        #print("gradient", v)
-        self.parameters[k]._value.assign_add(v * lr)
-        #print("new value", self.parameters[k]._value)
+        self.parameters[k].assign_add(v * lr)
+
+    lr *= 0.9999
 
 
 for k, v in self.parameters.items():
@@ -107,3 +110,18 @@ self.to_x(x, result, B, B0)
 
 
 GaussianArray.observed(X)
+
+
+mean=self.nodes["linear_predictor_covariate"]
+x=self.nodes["covariates_continuous"]
+variance=self.parameters["noise_covariate"].value()
+
+
+self = self.nodes["covariates_continuous"]
+
+
+# --------------------------------------
+# predict links
+self.links_proba() >0.5
+self.factors["adjacency"].to_result(self.nodes["noisy_linear_predictor_adjacency"])
+A

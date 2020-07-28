@@ -1,7 +1,7 @@
 import tensorflow as tf
 import sys
 sys.path.append("/home/simon/Documents/NNVI/NNVI")
-from models.gaussian import GaussianArray
+from models.gaussianarray import GaussianArray
 from NNVI.models.vmp.vmp_factors import Sum, WeightedSum, Probit
 
 factor = Sum()

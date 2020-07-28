@@ -1,3 +1,3 @@
-from models.gaussian import GaussianArray
-from models.bernoulli import BernoulliArray
+from models.gaussianarray import GaussianArray
+from models.bernoulliarray import BernoulliArray
 import models.vmp

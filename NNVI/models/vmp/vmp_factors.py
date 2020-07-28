@@ -1,6 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from NNVI.models.gaussian import GaussianArray
+from NNVI.models.gaussianarray import GaussianArray
+from NNVI.models.bernoulliarray import BernoulliArray
 import tensorflow_probability as tfp
 
 
@@ -15,7 +16,7 @@ class VMPFactor:
             # and the contribution is 0
             return 0.
         else:
-            # otherwise it must be implementedin the child class
+            # otherwise it must be implemented in the child class
             raise NotImplementedError("to_elbo not implemented for this stochastic factor")
 
 
@@ -25,17 +26,18 @@ class Prior(VMPFactor):
     def __init__(self, prior):
         super().__init__()
         self._deterministic = False
+        self._prior = prior
         self.message_to_x = prior
 
     def to_x(self):
-        return self.message_to_x
+        return self._prior
 
     def to_elbo(self, x):
         elbo = self.message_to_x.variance() + self.message_to_x.mean() ** 2
         elbo += x.variance() + x.mean() ** 2
         elbo += -2. * x.mean() * self.message_to_x.mean()
         elbo /= self.message_to_x.variance()
-        elbo += tf.math.log(2 * np.pi)
+        # elbo += tf.math.log(2 * np.pi)
         elbo += tf.math.log(self.message_to_x.variance())
         return -.5 * tf.reduce_sum(elbo)
 
@@ -43,7 +45,8 @@ class Prior(VMPFactor):
 class GaussianComparison(VMPFactor):
     # this is basically the same as prior but the other way around and with a different structure
     # maybe at some point it would be good to merge them
-    # dimension Nxp
+    # mean Nxp
+    # variance 1xp
     # N(mean, variance) where variance is constant per column
     # TODO: put variance as an attribute
 
@@ -55,7 +58,7 @@ class GaussianComparison(VMPFactor):
 
     def to_mean(self, x, variance):
         m = x.mean()
-        v = variance * tf.ones_like(m) + x.variance()
+        v = variance * tf.ones_like(m) + x.variance_safe() # maybe this contains infinity
         self.message_to_mean = GaussianArray.from_array(m, v)
         return self.message_to_mean
 
@@ -67,15 +70,15 @@ class GaussianComparison(VMPFactor):
         return self.message_to_x
 
     def to_elbo(self, mean, x, variance):
-        v = variance * tf.ones_like(x._precision)
+        v = variance * tf.ones(x.shape())
         elbo = mean.variance() + mean.mean() ** 2
-        elbo += x.variance() + x.mean() ** 2
+        elbo += x.variance_safe() + x.mean() ** 2
         elbo += -2. * x.mean() * mean.mean()
         elbo /= v
-        elbo += tf.math.log(2 * np.pi)
+        # elbo += tf.math.log(2 * np.pi)
         elbo += tf.math.log(v)
         # remove unobserved values
-        # TODO: make safe for gradient (I think elbo is infinite)
+        # TODO: make safe for gradient when missing values
         return -.5 * tf.reduce_sum(tf.where(x.is_uniform(), 0.0, elbo))
 
 
@@ -217,10 +220,12 @@ class AddVariance(VMPFactor):
 
 
 class Probit(VMPFactor):
+    # TODO incorporate the variance directly, move elbo here
 
     def __init__(self, shape):
         super().__init__()
         self.message_to_x = GaussianArray.uniform(shape)
+        self.message_to_result = BernoulliArray.uniform(shape)
 
     def to_x(self, x, A):
         # TODO: assumes 0/1 only, need to fix later with missing values
@@ -234,6 +239,12 @@ class Probit(VMPFactor):
         self.message_to_x = GaussianArray.from_array(m, v)
         return self.message_to_x
 
+    def to_result(self, x):
+        x = x / self.message_to_x
+        proba = 1. - tfp.distributions.Normal(*x.mean_and_variance()).cdf(0.0)
+        return BernoulliArray.from_array(proba)
+
+# TODO: Logit
 
 class Concatenate(VMPFactor):
 

@@ -1,6 +1,6 @@
 import tensorflow as tf
-from NNVI.models.gaussian import GaussianArray
-from NNVI.models.bernoulli import BernoulliArray
+from NNVI.models.gaussianarray import GaussianArray
+from NNVI.models.bernoulliarray import BernoulliArray
 from NNVI.models.parameter import ParameterArray, ParameterArrayLogScale
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
     Concatenate, WeightedSum, GaussianComparison
@@ -47,7 +47,7 @@ class JointModel:
     def _break_symmetry(self):
         self.factors["latent_prior"].message_to_x = GaussianArray.from_array(
                         mean=tf.random.normal((self.N, self.K), 0., 1.),
-                        variance=tf.ones((self.N, self.K)) * 1000.
+                        variance=tf.ones((self.N, self.K)) * 1.
                     )
 
     def initialize_latent(self):
@@ -166,7 +166,7 @@ class JointModel:
         return elbo
 
     def pass_and_elbo(self):
-        for _ in range(5):
+        for _ in range(1):
             self.forward_adjacency()
             self.backward_adjacency()
             self.forward_covariate()
@@ -174,18 +174,14 @@ class JointModel:
         return self.elbo()
 
     def predict_covariates(self):
-        # might want to add the variance
+        # might want to add the variance?
         return self.factors["comparison_gaussian"].to_x(
             mean=self.nodes["linear_predictor_covariate"],
             variance=self.parameters["noise_covariate"].value()
         )
 
     def links_proba(self):
-        prob = tfp.distributions.Normal(
-            self.factors["noise"].message_to_x.mean(),
-            self.factors["noise"].message_to_x.variance()
-        ).cdf(0.0)
-        return prob
+        return self.factors["adjacency"].to_result(self.nodes["noisy_linear_predictor_adjacency"])
 
     def _parameters(self):
         return {
