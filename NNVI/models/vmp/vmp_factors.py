@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from NNVI.models.gaussianarray import GaussianArray
-from NNVI.models.bernoulliarray import BernoulliArray
+from models.distributions.gaussianarray import GaussianArray
+from models.distributions.bernoulliarray import BernoulliArray
 import tensorflow_probability as tfp
 
 
@@ -34,15 +34,15 @@ class Prior(VMPFactor):
 
     def to_elbo(self, x):
         # model contribution
-        elbo = self.message_to_x.variance() + self.message_to_x.mean() ** 2
+        elbo = self._prior.variance() + self._prior.mean() ** 2
         elbo += x.variance() + x.mean() ** 2
-        elbo += -2. * x.mean() * self.message_to_x.mean()
-        elbo /= self.message_to_x.variance()
+        elbo += -2. * x.mean() * self._prior.mean()
+        elbo /= self._prior.variance()
         # elbo += tf.math.log(2 * np.pi)
-        elbo += tf.math.log(self.message_to_x.variance())
+        elbo += tf.math.log(self._prior.variance())
         elbo = -.5 * tf.reduce_sum(elbo)
         # node contribution
-        elbo += x.negative_entropy()
+        elbo += x.entropy()
         return elbo
 
 
@@ -87,7 +87,7 @@ class GaussianComparison(VMPFactor):
         elbo = -.5 * tf.reduce_sum(tf.where(x.is_uniform(), 0.0, elbo))
 
         # node contribution (non-zero only for missing values)
-        elbo += x.negative_entropy()
+        elbo += x.entropy()
         return elbo
 
 
@@ -229,7 +229,7 @@ class AddVariance(VMPFactor):
         elbo += tf.math.log(variance)
         elbo = -.5 * tf.reduce_sum(elbo)
         # node contribution
-        elbo += x.negative_entropy()
+        elbo += x.entropy()
         return elbo
 
 
@@ -255,6 +255,7 @@ class Probit(VMPFactor):
 
     def to_result(self, x):
         x = x / self.message_to_x
+        # TODO: should that be sqrt?
         proba = 1. - tfp.distributions.Normal(*x.mean_and_variance()).cdf(0.0)
         return BernoulliArray.from_array(proba)
 

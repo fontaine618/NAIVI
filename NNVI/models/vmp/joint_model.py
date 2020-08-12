@@ -1,10 +1,10 @@
 import tensorflow as tf
-from NNVI.models.gaussianarray import GaussianArray
-from NNVI.models.bernoulliarray import BernoulliArray
+import numpy as np
+from models.distributions.gaussianarray import GaussianArray
+from models.distributions.bernoulliarray import BernoulliArray
 from NNVI.models.parameter import ParameterArray, ParameterArrayLogScale
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
-    Concatenate, WeightedSum, GaussianComparison, ProbitNoisy
-import tensorflow_probability as tfp
+    Concatenate, WeightedSum, GaussianComparison
 
 
 class JointModel:
@@ -17,8 +17,8 @@ class JointModel:
         self.p = p
         self.parameters = {
             "noise_adjacency": ParameterArrayLogScale(1. * tf.ones((1, 1))),
-            "B": ParameterArray(tf.ones((K, p))),
-            "B0": ParameterArray(0. * tf.ones((1, p))),
+            "weight": ParameterArray(tf.ones((K, p))),
+            "bias": ParameterArray(0. * tf.ones((1, p))),
             "noise_covariate": ParameterArrayLogScale(tf.ones((1, p)))
         }
         self.nodes = {
@@ -46,6 +46,7 @@ class JointModel:
         }
 
     def _break_symmetry(self):
+        # TODO: I think this should be fixed, it seems to do nothing?
         self.factors["latent_prior"].message_to_x = GaussianArray.from_array(
                         mean=tf.random.normal((self.N, self.K), 0., 1.),
                         variance=tf.ones((self.N, self.K)) * 1.
@@ -61,7 +62,7 @@ class JointModel:
         self.nodes["product"] = self.factors["product"].to_product(
             x=self.nodes["latent"]
         ) * self.factors["concatenate"].message_to_x["s_uv"]
-        # heterogeneity
+        # heterogeneity (seems unnecessary/out of place?)
         to_alpha = \
             self.factors["concatenate"].message_to_x["a_u"].product(0) * \
             self.factors["concatenate"].message_to_x["a_v"].product(1)
@@ -80,7 +81,8 @@ class JointModel:
             "s_uv": self.nodes["product"]
         }
         self.nodes["vector"] = self.factors["concatenate"].to_v(x) * \
-            self.factors["sum"].to_x(self.nodes["vector"], self.nodes["linear_predictor_adjacency"])
+            self.factors["sum"].message_to_x
+            #self.factors["sum"].to_x(self.nodes["vector"], self.nodes["linear_predictor_adjacency"])
 
 
         # # linear predictor
@@ -139,8 +141,8 @@ class JointModel:
         self.nodes["linear_predictor_covariate"] = \
             self.factors["weighted_sum"].to_result(
                 x=self.nodes["latent"],
-                weight=self.parameters["B"].value(),
-                bias=self.parameters["B0"].value()
+                weight=self.parameters["weight"].value(),
+                bias=self.parameters["bias"].value()
             ) * self.factors["comparison_gaussian"].message_to_mean
 
     def backward_covariate(self):
@@ -155,8 +157,8 @@ class JointModel:
             self.factors["weighted_sum"].to_x(
                 x=self.nodes["latent"],
                 result=self.nodes["linear_predictor_covariate"],
-                weight=self.parameters["B"].value(),
-                bias=self.parameters["B0"].value()
+                weight=self.parameters["weight"].value(),
+                bias=self.parameters["bias"].value()
             )
 
     def elbo(self):
@@ -173,15 +175,45 @@ class JointModel:
             x=self.nodes["covariates_continuous"],
             variance=self.parameters["noise_covariate"].value()
         )
-        return elbo
+        return elbo / (self.N ** 2)
+
+    def elbo2(self):
+        # prior contribution: cross-entropy + entropy of nodes
+        prior_contribution = self.factors["latent_prior"].to_elbo(self.nodes["latent"])
+        prior_contribution += self.factors["heterogeneity_prior"].to_elbo(self.nodes["heterogeneity"])
+        # covariate contribution
+        m = tf.tensordot(self.nodes["latent"].mean(), self.parameters["weight"].value(), 1) + \
+            self.parameters["bias"].value()
+        v = tf.tensordot(self.nodes["latent"].variance(), self.parameters["weight"].value() ** 2, 1)
+        covariate_contribution = self.nodes["covariates_continuous"].mean() ** 2
+        covariate_contribution += self.nodes["covariates_continuous"].variance_safe()
+        covariate_contribution += m ** 2 + v
+        covariate_contribution += -2. * self.nodes["covariates_continuous"].mean() * m
+        covariate_contribution /= self.parameters["noise_covariate"].value()
+        covariate_contribution += tf.math.log(self.parameters["noise_covariate"].value())
+        covariate_contribution *= -0.5
+        covariate_contribution = tf.reduce_sum(
+            tf.where(self.nodes["covariates_continuous"].is_uniform(), 0., covariate_contribution)
+        )
+        covariate_contribution += GaussianArray.from_array(m, v).entropy()
+        # adjacency contribution
+        adjacency_contribution = self.factors["noise"].to_elbo(
+            mean=self.nodes["linear_predictor_adjacency"],
+            x=self.nodes["noisy_linear_predictor_adjacency"],
+            variance=self.parameters["noise_adjacency"].value()
+        )
+        return (prior_contribution + covariate_contribution + adjacency_contribution) / (self.N ** 2)
 
     def pass_and_elbo(self):
-        for _ in range(1):
+        self.propagate(1)
+        return self.elbo2()
+
+    def propagate(self, n_iter=1):
+        for _ in range(n_iter):
             self.forward_adjacency()
             self.backward_adjacency()
             self.forward_covariate()
             self.backward_covariate()
-        return self.elbo()
 
     def predict_covariates(self):
         # might want to add the variance?

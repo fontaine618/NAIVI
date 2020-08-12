@@ -26,21 +26,32 @@ class GaussianArray(DistributionArray):
         return self._precision, self._mean_times_precision
 
     def mean(self):
-        return tf.where(self.precision() < np.inf,
-                        tf.where(self.precision() > 0.0, self._mean_times_precision / self._precision, 0.0),
+        return tf.where(self._precision < np.inf,
+                        # if not point mass, go regular copmutation
+                        tf.where(
+                            self._precision > 0.0,
+                            # if not uniform, do regular computation
+                            self._mean_times_precision / self._precision,
+                            # otherwise, return 0
+                            0.0
+                        ),
+                        # otherwise, mtp contains the point
                         self._mean_times_precision)
 
     def variance(self):
-        return tf.where(self.precision() > 0.0, 1.0 / self._precision, np.inf)
+        return tf.where(self._precision > 0.0, 1.0 / self._precision, np.inf)
 
     def precision_safe(self):
-        return tf.clip_by_value(self._precision, 1.0e-10, 1.0e10)
+        return tf.clip_by_value(self._precision, 0., 1.0e10)
 
     def variance_safe(self):
-        return 1.0 / self.precision_safe()
+        return tf.clip_by_value(1.0 / self._precision, 0., 1.0e10)
 
     def mean_and_variance(self):
         return self.mean(), self.variance()
+
+    def mean_and_stddev(self):
+        return self.mean(), tf.math.sqrt(self.variance())
 
     def mode(self):
         return self.mean()
@@ -54,10 +65,24 @@ class GaussianArray(DistributionArray):
             tf.reduce_sum(self._mean_times_precision, dim)
         )
 
+    def set_natural(self, p, mtp):
+        self._precision = p
+        self._mean_times_precision = mtp
+
+    def set_mean_and_variance(self, m, v):
+        p = 1. / v
+        mtp = m * p
+        self.set_natural(p, mtp)
+
+    def update(self, previous, new):
+        self.set_to(self * new / previous)
+
+    def set_to(self, x):
+        self._precision = x.precision()
+        self._mean_times_precision = x.mean_times_precision()
+
     def entropy(self):
-        # TODO: make safe for gradient
-        # entropy = 0.5 * tf.math.log(2. * np.pi * self.precision_safe()) + 1.
-        entropy = 0.5 * tf.math.log(self.precision_safe())
+        entropy = 0.5 * tf.math.log(self.variance())
         return tf.reduce_sum(tf.where(tf.math.logical_or(self.is_point_mass(), self.is_uniform()), 0., entropy))
 
     @classmethod
@@ -89,7 +114,7 @@ class GaussianArray(DistributionArray):
     @classmethod
     def observed(cls, point):
         m = tf.where(tf.math.is_nan(point), 0.0, point)
-        v = tf.where(tf.math.is_nan(point), np.inf, 0.0)
+        v = tf.where(tf.math.is_nan(point), np.inf, 1.0e-10)
         return cls.from_array(m, v)
 
     def __mul__(self, other):

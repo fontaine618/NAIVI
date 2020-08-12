@@ -1,28 +1,26 @@
 import tensorflow as tf
 import numpy as np
-import tensorflow_probability as tfp
 from NNVI.models.vmp import JointModel
-from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
-    Concatenate, WeightedSum, GaussianComparison
-from NNVI.models.gaussianarray import GaussianArray
+from NNVI.models.vmp.vmp_factors import WeightedSum, GaussianComparison
+from models.distributions.gaussianarray import GaussianArray
 
 
 tf.random.set_seed(1)
 # problem dimension
-N = 50
+N = 100
 K = 1
-p = 1
+p = 5
 var_adj = 1.
 var_cov = 1.
-missing_rate = 0.0
+missing_rate = 0.1
 
 #-------------------------------------------------
 # latent variables
 Z = tf.random.normal((N, K), 0.0, 1.0, tf.float32)
 alpha = tf.random.normal((N, 1), 0.0, 1.0, tf.float32)
 # regression matrix
-B = tf.ones((K, p)) * 3.
-B0 = -1. * tf.ones((1, p))
+B = tf.ones((K, p)) * -3.
+B0 = +1. * tf.ones((1, p))
 # covariate model
 Theta_X = tf.matmul(Z, B) + B0
 X_complete = Theta_X + tf.random.normal((N, p), 0.0, var_cov, tf.float32)
@@ -35,16 +33,72 @@ A = tf.where(Theta_A + tf.random.normal((N, N), 0., var_adj) > 0., 1, 0)
 
 self = JointModel(K, A, X)
 
+tf.random.set_seed(1)
 self._break_symmetry()
 self.initialize_latent()
 
-# run once to get decent messages
-for I in range(10):
-    self.pass_and_elbo()
 
-lr = 0.001
+# EM algorithm
+lr = 0.01
+
+for i in range(10):
+    print("=" * 60)
+    print("=== E-step")
+    for j in range(10):
+        print(i, j, self.pass_and_elbo().numpy())
+    print("=== M-step")
+    for j in range(10):
+        with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
+            g.watch(self._parameters())
+            target = self.elbo2()
+        grad = g.gradient(target, self._parameters())
+        for k, v in grad.items():
+            self.parameters[k].grad = v
+            self.parameters[k].step(lr * (1.0 if k == "noise_adjacency" else self.N))
+        print(i, j, target.numpy())
+
+
+for k, v in self.parameters.items():
+    print(k)
+    print(v.value())
+
+
+
+
+
+
 
 for _ in range(10):
+    self.pass_and_elbo()
+
+
+with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
+    g.watch(self._parameters())
+    target = self.pass_and_elbo()
+
+self.propagate()
+with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
+    g.watch(self._parameters())
+    target = self.elbo2()
+
+
+grad = g.gradient(target, self._parameters())
+for k, v in self.parameters.items():
+    print(k)
+    print(grad[k])
+    print(v.value())
+
+
+
+
+
+
+
+
+
+lr = 0.01
+
+for _ in range(30):
 
     with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
         g.watch(self._parameters())
@@ -53,13 +107,15 @@ for _ in range(10):
     grad = g.gradient(target, self._parameters())
     for k, v in grad.items():
         self.parameters[k].grad = v
-        self.parameters[k].step(lr)
+        #self.parameters[k].step(lr)
+        self.parameters[k].step(lr * (1.0 if k == "noise_adjacency" else self.N))
     print(target)
-    lr *= 0.9999
 
 
 for k, v in self.parameters.items():
-    print(k, v.value())
+    print(k)
+    print(grad[k])
+    print(v.value())
 
 
 

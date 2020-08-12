@@ -33,7 +33,7 @@ class DistributionArray:
     def shape(self):
         pass
 
-    def entropy(self):
+    def entropy(self) -> float:
         pass
 
     def negative_entropy(self):

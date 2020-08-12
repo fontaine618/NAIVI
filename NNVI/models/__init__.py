@@ -1,3 +1,2 @@
-from models.gaussianarray import GaussianArray
-from models.bernoulliarray import BernoulliArray
+from models.distributions.bernoulliarray import BernoulliArray
 import models.vmp
