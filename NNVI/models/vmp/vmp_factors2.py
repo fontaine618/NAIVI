@@ -130,7 +130,7 @@ class Probit(VMPFactor):
         self.shape = child.shape()
         self.child = child
         self.parent = parent
-        self.message_to_child = GaussianArray.uniform(self.shape)
+        self.message_to_child = BernoulliArray.uniform(self.shape)
         self.message_to_parent = GaussianArray.uniform(self.shape)
 
     def to_parent(self):
