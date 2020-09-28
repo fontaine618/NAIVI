@@ -8,7 +8,7 @@ from models.distributions.bernoulliarray import BernoulliArray
 from models.vmp.vmp_factors2 import Prior
 child = GaussianArray.uniform((3, 3))
 self = Prior(child, 0., 1.)
-self.init_child()
+self.forward()
 self.to_elbo()
 
 # -----------------------------------------------------------------------------
@@ -29,6 +29,10 @@ self.to_elbo()
 from models.vmp.vmp_factors2 import Probit
 parent = GaussianArray.from_shape((5, 5), 0., 1.)
 A = tf.where(tf.random.normal((5, 5)) > 0., 1., 0.)
+
+missing = tf.random.uniform(A.shape) < 0.2
+A = tf.where(missing, np.nan, A)
+
 child = BernoulliArray.observed(A)
 self = Probit(child, parent)
 
@@ -45,6 +49,10 @@ from models.vmp.compound_factors import NoisyProbit, InnerProductModel, GLM
 
 parent = GaussianArray.from_shape((5, 5), 0., 1.)
 A = tf.where(tf.random.normal((5, 5)) > 0., 1., 0.)
+
+missing = tf.random.uniform(A.shape) < 0.2
+A = tf.where(missing, np.nan, A)
+
 child = BernoulliArray.observed(A)
 self = NoisyProbit(child, parent, 1.)
 
@@ -54,7 +62,7 @@ print(parent)
 self.backward()
 print(child)
 print(parent)
-
+print(self.to_elbo())
 
 # -----------------------------------------------------------------------------
 # GAUSSIAN COMPARISON

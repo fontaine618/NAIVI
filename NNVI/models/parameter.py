@@ -5,7 +5,7 @@ class ParameterArray:
 
     _n = 0
 
-    def __init__(self, init, fixed=False, lr=0.1, name="unnamed"):
+    def __init__(self, init, fixed=False, lr=0.01, name="unnamed"):
         ParameterArray._n += 1
         self._value = tf.Variable(init, name=str(ParameterArray._n) + "_" + name)
         self.grad = tf.zeros_like(init)

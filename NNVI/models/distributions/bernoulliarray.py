@@ -67,7 +67,9 @@ class BernoulliArray(DistributionArray):
 
     @classmethod
     def observed(cls, point):
-        return cls.from_array(point)
+        as_float = tf.cast(point, tf.float32)
+        nan_as_05 = tf.where(tf.math.is_nan(as_float), 0.5, tf.cast(point, tf.float32))
+        return cls.from_array(nan_as_05)
 
     def __str__(self):
         out = "BernoulliArray{}\n".format(self.shape())

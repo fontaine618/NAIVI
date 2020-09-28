@@ -27,7 +27,7 @@ class GaussianArray(DistributionArray):
 
     def mean(self):
         return tf.where(self._precision < np.inf,
-                        # if not point mass, go regular copmutation
+                        # if not point mass, go regular computation
                         tf.where(
                             self._precision > 0.0,
                             # if not uniform, do regular computation
@@ -137,10 +137,18 @@ class GaussianArray(DistributionArray):
     def __truediv__(self, other):
         if not isinstance(other, GaussianArray):
             raise TypeError("other should be a GaussianArray")
-        p = self.precision() - other.precision()
-        if tf.reduce_any(p < 0.0):
-            raise ValueError("cannot divide by larger precision")
-        mtp = self.mean_times_precision() - other.mean_times_precision()
+        p = self.precision()
+        p = tf.where(
+            other.is_uniform(),
+            p,
+            p - other.precision()
+        )
+        mtp = self.mean_times_precision()
+        mtp = tf.where(
+            other.is_uniform(),
+            mtp,
+            mtp - other.mean_times_precision()
+        )
         # case where self is a point mass, in which case division does nothing (unless other is also a point mass, but
         # we omit that case as it should never happen)
         mtp = tf.where(

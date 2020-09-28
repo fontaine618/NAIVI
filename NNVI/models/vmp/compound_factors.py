@@ -2,7 +2,7 @@ import tensorflow as tf
 
 from models import BernoulliArray
 from models.distributions.gaussianarray import GaussianArray
-from models.vmp.vmp_factors2 import VMPFactor, AddVariance, Probit, Product, ExpandTranspose, Concatenate, Sum
+from models.vmp.vmp_factors2 import VMPFactor, AddVariance, Probit, Product, ExpandTranspose, Concatenate, Sum, Split, Logistic
 
 
 class NoisyProbit(VMPFactor):
@@ -34,18 +34,22 @@ class NoisyProbit(VMPFactor):
 
     def forward(self):
         # update noisy
-        self._noise.to_child()
+        self._noise.forward()
         # update child (just to update the prediction; does nothing to vmp)
-        self._probit.to_child()
+        self._probit.forward()
 
     def backward(self):
         # update noisy
-        self._probit.to_parent()
+        self._probit.backward()
         # compute parent
-        self._noise.to_parent()
+        self._noise.backward()
 
     def to_elbo(self):
         return self._noise.to_elbo()
+
+    def predict(self):
+        self.forward()
+        return self._probit.message_to_child
 
 
 class InnerProductModel(VMPFactor):
@@ -94,25 +98,27 @@ class InnerProductModel(VMPFactor):
             "sum": self._sum
         })
 
-    def forward(self, initialized):
-        if initialized:
-            self._product.to_child()
-        else:
-            init_message = GaussianArray.from_array(
-                mean=tf.random.normal(self._product.child.shape(), 0., 1.),
-                variance=1.
-            )
-            self._product.child.update(self._product.message_to_child, init_message)
-            self._product.message_to_child = init_message
-        self._expand_transpose.to_child()
-        self._concatenate.to_vector()
-        self._sum.to_child()
+    def forward(self):
+        self._product.forward()
+        self._expand_transpose.forward()
+        # else:
+        #     # initialize positions
+        #     init_message = GaussianArray.from_array(
+        #         mean=tf.random.normal(self._product.child.shape(), 0., 1.),
+        #         variance=1.
+        #     )
+        #     self._product.child.update(self._product.message_to_child, init_message)
+        #     self._product.message_to_child = init_message
+        #     # initialize heterogeneity
+
+        self._concatenate.forward()
+        self._sum.forward()
 
     def backward(self):
-        self._sum.to_parent()
-        self._concatenate.to_parts()
-        self._expand_transpose.to_parent()
-        self._product.to_parent()
+        self._sum.backward()
+        self._concatenate.backward()
+        self._expand_transpose.backward()
+        self._product.backward()
 
 
 class GLM(VMPFactor):
@@ -123,7 +129,8 @@ class GLM(VMPFactor):
             child_cts: GaussianArray,
             child_bin: BernoulliArray,
             variance_cts=None,
-            variance_bin=None
+            variance_bin=None,
+            bin_model="NoisyProbit"
     ):
         super().__init__()
         self._deterministic = False
@@ -146,7 +153,7 @@ class GLM(VMPFactor):
             "lin_pred_bin": self._lin_pred_bin
         })
         # factors
-        self._split = Concatenate(
+        self._split = Split(
             parts={"cts": self._lin_pred_cts, "bin": self._lin_pred_bin},
             vector=self.parent
         )
@@ -155,11 +162,17 @@ class GLM(VMPFactor):
             child=self.child_cts,
             variance=variance_cts
         )
-        self._model_bin = NoisyProbit(
-            parent=self._lin_pred_bin,
-            child=self.child_bin,
-            variance=variance_bin
-        )
+        if bin_model == "Logistic":
+            self._model_bin = Logistic(
+                parent=self._lin_pred_bin,
+                child=self.child_bin,
+            )
+        else:
+            self._model_bin = NoisyProbit(
+                parent=self._lin_pred_bin,
+                child=self.child_bin,
+                variance=variance_bin
+            )
         self._factors.update({
             "split": self._split,
             "model_cts": self._model_cts,
@@ -167,14 +180,21 @@ class GLM(VMPFactor):
         })
 
     def forward(self):
-        self._split.to_parts()
-        self._model_cts.to_child()
+        self._split.forward()
+        self._model_cts.forward()
         self._model_bin.forward()
 
     def backward(self):
         self._model_bin.backward()
-        self._model_cts.to_parent()
-        self._split.to_vector()
+        self._model_cts.backward()
+        self._split.backward()
 
     def to_elbo(self, **kwargs):
         return self._model_bin.to_elbo() + self._model_cts.to_elbo()
+
+    def predict(self):
+        self._split.forward()
+        return {
+            "continuous": self._model_cts.predict(),
+            "binary": self._model_bin.predict()
+        }

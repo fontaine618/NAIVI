@@ -4,6 +4,7 @@ from typing import Dict
 from models.distributions.gaussianarray import GaussianArray
 from models.distributions.bernoulliarray import BernoulliArray
 from models.parameter import ParameterArray, ParameterArrayLogScale
+from models.vmp.logistic_utils import sigmoid_integrals
 import tensorflow_probability as tfp
 
 
@@ -24,6 +25,12 @@ class VMPFactor:
             # otherwise it must be implemented in the child class
             raise NotImplementedError("to_elbo not implemented for this stochastic factor")
 
+    def forward(self):
+        raise NotImplementedError("forward not implemented for this factor")
+
+    def backward(self):
+        raise NotImplementedError("forward not implemented for this factor")
+
     def parameters(self):
         parms = self._parameters
         for name, factor in self._factors.items():
@@ -43,24 +50,41 @@ class VMPFactor:
         factors.update(self._factors)
         return factors
 
+    def nodes(self):
+        nodes = dict()
+        for name, f in self._factors.items():
+            nodes.update({
+                name + "." + n: ff
+                for n, ff in f.nodes().items()
+            })
+        nodes.update(self._nodes)
+        return nodes
+
 
 class Prior(VMPFactor):
     # In the VMP, we only pass the message at the initialisation;
     # All other updates are add/remove other massages so the message from the
     # prior factor always remains.
 
-    def __init__(self, child: GaussianArray, mean: float = 0., variance: float = 1.):
+    def __init__(self, child: GaussianArray, mean: float = 0., variance: float = 1., initial=None):
         super().__init__()
         self._deterministic = False
         self.mean = ParameterArray(mean, True, name="Prior.mean")
         self.variance = ParameterArrayLogScale(variance, True, name="Prior.variance")
         self._parameters = {"mean": self.mean, "variance": self.variance}
-        self.shape = child.shape()
         self.child = child
-        self.message_to_child = GaussianArray.from_shape(self.shape, self.mean.value(), self.variance.value())
-
-    def init_child(self):
+        self.shape = child.shape()
+        self.prior = GaussianArray.from_shape(self.shape, self.mean.value(), self.variance.value())
+        # initialize child
+        self.message_to_child = GaussianArray.from_array(initial, tf.ones_like(initial) * variance * 0.5)
         self.child.set_to(self.message_to_child)
+
+    def backward(self):
+        pass
+
+    def forward(self):
+        self.child.update(self.message_to_child, self.prior)
+        self.message_to_child = self.prior
 
     def to_elbo(self):
         x = self.child
@@ -105,6 +129,12 @@ class AddVariance(VMPFactor):
         self.parent.update(self.message_to_parent, message_to_parent)
         self.message_to_parent = message_to_parent
 
+    def forward(self):
+        self.to_child()
+
+    def backward(self):
+        self.to_parent()
+
     def to_elbo(self):
         mean = self.parent
         x = self.child
@@ -121,6 +151,10 @@ class AddVariance(VMPFactor):
         elbo += x.entropy()
         return elbo
 
+    def predict(self):
+        self.forward()
+        return self.message_to_child.mean()
+
 
 class Probit(VMPFactor):
 
@@ -134,14 +168,16 @@ class Probit(VMPFactor):
         self.message_to_parent = GaussianArray.uniform(self.shape)
 
     def to_parent(self):
-        # TODO: assumes 0/1 only, need to fix later with missing values
         x = self.parent / self.message_to_parent
         A = self.child.proba()
-        stnr = x.mean() * tf.math.sqrt(x.precision()) * tf.cast(2 * A - 1, tf.float32)
+        A_safe = tf.where(tf.math.is_nan(A), 0.5, A)
+        stnr = x.mean() * tf.math.sqrt(x.precision()) * tf.cast(2 * A_safe - 1, tf.float32)
         vf = tfp.distributions.Normal(0., 1.).prob(stnr) / tfp.distributions.Normal(0., 1.).cdf(stnr)
         wf = vf * (stnr + vf)
-        m = x.mean() + tf.math.sqrt(x.variance()) * vf * tf.cast(2 * A - 1, tf.float32)
+        m = x.mean() + tf.math.sqrt(x.variance()) * vf * tf.cast(2 * A_safe - 1, tf.float32)
+        m = tf.where(tf.math.is_nan(A), 0., m)
         v = x.variance() * (1. - wf)
+        v = tf.where(tf.math.is_nan(A), np.inf, v)
         message_to_parent = GaussianArray.from_array(m, v)
         self.parent.update(self.message_to_parent, message_to_parent)
         self.message_to_parent = message_to_parent
@@ -151,6 +187,69 @@ class Probit(VMPFactor):
         x = self.parent / self.message_to_parent
         proba = 1. - tfp.distributions.Normal(*x.mean_and_stddev()).cdf(0.0)
         self.message_to_child = BernoulliArray.from_array(proba)
+
+    def forward(self):
+        self.to_child()
+
+    def backward(self):
+        self.to_parent()
+
+
+class Logistic(VMPFactor):
+
+    def __init__(self, child: BernoulliArray, parent: GaussianArray):
+        super().__init__()
+        self._deterministic = True
+        self.shape = child.shape()
+        self.child = child
+        self.parent = parent
+        self.message_to_child = BernoulliArray.uniform(self.shape)
+        self.message_to_parent = GaussianArray.uniform(self.shape)
+
+    def to_parent(self):
+        # Remove previous message ?
+        # x = self.parent / self.message_to_parent
+        x = self.parent
+        m, v = x.mean_and_variance()
+        # m, v = self.parent.mean_and_variance()
+        integrals = sigmoid_integrals(m, v, [0, 1])
+        sd = tf.math.sqrt(v)
+        exp1 = m * integrals[0] + sd * integrals[1]
+        p = (exp1 - m * integrals[0]) / v
+        mtp = m * p + self.child.proba() - integrals[0]
+        # nan case is stored as 0.5
+        p = tf.where(self.child.is_uniform(), 1.0e-10, p)
+        mtp = tf.where(self.child.is_uniform(), 0., mtp)
+
+        message_to_parent = GaussianArray(p, mtp)
+        self.parent.update(self.message_to_parent, message_to_parent)
+        self.message_to_parent = message_to_parent
+
+    def to_child(self):
+        # x = self.parent / self.message_to_parent
+        x = self.parent
+        m, v = x.mean_and_variance()
+        integral = sigmoid_integrals(m, v, [0])[0]
+        proba = tf.where(self.child.proba() == 1., integral, 1. - integral)
+        self.message_to_child = BernoulliArray.from_array(proba)
+
+    def forward(self):
+        self.to_child()
+
+    def backward(self):
+        self.to_parent()
+
+    def to_elbo(self, **kwargs):
+        # quadratic lower bound to the ELBO contribution
+        m, v = self.parent.mean_and_variance()
+        t = tf.math.sqrt(m ** 2 + v)
+        elbo = tf.math.log_sigmoid(t) + (self.child.proba() - 0.5) * m - t / 2.
+        elbo = tf.where(self.child.is_uniform(), 0., elbo)
+        return tf.reduce_sum(elbo)
+
+    def predict(self):
+        self.forward()
+        return self.message_to_child.proba()
 
 
 class Sum(VMPFactor):
@@ -185,6 +284,12 @@ class Sum(VMPFactor):
         message_to_parent = GaussianArray.from_array(m, v)
         self.parent.update(self.message_to_parent, message_to_parent)
         self.message_to_parent = message_to_parent
+
+    def forward(self):
+        self.to_child()
+
+    def backward(self):
+        self.to_parent()
 
 
 class Product(VMPFactor):
@@ -238,6 +343,12 @@ class Product(VMPFactor):
         self.parent.update(self.message_to_parent1, message_to_parent1)
         self.message_to_parent1 = message_to_parent1
 
+    def forward(self):
+        self.to_child()
+
+    def backward(self):
+        self.to_parent()
+
 
 class WeightedSum(VMPFactor):
     # expects weighted sum over last dimension
@@ -289,6 +400,12 @@ class WeightedSum(VMPFactor):
         self.parent.update(self.message_to_parent, message_to_parent)
         self.message_to_parent = message_to_parent
 
+    def forward(self):
+        self.to_child()
+
+    def backward(self):
+        self.to_parent()
+
 
 class Concatenate(VMPFactor):
 
@@ -328,6 +445,25 @@ class Concatenate(VMPFactor):
         message_to_vector = GaussianArray.from_array_natural(p, mtp)
         self.vector.update(self.message_to_vector, message_to_vector)
         self.message_to_vector = message_to_vector
+
+    def forward(self):
+        self.to_vector()
+
+    def backward(self):
+        self.to_parts()
+
+
+class Split(Concatenate, VMPFactor):
+    # same thing as concatenate, but in reverse order so we flip forward and backward
+
+    def __init__(self, vector: GaussianArray, parts: Dict[str, GaussianArray]):
+        super(Split, self).__init__(vector, parts)
+
+    def forward(self):
+        self.to_parts()
+
+    def backward(self):
+        self.to_vector()
 
 
 class ExpandTranspose(VMPFactor):
@@ -371,5 +507,9 @@ class ExpandTranspose(VMPFactor):
         self.parent.update(self.message_to_parent, message_to_parent)
         self.message_to_parent = message_to_parent
 
+    def forward(self):
+        self.to_child()
 
-# TODO: Logit
+    def backward(self):
+        self.to_parent()
+

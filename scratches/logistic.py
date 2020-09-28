@@ -37,18 +37,22 @@ print(parameters[1])
 import tensorflow as tf
 import numpy as np
 
-from models.vmp.logistic_utils import sigmoid_integrals
 from models.distributions.gaussianarray import GaussianArray
 from models.distributions.bernoulliarray import BernoulliArray
-from models.vmp.dasdasd import Logistic
-
+from models.vmp.vmp_factors2 import Logistic
 shape = (5, 5)
 parent = GaussianArray.from_array(
     tf.random.normal(shape, 0., 1.) * 0.,
     tf.ones(shape)
 )
 A = tf.where(tf.random.normal(shape) > 0., 1., 0.)
-child = BernoulliArray.observed(A)
+
+lower = tf.ones_like(A)
+upper = tf.linalg.band_part(lower, -1, 0) == 0
+A_lower = tf.where(upper, A, np.nan)
+
+
+child = BernoulliArray.observed(A_lower)
 
 self = Logistic(child, parent)
 
@@ -58,3 +62,4 @@ print(self.message_to_child)
 self.to_parent()
 print(parent)
 print(self.message_to_parent)
+print(self.predict())
