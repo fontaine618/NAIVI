@@ -66,17 +66,17 @@ class Prior(VMPFactor):
     # All other updates are add/remove other massages so the message from the
     # prior factor always remains.
 
-    def __init__(self, child: GaussianArray, mean: float = 0., variance: float = 1., initial=None):
+    def __init__(self, child: GaussianArray, mean: float = 0., variance: float = 1., initial=None, name=""):
         super().__init__()
         self._deterministic = False
-        self.mean = ParameterArray(mean, True, name="Prior.mean")
-        self.variance = ParameterArrayLogScale(variance, True, name="Prior.variance")
+        self.mean = ParameterArray(mean, True, name=name+".mean")
+        self.variance = ParameterArrayLogScale(variance, True, name=name+".variance")
         self._parameters = {"mean": self.mean, "variance": self.variance}
         self.child = child
         self.shape = child.shape()
         self.prior = GaussianArray.from_shape(self.shape, self.mean.value(), self.variance.value())
         # initialize child
-        self.message_to_child = GaussianArray.from_array(initial, tf.ones_like(initial) * variance * 0.5)
+        self.message_to_child = GaussianArray.from_array(initial, tf.ones_like(initial) * variance * 1.)
         self.child.set_to(self.message_to_child)
 
     def backward(self):
@@ -175,9 +175,9 @@ class Probit(VMPFactor):
         vf = tfp.distributions.Normal(0., 1.).prob(stnr) / tfp.distributions.Normal(0., 1.).cdf(stnr)
         wf = vf * (stnr + vf)
         m = x.mean() + tf.math.sqrt(x.variance()) * vf * tf.cast(2 * A_safe - 1, tf.float32)
-        m = tf.where(tf.math.is_nan(A), 0., m)
+        m = tf.where(A_safe == 0.5, 0., m)
         v = x.variance() * (1. - wf)
-        v = tf.where(tf.math.is_nan(A), np.inf, v)
+        v = tf.where(A_safe == 0.5, 1.0e10, v)
         message_to_parent = GaussianArray.from_array(m, v)
         self.parent.update(self.message_to_parent, message_to_parent)
         self.message_to_parent = message_to_parent
@@ -211,7 +211,6 @@ class Logistic(VMPFactor):
         # x = self.parent / self.message_to_parent
         x = self.parent
         m, v = x.mean_and_variance()
-        # m, v = self.parent.mean_and_variance()
         integrals = sigmoid_integrals(m, v, [0, 1])
         sd = tf.math.sqrt(v)
         exp1 = m * integrals[0] + sd * integrals[1]
@@ -226,8 +225,8 @@ class Logistic(VMPFactor):
         self.message_to_parent = message_to_parent
 
     def to_child(self):
-        # x = self.parent / self.message_to_parent
-        x = self.parent
+        x = self.parent / self.message_to_parent
+        # x = self.parent
         m, v = x.mean_and_variance()
         integral = sigmoid_integrals(m, v, [0])[0]
         proba = tf.where(self.child.proba() == 1., integral, 1. - integral)
@@ -301,53 +300,190 @@ class Product(VMPFactor):
         self.child = child
         self.parent = parent
         self.message_to_child = GaussianArray.uniform(child.shape())
-        # self.message_to_parent = GaussianArray.uniform(parent.shape())
-        self.message_to_parent0 = GaussianArray.uniform(parent.shape())
-        self.message_to_parent1 = GaussianArray.uniform(parent.shape())
+        self.message_to_parent0 = GaussianArray.uniform(child.shape())
+        self.message_to_parent1 = GaussianArray.uniform(child.shape())
 
     def to_child(self):
-        x0 = self.parent / self.message_to_parent0
-        x1 = self.parent / self.message_to_parent1
-        m0 = tf.expand_dims(x0.mean(), 0)
-        m1 = tf.expand_dims(x1.mean(), 1)
-        v0 = tf.expand_dims(x0.variance(), 0)
-        v1 = tf.expand_dims(x1.variance(), 1)
+        p, mtp = self.parent.natural()
+        p0 = tf.expand_dims(p, 0)
+        p1 = tf.expand_dims(p, 1)
+        mtp0 = tf.expand_dims(mtp, 0)
+        mtp1 = tf.expand_dims(mtp, 1)
+        v0 = 1. / p0
+        v1 = 1. / p1
+        m0 = mtp0 * v0
+        m1 = mtp1 * v1
+
+        m = m0 * m1
+        v = m0 ** 2 * v1 + m1 ** 2 * v0 + v0 * v1
+        # new marginal
+        child = GaussianArray.from_array(m, v)
+        # compute what should be the message
+        message_to_child = (child * self.message_to_child) / self.child
+        # update and store
+        self.child.update(self.message_to_child, message_to_child)
+        self.message_to_child = message_to_child
+
+    def to_child2(self):
+        p, mtp = self.parent.natural()
+        p0 = tf.expand_dims(p, 0) - self.message_to_parent0.precision()
+        p1 = tf.expand_dims(p, 1) - self.message_to_parent1.precision()
+        mtp0 = tf.expand_dims(mtp, 0) - self.message_to_parent0.mean_times_precision()
+        mtp1 = tf.expand_dims(mtp, 1) - self.message_to_parent1.mean_times_precision()
+        v0 = 1. / p0
+        v1 = 1. / p1
+        m0 = mtp0 * v0
+        m1 = mtp1 * v1
+
         m = m0 * m1
         v = m0 ** 2 * v1 + m1 ** 2 * v0 + v0 * v1
         message_to_child = GaussianArray.from_array(m, v)
         self.child.update(self.message_to_child, message_to_child)
         self.message_to_child = message_to_child
 
+    def to_parent2(self):
+        # message from child
+        product = self.child / self.message_to_child
+        prod_m, prod_v = product.mean_and_variance()
+        # parent and messages to parent
+        par_m, par_v = self.parent.mean_and_variance()
+        par_m, par_v = tf.Variable(par_m), tf.Variable(par_v)
+        N, K = self.parent.shape()
+        for u in range(N-1):
+            for v in range(u+1, N):
+        # for u in range(N):
+        #     for v in range(N):
+                # we consider I(S_uv = Z_u*Z_v)
+                # -----------------------------------------
+                # message to Z_u
+                # get message from Z_v
+                m1 = par_m[v, ]
+                v1 = par_v[v, ]
+                # compute new message
+                m0 = prod_m[u, v, ] * m1 / (v1 + m1 ** 2)
+                v0 = prod_v[u, v, ] / (v1 + m1 ** 2)
+                # update
+                par_m = par_m[u, ].assign(m0)
+                par_v = par_v[u, ].assign(v0)
+                print("update ", u, m0.numpy())
+                # -----------------------------------------
+                # message to Z_v
+                # get message from Z_u
+                m0 = par_m[u, ]
+                v0 = par_v[u, ]
+                # compute new message
+                m1 = prod_m[u, v, ] * m0 / (v0 + m0 ** 2)
+                v1 = prod_v[u, v, ] / (v0 + m0 ** 2)
+                # update
+                par_m = par_m[v, ].assign(m1)
+                par_v = par_v[v, ].assign(v1)
+                print("update ", v, m1.numpy())
+        self.parent.set_to(GaussianArray.from_array(par_m, par_v))
+
+    def to_parent3(self):
+        # message from child
+        product = self.child / self.message_to_child
+        prod_p, prod_mtp = product.natural()
+        # parent and messages to parent
+        par_p, par_mtp = self.parent.natural()
+        par_p, par_mtp = tf.Variable(par_p), tf.Variable(par_mtp)
+        mt0_p, mt0_mtp = self.message_to_parent0.natural()
+        mt0_p, mt0_mtp = tf.Variable(mt0_p), tf.Variable(mt0_mtp)
+        mt1_p, mt1_mtp = self.message_to_parent1.natural()
+        mt1_p, mt1_mtp = tf.Variable(mt1_p), tf.Variable(mt1_mtp)
+        N, K = self.parent.shape()
+        for u in range(N-1):
+            for v in range(u+1, N):
+                # we consider S_uv = Z_u*Z_v
+                # -----------------------------------------
+                # message to Z_u
+                # get message from Z_v
+                p1 = par_p[v, ] - mt1_p[u, v, ]
+                mtp1 = par_mtp[v, ] - mt1_mtp[u, v, ]
+                v1 = 1. / p1
+                m1 = mtp1 * v1
+                # compute new message
+                p0 = prod_p[u, v, ] * (v1 + m1 ** 2)
+                mtp0 = prod_mtp[u, v, ] * m1
+                # update
+                new_p = par_p[u, ] - mt0_p[u, v, ] + p0
+                new_mtp = par_mtp[u, ] - mt0_mtp[u, v, ] + mtp0
+                par_p = par_p[u, ].assign(new_p)
+                par_mtp = par_mtp[u, ].assign(new_mtp)
+                mt0_p = mt0_p[u, v, ].assign(p0)
+                mt0_mtp = mt0_mtp[u, v, ].assign(mtp0)
+                # -----------------------------------------
+                # message to Z_v
+                # get message from Z_u
+                p0 = par_p[u, ] - mt0_p[u, v, ]
+                mtp0 = par_mtp[u, ] - mt0_mtp[u, v, ]
+                v0 = 1. / p0
+                m0 = mtp0 * v0
+                # compute new message
+                p1 = prod_p[u, v, ] * (v0 + m0 ** 2)
+                mtp1 = prod_mtp[u, v, ] * m0
+                # update
+                new_p = par_p[v, ] - mt1_p[u, v, ] + p1
+                new_mtp = par_mtp[v, ] - mt1_mtp[u, v, ] + mtp1
+                par_p = par_p[v, ].assign(new_p)
+                par_mtp = par_mtp[v, ].assign(new_mtp)
+                mt1_p = mt1_p[u, v, ].assign(p1)
+                mt1_mtp = mt1_mtp[u, v, ].assign(mtp1)
+        self.parent.set_to(GaussianArray(par_p, par_mtp))
+        self.message_to_parent0.set_to(GaussianArray(mt0_p, mt0_mtp))
+        self.message_to_parent1.set_to(GaussianArray(mt1_p, mt1_mtp))
+
     def to_parent(self):
         product = self.child / self.message_to_child
 
+        # ----------------------------------------
         # update 0
-        x1 = self.parent / self.message_to_parent1
-        p = product.precision() * tf.expand_dims(x1.variance() + x1.mean() ** 2, 1)
-        mtp = product.mean_times_precision() * tf.expand_dims(x1.mean(), 1)
-        p0 = tf.math.reduce_sum(p, 1)
-        mtp0 = tf.math.reduce_sum(mtp, 1)
 
-        message_to_parent0 = GaussianArray(p0, mtp0)
-        self.parent.update(self.message_to_parent0, message_to_parent0)
-        self.message_to_parent0 = message_to_parent0
+        # get marginal
+        m1, v1 = self.parent.mean_and_variance()
+        m1 = tf.expand_dims(m1, 1)
+        v1 = tf.expand_dims(v1, 1)
+        # compute new message
+        p0 = product.precision() * (v1 + m1 ** 2)
+        mtp0 = product.mean_times_precision() * m1
+        # store new messages
+        p0prev, mtp0prev = self.message_to_parent0.natural()
+        self.message_to_parent0 = GaussianArray(p0, mtp0)
+        # accumulate
+        p0sum = tf.math.reduce_sum(p0, 1)
+        mtp0sum = tf.math.reduce_sum(mtp0, 1)
+        psum = tf.math.reduce_sum(p0prev, 1)
+        mtpsum = tf.math.reduce_sum(mtp0prev, 1)
+        # update
+        self.parent.update(GaussianArray(psum, mtpsum), GaussianArray(p0sum, mtp0sum))
 
+        # ----------------------------------------
         # update 1
-        x0 = self.parent / self.message_to_parent0
-        p = product.precision() * tf.expand_dims(x0.variance() + x0.mean() ** 2, 0)
-        mtp = product.mean_times_precision() * tf.expand_dims(x0.mean(), 0)
-        p1 = tf.math.reduce_sum(p, 0)
-        mtp1 = tf.math.reduce_sum(mtp, 0)
 
-        message_to_parent1 = GaussianArray(p1, mtp1)
-        self.parent.update(self.message_to_parent1, message_to_parent1)
-        self.message_to_parent1 = message_to_parent1
+        # get marginal
+        m0, v0 = self.parent.mean_and_variance()
+        m0 = tf.expand_dims(m0, 0)
+        v0 = tf.expand_dims(v0, 0)
+        # compute new message
+        p1 = product.precision() * (v0 + m0 ** 2)
+        mtp1 = product.mean_times_precision() * m0
+        # store new messages
+        p1prev, mtp1prev = self.message_to_parent1.natural()
+        self.message_to_parent1 = GaussianArray(p1, mtp1)
+        # accumulate
+        p1sum = tf.math.reduce_sum(p1, 0)
+        mtp1sum = tf.math.reduce_sum(mtp1, 0)
+        psum = tf.math.reduce_sum(p1prev, 0)
+        mtpsum = tf.math.reduce_sum(mtp1prev, 0)
+        # update
+        self.parent.update(GaussianArray(psum, mtpsum), GaussianArray(p1sum, mtp1sum))
 
     def forward(self):
         self.to_child()
 
     def backward(self):
-        self.to_parent()
+        for _ in range(10):
+            self.to_parent()
 
 
 class WeightedSum(VMPFactor):

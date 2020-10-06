@@ -110,18 +110,19 @@ self.to_elbo()
 # -----------------------------------------------------------------------------
 # PRODUCT
 from models.vmp.vmp_factors2 import Product
+
 parent = GaussianArray.from_shape((3, 2), 1.414, 1)
 child = GaussianArray.from_shape((3, 3, 2), 2., 1.)
-self = Product(child, parent)
 
 parent = GaussianArray.from_shape((3, 2), 1., 1.)
 child = GaussianArray.from_shape((3, 3, 2), 2., 100000.)
+
 self = Product(child, parent)
 
-print(parent)
-self.to_child()
-self.to_parent()
-print(parent)
+for _ in range(100):
+    self.to_child()
+    self.to_parent()
+    print(parent)
 
 print(child)
 self.to_child()

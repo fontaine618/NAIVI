@@ -61,13 +61,15 @@ class JointModel2(VMPFactor):
             child=self.positions,
             mean=0.,
             variance=1.,
-            initial=initial["positions"]
+            initial=initial["positions"],
+            name="position_prior"
         )
         self.heterogeneity_prior = Prior(
             child=self.heterogeneity,
-            mean=0.,
+            mean=-2.,
             variance=1.,
-            initial=initial["heterogeneity"]
+            initial=initial["heterogeneity"],
+            name="heterogeneity_prior"
         )
         self.inner_product_model = InnerProductModel(
             positions=self.positions,
@@ -154,6 +156,8 @@ class JointModel2(VMPFactor):
         for _ in range(n_iter):
             self.forward_adjacency()
             self.backward_adjacency()
+            self.position_prior.forward()
+            self.heterogeneity_prior.forward()
             if self.p > 0:
                 self.forward_covariate()
                 self.backward_covariate()
@@ -208,6 +212,24 @@ class JointModel2(VMPFactor):
                 "Dist",
                 "Dist(proj)"
             ))
+        elbo = self.to_elbo()
+        #self.propagate(100)
+        self.to_elbo()
+        # Evaluate
+        err = self.covariate_metrics(X_cts_missing, X_bin_missing)
+        dist = self.latent_distance(positions_true)
+        if verbose:
+            print("{:10}  {:10}  {:10.6f}  {:10}  {:10.6f}  {:10.6f}  {:10.6f}  {:10.6f}  {:10.6f}".format(
+                0,
+                0,
+                elbo.numpy(),
+                0,
+                self.elbo.numpy(),
+                err["mse"],
+                err["auroc"],
+                dist["inv"],
+                dist["proj"]
+            ))
         elbo_pre_e_step = -np.inf
         elbo_post_m_step = -np.inf
         for i in range(n_iter):
@@ -219,15 +241,15 @@ class JointModel2(VMPFactor):
             if np.isnan(self.elbo):
                 return
             elbo_pre_e_step = self.elbo
+            # Evaluate
+            err = self.covariate_metrics(X_cts_missing, X_bin_missing)
+            dist = self.latent_distance(positions_true)
             # E Step
             ne = -1
             for ne in range(n_gd):
                 self.compute_gradient()
                 self.step()
             elbo_post_m_step = self.to_elbo()
-            # Evaluate
-            err = self.covariate_metrics(X_cts_missing, X_bin_missing)
-            dist = self.latent_distance(positions_true)
             if verbose:
                 print("{:10}  {:10}  {:10.6f}  {:10}  {:10.6f}  {:10.6f}  {:10.6f}  {:10.6f}  {:10.6f}".format(
                     i + 1,

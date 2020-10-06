@@ -101,16 +101,6 @@ class InnerProductModel(VMPFactor):
     def forward(self):
         self._product.forward()
         self._expand_transpose.forward()
-        # else:
-        #     # initialize positions
-        #     init_message = GaussianArray.from_array(
-        #         mean=tf.random.normal(self._product.child.shape(), 0., 1.),
-        #         variance=1.
-        #     )
-        #     self._product.child.update(self._product.message_to_child, init_message)
-        #     self._product.message_to_child = init_message
-        #     # initialize heterogeneity
-
         self._concatenate.forward()
         self._sum.forward()
 

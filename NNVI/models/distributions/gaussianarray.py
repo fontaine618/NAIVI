@@ -76,6 +76,8 @@ class GaussianArray(DistributionArray):
 
     def update(self, previous, new):
         self.set_to(self * new / previous)
+        # print(self.shape())
+        # print(tf.reduce_max(tf.math.abs(self.mean())))
 
     def set_to(self, x):
         self._precision = x.precision()
@@ -137,26 +139,15 @@ class GaussianArray(DistributionArray):
     def __truediv__(self, other):
         if not isinstance(other, GaussianArray):
             raise TypeError("other should be a GaussianArray")
-        p = self.precision()
-        p = tf.where(
-            other.is_uniform(),
-            p,
-            p - other.precision()
-        )
-        mtp = self.mean_times_precision()
-        mtp = tf.where(
-            other.is_uniform(),
-            mtp,
-            mtp - other.mean_times_precision()
-        )
+        p, mtp = self.natural()
+        op, omtp = other.natural()
+        mask = other.is_uniform()
+        pnew = tf.where(mask, p, p - op)
+        mtpnew = tf.where(mask, mtp, mtp - omtp)
         # case where self is a point mass, in which case division does nothing (unless other is also a point mass, but
         # we omit that case as it should never happen)
-        mtp = tf.where(
-            self.is_point_mass(),
-            self.mean_times_precision(),
-            mtp
-        )
-        return GaussianArray(p, mtp)
+        mtpnew = tf.where(self.is_point_mass(), mtp, mtpnew)
+        return GaussianArray(pnew, mtpnew)
 
     def __str__(self):
         out = "GaussianArray{}\n".format(self.shape())

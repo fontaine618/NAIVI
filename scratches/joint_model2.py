@@ -5,7 +5,7 @@ from models.vmp.joint_model2 import JointModel2
 
 tf.random.set_seed(1)
 # problem dimension
-N = 7
+N = 500
 K = 5
 p_cts = 10
 p_bin = 0
@@ -17,9 +17,10 @@ missing_rate = 0.1
 #-------------------------------------------------
 # latent variables
 Z = tf.random.normal((N, K), 0.0, 1.0, tf.float32)
-alpha = tf.random.normal((N, 1), -1.0, 0.5, tf.float32)
+alpha = tf.random.normal((N, 1), -1.85, 0.5, tf.float32)
 # regression matrix
 B = tf.ones((K, p)) * 2.
+B = tf.random.normal((K, p))
 B0 = 1. * tf.ones((1, p))
 # covariate model
 Theta_X = tf.matmul(Z, B) + B0
@@ -42,7 +43,7 @@ if p_bin == 0:
     X_bin_missing = None
 # adjacency model
 Theta_A = alpha + tf.transpose(alpha) + tf.matmul(Z, Z, transpose_b=True)
-P = 1. / (1. + tf.math.exp( - Theta_A))
+P = 1. / (1. + tf.math.exp(- Theta_A))
 A = tf.where(
     tf.random.uniform(P.shape) < P, 1., 0.
 )
@@ -52,6 +53,8 @@ A = tf.where(
 
 upper = tf.linalg.band_part(tf.ones_like(A), -1, 0) == 0
 A_lower = tf.where(upper, A, np.nan)
+print(tf.reduce_sum(tf.where(tf.math.is_nan(A_lower), 0., A_lower)) * 2 / (N*(N-1)))
+# A_lower = tf.ones_like(A) * np.nan
 
 # ----------------------------------------------------
 initial = {
@@ -70,23 +73,23 @@ self = JointModel2(
     initial=initial
 )
 
-self.fit(1, 1, 0, verbose=True,
+self.fit(20, 5, 5, verbose=True,
          X_cts_missing=X_cts_missing, X_bin_missing=X_bin_missing,
          positions_true=Z)
 
 
 tf.reduce_sum(tf.where(tf.math.is_nan(A_lower), 0., A_lower), 1)
-tf.reduce_sum(tf.where(tf.math.is_nan(A_lower), 0., A_lower))
+tf.reduce_sum(tf.where(tf.math.is_nan(A_lower), 0., A_lower)) / N**2
 
 self.predict_covariate()
 
 for k, v in self.parameters_value().items():
     print(k)
-    print(v.numpy())
+    print(v)
 
 
-y_true = Z
-y_pred = self.positions.mean()
+Z
+self.positions.mean()
 
 
 print(Z)
@@ -94,13 +97,19 @@ print(self.positions.mean())
 
 print(alpha)
 print(self.heterogeneity.mean())
-print(tf.concat([alpha, self.heterogeneity.mean()], 1))
+print(tf.concat([alpha, self.heterogeneity.mean()], 1) )
 
 print(Theta_X)
 print(self.covariate_mean.mean())
 
 print(Theta_X - self.covariate_mean.mean())
 
+self = self.inner_product_model._product
+self.child.mean()[:,:,1]
+
+tf.matmul(Z, Z, transpose_b=True)
+m = self.positions.mean()
+tf.matmul(m, m, transpose_b=True)
 
 
 for name, node in self.nodes().items():

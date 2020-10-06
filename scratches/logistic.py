@@ -42,10 +42,10 @@ from models.distributions.bernoulliarray import BernoulliArray
 from models.vmp.vmp_factors2 import Logistic
 shape = (5, 5)
 parent = GaussianArray.from_array(
-    tf.random.normal(shape, 0., 1.) * 0.,
+    tf.random.normal(shape, 0., 1.) ,
     tf.ones(shape)
 )
-A = tf.where(tf.random.normal(shape) > 0., 1., 0.)
+A = tf.where(parent.mean() + tf.random.normal(shape) > 0., 1., 0.)
 
 lower = tf.ones_like(A)
 upper = tf.linalg.band_part(lower, -1, 0) == 0
@@ -63,3 +63,20 @@ self.to_parent()
 print(parent)
 print(self.message_to_parent)
 print(self.predict())
+
+
+
+# Probit
+from models.vmp.compound_factors import NoisyProbit
+
+
+self = NoisyProbit(child, parent, 1.)
+
+self.forward()
+print(self._probit.message_to_child)
+print(parent)
+self.backward()
+print(child)
+print(parent)
+print(self.to_elbo())
+print(self._noise.message_to_parent)

@@ -11,12 +11,8 @@ def invariant_matrix_distance(y_true, y_pred):
 
 
 def projection_distance(y_true, y_pred):
-    inv_true = tf.linalg.matmul(y_true, y_true, transpose_a=True)
-    inv_true = tf.linalg.inv(inv_true)
-    proj_true = tf.matmul(y_true, inv_true)
-    proj_true = tf.matmul(proj_true, y_true, transpose_b=True)
-    inv_pred = tf.linalg.matmul(y_pred, y_pred, transpose_a=True)
-    inv_pred = tf.linalg.inv(inv_pred)
-    proj_pred = tf.matmul(y_pred, inv_pred)
-    proj_pred = tf.matmul(proj_pred, y_pred, transpose_b=True)
+    _, u, _ = tf.linalg.svd(y_true)
+    proj_true = tf.matmul(u, u, transpose_b=True)
+    _, u, _ = tf.linalg.svd(y_pred)
+    proj_pred = tf.matmul(u, u, transpose_b=True)
     return tf.reduce_sum((proj_pred - proj_true) ** 2)
