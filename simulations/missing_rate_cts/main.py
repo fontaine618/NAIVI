@@ -94,6 +94,7 @@ def run(traj):
     traj.f_add_result("runs.$.dist_proj", dist_proj, "Projection distance")
     traj.f_add_result("runs.$.density", density, "Network density")
 
+    print(elbo, mse, auroc, dist_inv, dist_proj, density)
     return elbo, mse, auroc, dist_inv, dist_proj, density
 
 
@@ -123,13 +124,14 @@ def post_processing(traj, result_list):
     }, index=run_idx)
     print(df)
     traj.f_add_result("data_frame", df, "Summary across replications")
+    df.to_csv("./simulations/missing_rate_cts/results/summary.csv")
 
 
 def main():
     # pypet environment
     env = Environment(
-        trajectory="missing_rate",
-        comment="Test experiment with varying missing rate",
+        trajectory="missing_rate_cts",
+        comment="Experiment on missing rate with continuous covariates",
         log_config=None,
         multiproc=False,
         ncores=1,
@@ -137,7 +139,7 @@ def main():
         # freeze_input=True,
         # wrap_mode=pypetconstants.WRAP_MODE_QUEUE,
         # graceful_exit=True,
-        filename="./simulations/results/test/",
+        filename="./simulations/missing_rate_cts/results/",
         overwrite_file=True
     )
     traj = env.trajectory
@@ -174,7 +176,7 @@ def main():
 
     # parameters (model)
     traj.f_add_parameter(
-        "model.K", np.int64(3), "Number of latent components in the model"
+        "model.K", np.int64(5), "Number of latent components in the model"
     )
     traj.f_add_parameter(
         "model.adj_model", "Logistic", "Adjacency model"
@@ -185,13 +187,13 @@ def main():
 
     # parameters (fit)
     traj.f_add_parameter(
-        "fit.n_iter", np.int64(10), "Number of VEM iterations"
+        "fit.n_iter", np.int64(20), "Number of VEM iterations"
     )
     traj.f_add_parameter(
-        "fit.n_vmp", np.int64(10), "Number of VMP iterations per E-step"
+        "fit.n_vmp", np.int64(5), "Number of VMP iterations per E-step"
     )
     traj.f_add_parameter(
-        "fit.n_gd", np.int64(10), "Number of GD iterations per M-step"
+        "fit.n_gd", np.int64(5), "Number of GD iterations per M-step"
     )
     traj.f_add_parameter(
         "fit.step_size", np.float64(0.01), "GD Step size"
@@ -199,9 +201,9 @@ def main():
 
     # experiment
     explore_dict = {
-        "data.missing_rate": np.array([0.05]),
-        "data.p_cts": np.array([10]),
-        "data.seed": np.array([1])
+        "data.missing_rate": np.array([0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]),
+        "data.p_cts": np.array([10, 100, 500]),
+        "data.seed": np.arange(0, 100, 1)
     }
     experiment = cartesian_product(explore_dict, ('data.missing_rate', "data.p_cts", "data.seed"))
     traj.f_explore(experiment)
