@@ -270,25 +270,31 @@ class JointModel2(VMPFactor):
     def covariate_metrics(self, X_cts_missing=None, X_bin_missing=None):
         if self.p > 0:
             predictions = self.predict_covariate()
-        else:
-            predictions = dict()
-        if X_cts_missing is not None:
-            mask = tf.where(tf.math.is_nan(X_cts_missing), False, True).numpy()
-            mse = mean_squared_error(X_cts_missing.numpy()[mask], predictions["continuous"].numpy()[mask])
+            if X_cts_missing is not None and tf.reduce_sum(tf.where(tf.math.is_nan(X_cts_missing), 0., 1.)) > 0.:
+                mask = tf.where(tf.math.is_nan(X_cts_missing), False, True).numpy()
+                mse = mean_squared_error(X_cts_missing.numpy()[mask], predictions["continuous"].numpy()[mask])
+            else:
+                mse = 0.
+            if X_bin_missing is not None and tf.reduce_sum(tf.where(tf.math.is_nan(X_bin_missing), 0., 1.)) > 0.:
+                mask = tf.where(tf.math.is_nan(X_bin_missing), False, True).numpy()
+                auroc = roc_auc_score(X_bin_missing.numpy()[mask], predictions["binary"].numpy()[mask])
+            else:
+                auroc = 0.
         else:
             mse = 0.
-        if X_bin_missing is not None:
-            mask = tf.where(tf.math.is_nan(X_bin_missing), False, True).numpy()
-            auroc = roc_auc_score(X_bin_missing.numpy()[mask], predictions["binary"].numpy()[mask])
-        else:
             auroc = 0.
         return {
             "mse": mse,
             "auroc": auroc
         }
 
-    def latent_distance(self, Z):
+    def latent_distance(self, Z=None):
+        if Z is None:
+            return {
+            "inv": 0.,
+            "proj": 0.
+            }
         return {
-            "inv": invariant_matrix_distance(Z, self.positions.mean()),
-            "proj": projection_distance(Z, self.positions.mean())
+            "inv": invariant_matrix_distance(Z, self.positions.mean()).numpy(),
+            "proj": projection_distance(Z, self.positions.mean()).numpy()
         }

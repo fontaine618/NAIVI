@@ -5,7 +5,7 @@ from models.vmp.joint_model2 import JointModel2
 
 tf.random.set_seed(1)
 # problem dimension
-N = 500
+N = 100
 K = 5
 p_cts = 10
 p_bin = 0
@@ -74,8 +74,9 @@ self = JointModel2(
 )
 
 self.fit(20, 5, 5, verbose=True,
-         X_cts_missing=X_cts_missing, X_bin_missing=X_bin_missing,
-         positions_true=Z)
+         # X_cts_missing=X_cts_missing, X_bin_missing=X_bin_missing,
+         # positions_true=Z
+         )
 
 
 tf.reduce_sum(tf.where(tf.math.is_nan(A_lower), 0., A_lower), 1)
