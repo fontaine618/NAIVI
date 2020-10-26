@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-from models import BernoulliArray
-from models.distributions.gaussianarray import GaussianArray
-from models.vmp.vmp_factors2 import VMPFactor, AddVariance, Probit, Product, ExpandTranspose, Concatenate, Sum, Split, Logistic
+from NNVI.models import BernoulliArray
+from NNVI.models.distributions.gaussianarray import GaussianArray
+from NNVI.models.vmp.vmp_factors2 import VMPFactor, AddVariance, Probit, Product, ExpandTranspose, Concatenate, Sum, Split, Logistic
 
 
 class NoisyProbit(VMPFactor):

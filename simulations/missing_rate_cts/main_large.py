@@ -94,27 +94,30 @@ def run(traj):
     traj.f_add_result("runs.$.dist_proj", dist_proj, "Projection distance")
     traj.f_add_result("runs.$.density", density, "Network density")
 
-    print(elbo, mse, auroc, dist_inv, dist_proj, density)
-    return elbo, mse, auroc, dist_inv, dist_proj, density
+    print(p_cts, missing_rate, seed, elbo, mse, auroc, dist_inv, dist_proj, density)
+    return p_cts, missing_rate, seed, elbo, mse, auroc, dist_inv, dist_proj, density
 
 
 def post_processing(traj, result_list):
-    seed_range = traj.par.data.f_get("seed").f_get_range()
-    missing_rate_range = traj.par.data.f_get("missing_rate").f_get_range()
-    p_cts_range = traj.par.data.f_get("p_cts").f_get_range()
+    # seed_range = traj.par.data.f_get("seed").f_get_range()
+    # missing_rate_range = traj.par.data.f_get("missing_rate").f_get_range()
+    # p_cts_range = traj.par.data.f_get("p_cts").f_get_range()
 
     run_idx = [res[0] for res in result_list]
-    elbo = [res[1][0] for res in result_list]
-    mse = [res[1][1] for res in result_list]
-    auroc = [res[1][2] for res in result_list]
-    dist_inv = [res[1][3] for res in result_list]
-    dist_proj = [res[1][4] for res in result_list]
-    density = [res[1][5] for res in result_list]
+    p_cts = [res[1][0] for res in result_list]
+    missing_rate = [res[1][1] for res in result_list]
+    seed = [res[1][2] for res in result_list]
+    elbo = [res[1][3] for res in result_list]
+    mse = [res[1][4] for res in result_list]
+    auroc = [res[1][5] for res in result_list]
+    dist_inv = [res[1][6] for res in result_list]
+    dist_proj = [res[1][7] for res in result_list]
+    density = [res[1][8] for res in result_list]
 
     df = pd.DataFrame({
-        "missing_rate": [missing_rate_range[i] for i in run_idx],
-        "seed": [seed_range[i] for i in run_idx],
-        "p_cts": [p_cts_range[i] for i in run_idx],
+        "missing_rate": [missing_rate[i] for i in run_idx],
+        "seed": [seed[i] for i in run_idx],
+        "p_cts": [p_cts[i] for i in run_idx],
         "elbo": [elbo[i] for i in run_idx],
         "mse": [mse[i] for i in run_idx],
         "auroc": [auroc[i] for i in run_idx],
@@ -124,14 +127,14 @@ def post_processing(traj, result_list):
     }, index=run_idx)
     print(df)
     traj.f_add_result("data_frame", df, "Summary across replications")
-    df.to_csv("./simulations/missing_rate_cts/results/summary.csv")
+    df.to_csv("./simulations/missing_rate_cts/results/summary_large.csv")
 
 
 def main():
     # pypet environment
     env = Environment(
-        trajectory="missing_rate_cts",
-        comment="Experiment on missing rate with continuous covariates",
+        trajectory="missing_rate_cts_large2",
+        comment="Experiment on (large) missing rate with continuous covariates",
         log_config=None,
         multiproc=False,
         ncores=1,
@@ -201,9 +204,10 @@ def main():
 
     # experiment
     explore_dict = {
-        "data.missing_rate": np.array([0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]),
+        "data.missing_rate": np.array([0.50, 0.75]),
         "data.p_cts": np.array([10, 100, 500]),
-        "data.seed": np.arange(0, 100, 1)
+        "data.seed": np.arange(0, 2, 1),
+        # "data.seed": np.arange(0, 100, 1)
     }
     experiment = cartesian_product(explore_dict, ('data.missing_rate', "data.p_cts", "data.seed"))
     traj.f_explore(experiment)

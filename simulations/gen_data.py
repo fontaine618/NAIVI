@@ -4,18 +4,19 @@ import numpy as np
 
 def generate_dataset(
         N, K, p_cts, p_bin, var_adj=1., var_cov=1., missing_rate=0.2, alpha_mean=-1.,
-        seed=1, link_model="Logistic", bin_model="Logistic"
+        seed=1, link_model="Logistic", bin_model="Logistic", seed_beta=0
 ):
-    tf.random.set_seed(seed)
     p = p_cts + p_bin
-    # -------------------------------------------------
-    # latent variables
-    Z = tf.random.normal((N, K), 0.0, 1.0, tf.float32)
-    alpha = tf.random.normal((N, 1), alpha_mean, 0.5, tf.float32)
     # regression matrix
+    tf.random.set_seed(seed_beta)
     B = tf.random.normal((K, p))
     B = B / tf.norm(B, 2, 0, keepdims=True)
     B0 = 0. * tf.ones((1, p))
+    # -------------------------------------------------
+    tf.random.set_seed(seed)
+    # latent variables
+    Z = tf.random.normal((N, K), 0.0, 1.0, tf.float32)
+    alpha = tf.random.normal((N, 1), alpha_mean, 0.5, tf.float32)
     # covariate model
     Theta_X = tf.matmul(Z, B) + B0
     # continuous variables

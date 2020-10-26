@@ -1,2 +1,2 @@
-from models.distributions.bernoulliarray import BernoulliArray
-import models.vmp
+from NNVI.models.distributions.bernoulliarray import BernoulliArray
+import NNVI.models.vmp

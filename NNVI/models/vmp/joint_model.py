@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from models.distributions.gaussianarray import GaussianArray
-from models.distributions.bernoulliarray import BernoulliArray
+from NNVI.models.distributions.gaussianarray import GaussianArray
+from NNVI.models.distributions.bernoulliarray import BernoulliArray
 from NNVI.models.parameter import ParameterArray, ParameterArrayLogScale
 from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
     Concatenate, WeightedSum, GaussianComparison

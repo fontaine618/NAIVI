@@ -101,7 +101,7 @@ def run(traj):
 def post_processing(traj, result_list):
     seed_range = traj.par.data.f_get("seed").f_get_range()
     missing_rate_range = traj.par.data.f_get("missing_rate").f_get_range()
-    p_cts_range = traj.par.data.f_get("p_cts").f_get_range()
+    p_cts_range = traj.par.data.f_get("p_bin").f_get_range()
 
     run_idx = [res[0] for res in result_list]
     elbo = [res[1][0] for res in result_list]
@@ -130,8 +130,8 @@ def post_processing(traj, result_list):
 def main():
     # pypet environment
     env = Environment(
-        trajectory="missing_rate_cts",
-        comment="Experiment on missing rate with continuous covariates",
+        trajectory="missing_rate_bin",
+        comment="Experiment on missing rate with binary covariates",
         log_config=None,
         multiproc=False,
         ncores=1,
@@ -153,7 +153,7 @@ def main():
         "data.K", np.int64(5), "True number of latent components"
     )
     traj.f_add_parameter(
-        "data.p_cts", np.int64(10), "Number of continuous covariates"
+        "data.p_cts", np.int64(0), "Number of continuous covariates"
     )
     traj.f_add_parameter(
         "data.p_bin", np.int64(0), "Number of binary covariates"
@@ -201,11 +201,12 @@ def main():
 
     # experiment
     explore_dict = {
-        "data.missing_rate": np.array([0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]),
-        "data.p_cts": np.array([10, 100, 500]),
+        "data.missing_rate": np.array(
+            [0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40, 0.50, 0.75]),
+        "data.p_bin": np.array([10, 100, 500]),
         "data.seed": np.arange(0, 100, 1)
     }
-    experiment = cartesian_product(explore_dict, ('data.missing_rate', "data.p_cts", "data.seed"))
+    experiment = cartesian_product(explore_dict, ('data.missing_rate', "data.p_bin", "data.seed"))
     traj.f_explore(experiment)
 
     env.add_postprocessing(post_processing)
