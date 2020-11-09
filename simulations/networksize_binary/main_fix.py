@@ -1,14 +1,14 @@
 import os
 import sys
 
-# PATH = "/home/simfont/scratch/NNVI/"
-PATH = "/home/simon/Documents/NNVI/"
+PATH = "/home/simfont/scratch/NNVI/"
 sys.path.append(PATH)
 sys.path.append(PATH + "NNVI/")
 sys.path.append(PATH + "venv/")
 sys.path.append(PATH + "venv/lib/")
-SIM_NAME = "covariate_binary"
+SIM_NAME = "networksize_binary"
 SIM_PATH = PATH + "/simulations/" + SIM_NAME
+SIM_NAME = "networksize_binary_fix"
 
 from pypet import Environment
 from pypet.utils.explore import cartesian_product
@@ -135,19 +135,19 @@ def post_processing(traj, result_list):
     }, index=run_idx)
     print(df)
     traj.f_add_result("data_frame", df, "Summary across replications")
-    df.to_csv(SIM_PATH + "/results/summary.csv")
+    df.to_csv(SIM_PATH + "/results/summary_fix.csv")
 
 
 def main():
     # pypet environment
     env = Environment(
         trajectory=SIM_NAME,
-        comment="Experiment on network size with binary covariates",
+        comment="Experiment on network size with binary covariates (fix)",
         log_config=None,
         multiproc=False,
         ncores=1,
         filename=SIM_PATH + "/results/",
-        overwrite_file=False
+        overwrite_file=True
     )
     traj = env.trajectory
 
@@ -209,9 +209,9 @@ def main():
     # experiment
     explore_dict = {
         "data.N": np.array(
-            [100, 1000]
+            [2000]
         ),
-        "data.p_bin": np.array([5, 10, 20, 50, 100, 200, 500, 1000]),
+        "data.p_bin": np.array([500]),
         "data.seed": np.arange(0, 100, 1)
     }
     experiment = cartesian_product(explore_dict, tuple(explore_dict.keys()))

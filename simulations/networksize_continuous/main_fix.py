@@ -1,6 +1,17 @@
+import os
+import sys
+
+PATH = "/home/simfont/scratch/NNVI/"
+sys.path.append(PATH)
+sys.path.append(PATH + "NNVI/")
+sys.path.append(PATH + "venv/")
+sys.path.append(PATH + "venv/lib/")
+SIM_NAME = "networksize_continuous"
+SIM_PATH = PATH + "/simulations/" + SIM_NAME
+SIM_NAME = "networksize_continuous_fix"
+
 from pypet import Environment
 from pypet.utils.explore import cartesian_product
-from pypet import pypetconstants
 import numpy as np
 from simulations.gen_data import generate_dataset
 from NNVI.models.vmp.joint_model2 import JointModel2
@@ -21,7 +32,7 @@ def run(traj):
         seed = traj.par.data.seed
         alpha_mean = traj.par.data.alpha_mean
 
-        print(p_cts, missing_rate, seed)
+        print(p_cts, N, seed)
 
         K_model = traj.par.model.K
         adj_model = traj.par.model.adj_model
@@ -47,7 +58,7 @@ def run(traj):
 
         # initialize model
         model = JointModel2(
-            K=K,
+            K=K_model,
             A=A,
             X_cts=X_cts,
             X_bin=X_bin,
@@ -62,9 +73,6 @@ def run(traj):
             n_vmp=n_vmp,
             n_gd=n_gd,
             verbose=False,
-            # X_cts_missing=X_cts_missing,
-            # X_bin_missing=X_bin_missing,
-            # positions_true=Z
         )
 
         # metrics
@@ -87,6 +95,9 @@ def run(traj):
         dist_inv = np.nan
         dist_proj = np.nan
         density = np.nan
+    traj.f_add_result("runs.$.p_cts", p_cts, "p_cts")
+    traj.f_add_result("runs.$.N", N, "N")
+    traj.f_add_result("runs.$.seed", seed, "seed")
     traj.f_add_result("runs.$.elbo", elbo, "ELBO")
     traj.f_add_result("runs.$.mse", mse, "MSE")
     traj.f_add_result("runs.$.auroc", auroc, "AUROC")
@@ -94,27 +105,27 @@ def run(traj):
     traj.f_add_result("runs.$.dist_proj", dist_proj, "Projection distance")
     traj.f_add_result("runs.$.density", density, "Network density")
 
-    print(elbo, mse, auroc, dist_inv, dist_proj, density)
-    return elbo, mse, auroc, dist_inv, dist_proj, density
+    print(p_cts, N, seed, elbo, mse, auroc, dist_inv, dist_proj, density)
+    return p_cts, N, seed, elbo, mse, auroc, dist_inv, dist_proj, density
 
 
 def post_processing(traj, result_list):
-    seed_range = traj.par.data.f_get("seed").f_get_range()
-    missing_rate_range = traj.par.data.f_get("missing_rate").f_get_range()
-    p_cts_range = traj.par.data.f_get("p_cts").f_get_range()
 
     run_idx = [res[0] for res in result_list]
-    elbo = [res[1][0] for res in result_list]
-    mse = [res[1][1] for res in result_list]
-    auroc = [res[1][2] for res in result_list]
-    dist_inv = [res[1][3] for res in result_list]
-    dist_proj = [res[1][4] for res in result_list]
-    density = [res[1][5] for res in result_list]
+    p_cts = [res[1][0] for res in result_list]
+    N = [res[1][1] for res in result_list]
+    seed = [res[1][2] for res in result_list]
+    elbo = [res[1][3] for res in result_list]
+    mse = [res[1][4] for res in result_list]
+    auroc = [res[1][5] for res in result_list]
+    dist_inv = [res[1][6] for res in result_list]
+    dist_proj = [res[1][7] for res in result_list]
+    density = [res[1][8] for res in result_list]
 
     df = pd.DataFrame({
-        "missing_rate": [missing_rate_range[i] for i in run_idx],
-        "seed": [seed_range[i] for i in run_idx],
-        "p_cts": [p_cts_range[i] for i in run_idx],
+        "N": [N[i] for i in run_idx],
+        "seed": [seed[i] for i in run_idx],
+        "p_cts": [p_cts[i] for i in run_idx],
         "elbo": [elbo[i] for i in run_idx],
         "mse": [mse[i] for i in run_idx],
         "auroc": [auroc[i] for i in run_idx],
@@ -124,22 +135,18 @@ def post_processing(traj, result_list):
     }, index=run_idx)
     print(df)
     traj.f_add_result("data_frame", df, "Summary across replications")
-    df.to_csv("./simulations/missing_rate_cts/results/summary.csv")
+    df.to_csv(SIM_PATH + "/results/summary_fix.csv")
 
 
 def main():
     # pypet environment
     env = Environment(
-        trajectory="missing_rate_cts",
-        comment="Experiment on missing rate with continuous covariates",
+        trajectory=SIM_NAME,
+        comment="Experiment on network size with continuous covariates (fix)",
         log_config=None,
         multiproc=False,
         ncores=1,
-        # use_pool=True,
-        # freeze_input=True,
-        # wrap_mode=pypetconstants.WRAP_MODE_QUEUE,
-        # graceful_exit=True,
-        filename="results/",
+        filename=SIM_PATH + "/results/",
         overwrite_file=True
     )
     traj = env.trajectory
@@ -153,7 +160,7 @@ def main():
         "data.K", np.int64(5), "True number of latent components"
     )
     traj.f_add_parameter(
-        "data.p_cts", np.int64(10), "Number of continuous covariates"
+        "data.p_cts", np.int64(0), "Number of continuous covariates"
     )
     traj.f_add_parameter(
         "data.p_bin", np.int64(0), "Number of binary covariates"
@@ -165,7 +172,7 @@ def main():
         "data.var_cov", np.float64(1.), "True variance in the covariate model (cts and bin)"
     )
     traj.f_add_parameter(
-        "data.missing_rate", np.float64(0.2), "Missing rate"
+        "data.missing_rate", np.float64(0.1), "Missing rate"
     )
     traj.f_add_parameter(
         "data.seed", np.int64(1), "Random seed"
@@ -201,11 +208,13 @@ def main():
 
     # experiment
     explore_dict = {
-        "data.missing_rate": np.array([0.01, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30, 0.35, 0.40]),
-        "data.p_cts": np.array([10, 100, 500]),
+        "data.N": np.array(
+            [2000]
+        ),
+        "data.p_cts": np.array([500]),
         "data.seed": np.arange(0, 100, 1)
     }
-    experiment = cartesian_product(explore_dict, ('data.missing_rate', "data.p_cts", "data.seed"))
+    experiment = cartesian_product(explore_dict, tuple(explore_dict.keys()))
     traj.f_explore(experiment)
 
     env.add_postprocessing(post_processing)
