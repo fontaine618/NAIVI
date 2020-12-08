@@ -1,1 +1,1 @@
-from NNVI import models
+from NNVI import vmp, mle

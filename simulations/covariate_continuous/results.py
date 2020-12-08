@@ -59,6 +59,8 @@ stat = results.groupby(["N", "p_cts"]).agg(["mean", "std"])
 n = results.groupby(["N", "p_cts"]).count()["elbo"]
 stat["n"] = n
 
+stat.drop(index=(100, 200), inplace=True)
+
 # statistics
 names = {
     "mse": "MSE",
@@ -71,7 +73,7 @@ ns = {
 }
 
 # plot
-fig, axs = plt.subplots(2, 1, figsize=(4, 8), sharex=True)
+fig, axs = plt.subplots(2, 1, figsize=(4, 6), sharex=True)
 
 for i, (st, name) in enumerate(names.items()):
     ax = axs[i]
@@ -83,12 +85,39 @@ for i, (st, name) in enumerate(names.items()):
         ax.plot(df.index, mean, color=col, label=nn)
         ax.fill_between(df.index, mean-std, mean+std, color=col, alpha=0.2)
     if i==1:
-        plt.legend(loc="upper right", title="N")
         ax.set_xlabel("Number of covariates")
+    if i==0:
+        ax.legend(loc="upper left", title="N")
     ax.set_ylabel(name)
     plt.xscale("log")
 
+fig.suptitle("Continuous covariates")
 fig.tight_layout()
 fig.savefig(SIM_PATH + "/results/plot.pdf")
+
+plt.close(fig)
+
+
+
+
+fig, axs = plt.subplots(1, 1, figsize=(4, 4), sharex=True)
+
+for i, (st, name) in enumerate(names.items()):
+    ax = axs
+    for nn, col in ns.items():
+        df = stat.loc[(nn, )]
+        mean = df[(st, "mean")]
+        std = df[(st, "std")]
+        l = df["n"]
+        ax.plot(df.index, mean, color=col, label=nn)
+        ax.fill_between(df.index, mean-std, mean+std, color=col, alpha=0.2)
+        ax.set_xlabel("Number of covariates")
+        ax.legend(loc="lower right", title="N")
+        ax.set_ylabel(name)
+    break
+
+fig.suptitle("Continuous covariates")
+fig.tight_layout()
+fig.savefig(SIM_PATH + "/results/" + SIM_NAME + "_metric.pdf")
 
 plt.close(fig)

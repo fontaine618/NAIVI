@@ -1,9 +1,9 @@
 import tensorflow as tf
 import numpy as np
-from NNVI.models.distributions.gaussianarray import GaussianArray
-from NNVI.models.distributions.bernoulliarray import BernoulliArray
-from NNVI.models.parameter import ParameterArray, ParameterArrayLogScale
-from NNVI.models.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
+from NNVI.vmp.distributions.gaussianarray import GaussianArray
+from NNVI.vmp.distributions.bernoulliarray import BernoulliArray
+from NNVI.vmp.parameter import ParameterArray, ParameterArrayLogScale
+from NNVI.vmp.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, \
     Concatenate, WeightedSum, GaussianComparison
 
 

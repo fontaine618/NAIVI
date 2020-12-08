@@ -2,12 +2,12 @@ import tensorflow as tf
 import numpy as np
 from sklearn.metrics import roc_auc_score, mean_squared_error
 
-from NNVI.models.vmp.vmp_factors2 import VMPFactor
-from NNVI.models.distributions.gaussianarray import GaussianArray
-from NNVI.models.distributions.bernoulliarray import BernoulliArray
-from NNVI.models.vmp.vmp_factors2 import Prior, WeightedSum, Logistic
-from NNVI.models.vmp.compound_factors import NoisyProbit, InnerProductModel, GLM
-from NNVI.models.utils import invariant_matrix_distance, projection_distance
+from NNVI.vmp.vmp.vmp_factors2 import VMPFactor
+from NNVI.vmp.distributions.gaussianarray import GaussianArray
+from NNVI.vmp.distributions.bernoulliarray import BernoulliArray
+from NNVI.vmp.vmp.vmp_factors2 import Prior, WeightedSum, Logistic
+from NNVI.vmp.vmp.compound_factors import NoisyProbit, InnerProductModel, GLM
+from NNVI.vmp.utils import invariant_matrix_distance, projection_distance
 
 
 class JointModel2(VMPFactor):
@@ -136,6 +136,10 @@ class JointModel2(VMPFactor):
         self.position_prior.forward()
         self.heterogeneity_prior.forward()
 
+    def set_lr(self, lr):
+        for p in self.parameters().values():
+            p.lr = lr
+
     def forward_adjacency(self):
         self.inner_product_model.forward()
         self.adjacency_model.forward()
@@ -169,7 +173,7 @@ class JointModel2(VMPFactor):
         elbo = 0.0
         for name, factor in self._factors.items():
             elbo += factor.to_elbo()
-        self.elbo = elbo / self.N ** 2
+        self.elbo = elbo / (self.N * (self.N + self.p))
         return self.elbo
 
     def parameters_value(self):

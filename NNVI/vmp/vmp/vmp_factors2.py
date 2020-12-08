@@ -1,10 +1,10 @@
 import tensorflow as tf
 import numpy as np
 from typing import Dict
-from NNVI.models.distributions.gaussianarray import GaussianArray
-from NNVI.models.distributions.bernoulliarray import BernoulliArray
-from NNVI.models.parameter import ParameterArray, ParameterArrayLogScale
-from NNVI.models.vmp.logistic_utils import sigmoid_integrals
+from NNVI.vmp.distributions.gaussianarray import GaussianArray
+from NNVI.vmp.distributions.bernoulliarray import BernoulliArray
+from NNVI.vmp.parameter import ParameterArray, ParameterArrayLogScale
+from NNVI.vmp.vmp.logistic_utils import sigmoid_integrals
 import tensorflow_probability as tfp
 
 
@@ -76,7 +76,7 @@ class Prior(VMPFactor):
         self.shape = child.shape()
         self.prior = GaussianArray.from_shape(self.shape, self.mean.value(), self.variance.value())
         # initialize child
-        self.message_to_child = GaussianArray.from_array(initial, tf.ones_like(initial) * variance * 1.)
+        self.message_to_child = GaussianArray.from_array(initial, tf.ones_like(initial) * variance * 0.1)
         self.child.set_to(self.message_to_child)
 
     def backward(self):
@@ -373,7 +373,7 @@ class Product(VMPFactor):
         self.to_child()
 
     def backward(self):
-        for _ in range(10):
+        for _ in range(1):
             self.to_parent()
 
 

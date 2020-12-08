@@ -15,7 +15,7 @@ from pypet.utils.explore import cartesian_product
 from pypet import pypetconstants
 import numpy as np
 from simulations.gen_data import generate_dataset
-from NNVI.models.vmp.joint_model2 import JointModel2
+from NNVI.vmp.vmp.joint_model2 import JointModel2
 import pandas as pd
 import tensorflow as tf
 

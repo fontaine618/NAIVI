@@ -1,13 +1,13 @@
 import tensorflow as tf
 import numpy as np
 
-from models.vmp.joint_model2 import JointModel2
+from NNVI.vmp.vmp.joint_model2 import JointModel2
 
 tf.random.set_seed(1)
 # problem dimension
-N = 100
+N = 500
 K = 5
-p_cts = 10
+p_cts = 100
 p_bin = 0
 p = p_cts + p_bin
 var_adj = 1.
@@ -21,6 +21,7 @@ alpha = tf.random.normal((N, 1), -1.85, 0.5, tf.float32)
 # regression matrix
 B = tf.ones((K, p)) * 2.
 B = tf.random.normal((K, p))
+B = B / tf.norm(B, 2, 0, keepdims=True)
 B0 = 1. * tf.ones((1, p))
 # covariate model
 Theta_X = tf.matmul(Z, B) + B0
@@ -74,8 +75,8 @@ self = JointModel2(
 )
 
 self.fit(20, 5, 5, verbose=True,
-         # X_cts_missing=X_cts_missing, X_bin_missing=X_bin_missing,
-         # positions_true=Z
+         X_cts_missing=X_cts_missing, X_bin_missing=X_bin_missing,
+         positions_true=Z
          )
 
 

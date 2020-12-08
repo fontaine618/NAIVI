@@ -2,7 +2,7 @@ from unittest import TestCase
 import tensorflow as tf
 
 from models.distributions.gaussianarray import GaussianArray
-from NNVI.models.vmp.vmp_factors import Sum
+from NNVI.vmp.vmp.vmp_factors import Sum
 
 
 class TestPrior(TestCase):

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import sys
 sys.path.append("/home/simon/Documents/NNVI/NNVI")
-from NNVI.models import Variational
+from NNVI.vmp import Variational
 
 model = Variational(6)
 

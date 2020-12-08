@@ -49,6 +49,10 @@ results.to_csv(SIM_PATH + "/results/summary.csv", index=False)
 
 results = pd.read_csv(SIM_PATH + "/results/summary.csv")
 
+results_fix = pd.read_csv(SIM_PATH + "/results/summary_fix.csv", index_col=0)
+
+results = results.merge(results_fix, how="outer")
+
 # drop stuff
 results.dropna(inplace=True, how="any", axis=0)
 results.drop(columns=["seed"], inplace=True)
@@ -60,7 +64,7 @@ stat["n"] = n
 
 # statistics
 names = {
-    "auroc": "AUROC",
+    "auroc": "1 - AUROC",
     "dist_inv": "Distance to Z"
 }
 
@@ -70,7 +74,7 @@ ns = {
 }
 
 # plot
-fig, axs = plt.subplots(2, 1, figsize=(4, 8), sharex=True)
+fig, axs = plt.subplots(2, 1, figsize=(4, 6), sharex=True)
 
 for i, (st, name) in enumerate(names.items()):
     ax = axs[i]
@@ -82,12 +86,45 @@ for i, (st, name) in enumerate(names.items()):
         ax.plot(df.index, mean, color=col, label=nn)
         ax.fill_between(df.index, mean-std, mean+std, color=col, alpha=0.2)
     if i==1:
-        plt.legend(loc="upper right", title="N")
         ax.set_xlabel("Number of covariates")
+    if i==0:
+        ax.legend(loc="upper right", title="N")
     ax.set_ylabel(name)
     plt.xscale("log")
 
+fig.suptitle("Binary covariates")
 fig.tight_layout()
 fig.savefig(SIM_PATH + "/results/plot.pdf")
+
+plt.close(fig)
+
+
+# test
+
+df1 = pd.read_csv(SIM_PATH + "/results/summary_fix.csv", index_col=0)
+df2 = pd.read_csv(SIM_PATH + "/results/summary_fix_l.csv", index_col=0)
+
+df1["dist_inv"].mean() / df2["dist_inv"].mean()
+
+
+fig, axs = plt.subplots(1, 1, figsize=(4, 4), sharex=True)
+
+for i, (st, name) in enumerate(names.items()):
+    ax = axs
+    for nn, col in ns.items():
+        df = stat.loc[(nn, )]
+        mean = df[(st, "mean")]
+        std = df[(st, "std")]
+        l = df["n"]
+        ax.plot(df.index, mean, color=col, label=nn)
+        ax.fill_between(df.index, mean-std, mean+std, color=col, alpha=0.2)
+        ax.set_xlabel("Number of covariates")
+        ax.legend(loc="upper right", title="N")
+        ax.set_ylabel(name)
+    break
+
+fig.suptitle("Binary covariates")
+fig.tight_layout()
+fig.savefig(SIM_PATH + "/results/" + SIM_NAME + "_metric.pdf")
 
 plt.close(fig)

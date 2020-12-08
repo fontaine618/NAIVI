@@ -15,7 +15,7 @@ from pypet import Environment
 from pypet.utils.explore import cartesian_product
 import numpy as np
 from simulations.gen_data import generate_dataset
-from NNVI.models.vmp.joint_model2 import JointModel2
+from NNVI.vmp.vmp.joint_model2 import JointModel2
 import pandas as pd
 import tensorflow as tf
 
@@ -136,7 +136,7 @@ def post_processing(traj, result_list):
     }, index=run_idx)
     print(df)
     traj.f_add_result("data_frame", df, "Summary across replications")
-    df.to_csv(SIM_PATH + "/results/summary_fix.csv")
+    df.to_csv(SIM_PATH + "/results/summary_fix_l.csv")
 
 
 def main():
