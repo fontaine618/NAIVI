@@ -1,4 +1,4 @@
-from NNVI.mle.gen_data import generate_dataset
+from NNVI.utils.gen_data import generate_dataset
 from NNVI.utils.data import JointDataset
 from NNVI.advi.model import ADVI
 from NNVI.mle.model import MLE

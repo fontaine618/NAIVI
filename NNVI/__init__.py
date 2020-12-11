@@ -1,1 +1,1 @@
-from NNVI import vmp, mle
+from NNVI import vmp_tf, mle

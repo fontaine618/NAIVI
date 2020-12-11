@@ -1,10 +1,10 @@
 import tensorflow as tf
 import numpy as np
 from typing import Dict
-from NNVI.vmp.distributions.gaussianarray import GaussianArray
-from NNVI.vmp.distributions.bernoulliarray import BernoulliArray
-from NNVI.vmp.parameter import ParameterArray, ParameterArrayLogScale
-from NNVI.vmp.vmp.logistic_utils import sigmoid_integrals
+from NNVI.vmp_tf.distributions.gaussianarray import GaussianArray
+from NNVI.vmp_tf.distributions.bernoulliarray import BernoulliArray
+from NNVI.vmp_tf.parameter import ParameterArray, ParameterArrayLogScale
+from NNVI.vmp_tf.vmp.logistic_utils import sigmoid_integrals
 import tensorflow_probability as tfp
 
 

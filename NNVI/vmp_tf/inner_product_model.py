@@ -1,6 +1,6 @@
 import tensorflow as tf
 from models.distributions.gaussianarray import GaussianArray
-from NNVI.vmp.vmp.vmp_factors import Product, Concatenate, Sum
+from NNVI.vmp_tf.vmp.vmp_factors import Product, Concatenate, Sum
 
 
 class InnerProductModel:

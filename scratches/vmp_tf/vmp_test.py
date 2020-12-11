@@ -2,9 +2,9 @@ import torch
 import tensorflow as tf
 import numpy as np
 # data
-from NNVI.mle.gen_data import generate_dataset
+from NNVI.utils.gen_data import generate_dataset
 # VMP
-from NNVI.vmp.vmp.joint_model2 import JointModel2
+from NNVI.vmp_tf.vmp.joint_model2 import JointModel2
 # MLE
 from NNVI.utils.data import JointDataset
 from NNVI.mle.model import MLE
@@ -40,7 +40,7 @@ self.fit(train, test, Z, batch_size=len(train), eps=1.e-5, max_iter=1000, lr=0.0
 # VMP fit
 # -----------------------------------------------------------------------------
 
-# map to vmp data structure
+# map to vmp_tf data structure
 
 A_lower = torch.ones((N, N)) * np.nan
 A_lower.index_put_((i0, i1), A.view(-1))

@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
 
-from NNVI.vmp.vmp.joint_model2 import JointModel2
+from NNVI.vmp_tf.vmp.joint_model2 import JointModel2
 
 tf.random.set_seed(1)
 # problem dimension

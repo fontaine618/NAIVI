@@ -1,8 +1,8 @@
 import tensorflow as tf
 
-from NNVI.vmp import BernoulliArray
-from NNVI.vmp.distributions.gaussianarray import GaussianArray
-from NNVI.vmp.vmp.vmp_factors2 import VMPFactor, AddVariance, Probit, Product, ExpandTranspose, Concatenate, Sum, Split, Logistic
+from NNVI.vmp_tf import BernoulliArray
+from NNVI.vmp_tf.distributions.gaussianarray import GaussianArray
+from NNVI.vmp_tf.vmp.vmp_factors2 import VMPFactor, AddVariance, Probit, Product, ExpandTranspose, Concatenate, Sum, Split, Logistic
 
 
 class NoisyProbit(VMPFactor):
@@ -35,7 +35,7 @@ class NoisyProbit(VMPFactor):
     def forward(self):
         # update noisy
         self._noise.forward()
-        # update child (just to update the prediction; does nothing to vmp)
+        # update child (just to update the prediction; does nothing to vmp_tf)
         self._probit.forward()
 
     def backward(self):

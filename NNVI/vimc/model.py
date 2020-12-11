@@ -16,14 +16,14 @@ class JointModel(nn.Module):
         self.covariate_model = CovariateModel(K, p_cts, p_bin, N)
         self.adjacency_model = AdjacencyModel(N)
 
-    def forward(self, indices0, indices1, indicesX, n_sample=1):
-        latent_position0, latent_heterogeneity0 = self.encoder(indices0, n_sample)
-        latent_position1, latent_heterogeneity1 = self.encoder(indices1, n_sample)
-        latent_positionX, _ = self.encoder(indicesX, n_sample)
-        mean_cts, proba_bin = self.covariate_model(latent_positionX)
+    def forward(self, i0, i1, iX, n_sample=1):
+        p0, h0 = self.encoder(i0, n_sample)
+        p1, h1 = self.encoder(i1, n_sample)
+        pX, _ = self.encoder(iX, n_sample)
+        mean_cts, proba_bin = self.covariate_model(pX)
         proba_adj = self.adjacency_model(
-            latent_position0, latent_position1,
-            latent_heterogeneity0, latent_heterogeneity1
+            p0, p1,
+            h0, h1
         )
         return mean_cts, proba_bin, proba_adj
 

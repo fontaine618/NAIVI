@@ -43,7 +43,6 @@ class JointModel(nn.Module):
         return elbo
 
 
-
 class ADVI:
 
     def __init__(self, K, N, p_cts, p_bin):

@@ -1,5 +1,5 @@
 import torch
-from NNVI.mle.gen_data import generate_dataset
+from NNVI.utils.gen_data import generate_dataset
 
 # -----------------------------------------------------------------------------
 # Create Data

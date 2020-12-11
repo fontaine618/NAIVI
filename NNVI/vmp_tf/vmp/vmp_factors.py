@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from NNVI.vmp.distributions.gaussianarray import GaussianArray
-from NNVI.vmp.distributions.bernoulliarray import BernoulliArray
+from NNVI.vmp_tf.distributions.gaussianarray import GaussianArray
+from NNVI.vmp_tf.distributions.bernoulliarray import BernoulliArray
 import tensorflow_probability as tfp
 
 

@@ -2,12 +2,12 @@ import tensorflow as tf
 import numpy as np
 from sklearn.metrics import roc_auc_score, mean_squared_error
 
-from NNVI.vmp.vmp.vmp_factors2 import VMPFactor
-from NNVI.vmp.distributions.gaussianarray import GaussianArray
-from NNVI.vmp.distributions.bernoulliarray import BernoulliArray
-from NNVI.vmp.vmp.vmp_factors2 import Prior, WeightedSum, Logistic
-from NNVI.vmp.vmp.compound_factors import NoisyProbit, InnerProductModel, GLM
-from NNVI.vmp.utils import invariant_matrix_distance, projection_distance
+from NNVI.vmp_tf.vmp.vmp_factors2 import VMPFactor
+from NNVI.vmp_tf.distributions.gaussianarray import GaussianArray
+from NNVI.vmp_tf.distributions.bernoulliarray import BernoulliArray
+from NNVI.vmp_tf.vmp.vmp_factors2 import Prior, WeightedSum, Logistic
+from NNVI.vmp_tf.vmp.compound_factors import NoisyProbit, InnerProductModel, GLM
+from NNVI.vmp_tf.utils import invariant_matrix_distance, projection_distance
 
 
 class JointModel2(VMPFactor):

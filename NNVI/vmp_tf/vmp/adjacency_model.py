@@ -1,7 +1,7 @@
 import tensorflow as tf
-from NNVI.vmp.distributions.gaussianarray import GaussianArray
-from NNVI.vmp.parameter import ParameterArray
-from NNVI.vmp.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, Concatenate
+from NNVI.vmp_tf.distributions.gaussianarray import GaussianArray
+from NNVI.vmp_tf.parameter import ParameterArray
+from NNVI.vmp_tf.vmp.vmp_factors import Prior, Product, Probit, Sum, AddVariance, Concatenate
 
 
 class InnerProductLatentSpaceModel:

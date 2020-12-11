@@ -1,7 +1,7 @@
 import tensorflow as tf
 import numpy as np
-from NNVI.vmp.vmp import JointModel
-from NNVI.vmp.vmp.vmp_factors import WeightedSum, GaussianComparison
+from NNVI.vmp_tf.vmp import JointModel
+from NNVI.vmp_tf.vmp.vmp_factors import WeightedSum, GaussianComparison
 from models.distributions.gaussianarray import GaussianArray
 
 
