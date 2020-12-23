@@ -9,7 +9,7 @@ from NNVI.vmp.factors import GaussianFactor
 shape = (2, 3)
 parent = Gaussian.from_shape(shape, 0., 1.)
 child = Gaussian.from_shape(shape, 1., 2.)
-self = GaussianFactor(parent, child, 1.)
+self = GaussianFactor(parent, child, torch.arange(3).double())
 self.forward()
 self.backward()
 self
@@ -66,3 +66,151 @@ self.backward()
 self
 
 self.to_elbo()
+
+
+
+# -----------------------------------------------------------------------------
+# Linear
+import torch
+import numpy as np
+from NNVI.vmp.gaussian import Gaussian
+from NNVI.vmp.factors import Linear
+
+N = 5
+K = 3
+p = 4
+
+parent = Gaussian.from_shape((N, K), 0., 1.)
+child = Gaussian.from_shape((N, p), 1., 2.)
+
+self = Linear(parent, child)
+
+self
+self.forward()
+self.backward()
+self
+
+
+
+
+# -----------------------------------------------------------------------------
+# Sum
+import torch
+import numpy as np
+from NNVI.vmp.gaussian import Gaussian
+from NNVI.vmp.factors import Sum
+
+N = 5
+
+p0 = Gaussian.from_shape((N, 1), 0., 1.)
+p1 = Gaussian.from_shape((N, 1), 0., 1.)
+p2 = Gaussian.from_shape((N, 1), 0., 1.)
+parents = (p0, p1, p2)
+child = Gaussian.from_shape((N, 1), 1., 2.)
+
+self = Sum(parents, child)
+
+self
+self.forward()
+self.backward()
+self
+
+
+
+
+
+# -----------------------------------------------------------------------------
+# Sum
+import torch
+import numpy as np
+from NNVI.vmp.gaussian import Gaussian
+from NNVI.vmp.factors import Select
+
+N = 5
+n = N * (N-1) // 2
+K = 3
+
+parent = Gaussian.from_array(torch.randn((N, K)), torch.ones((N, K)))
+index = torch.randint(0, N, (n, ))
+child = Gaussian.uniform((n, K))
+
+self = Select(parent, index, child)
+
+self
+self.forward()
+self.backward()
+self
+
+
+
+# -----------------------------------------------------------------------------
+# Sum
+import torch
+import numpy as np
+from NNVI.vmp.gaussian import Gaussian
+from NNVI.vmp.factors import Product
+
+N = 5
+K = 3
+
+p0 = Gaussian.from_shape((N, K), 0., 1.)
+p1 = Gaussian.from_shape((N, K), 0., 1.)
+parents = (p0, p1)
+child = Gaussian.from_shape((N, K), 0., 2.)
+
+self = Product(parents, child)
+
+self
+self.forward()
+self.backward()
+self
+
+
+
+# -----------------------------------------------------------------------------
+# InnerProduct
+import torch
+import numpy as np
+from NNVI.vmp.gaussian import Gaussian
+from NNVI.vmp.factors import Linear
+from NNVI.vmp.factors import InnerProduct
+
+N = 5
+K = 3
+
+p0 = Gaussian.from_shape((N, K), 0., 1.)
+p1 = Gaussian.from_shape((N, K), 0., 1.)
+parents = (p0, p1)
+child = Gaussian.from_shape((N, 1), 0., 5.)
+
+self = InnerProduct(parents, child)
+
+self
+self.forward()
+self.backward()
+self
+
+
+
+# -----------------------------------------------------------------------------
+# Split
+import torch
+import numpy as np
+from NNVI.vmp.gaussian import Gaussian
+from NNVI.vmp.factors import Split
+
+N = 5
+
+p0 = Gaussian.from_shape((N, 2), 0., 1.)
+p1 = Gaussian.from_shape((N, 4), 0., 1.)
+children = (p0, p1)
+parent = Gaussian.from_shape((N, 6), 0., 5.)
+
+self = Split(parent, children)
+
+self
+self.forward()
+self.backward()
+self
+
+

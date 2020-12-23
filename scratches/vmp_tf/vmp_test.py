@@ -89,9 +89,9 @@ for n in self.parameters():
     print(n)
 
 self.position_prior.mean.value()
-self.position_prior.variance.value()
+self.position_prior.log_var.value()
 self.heterogeneity_prior.mean.value()
-self.heterogeneity_prior.variance.value()
+self.heterogeneity_prior.log_var.value()
 self.mean_model.bias.value()
 self.mean_model.weight.value()
 

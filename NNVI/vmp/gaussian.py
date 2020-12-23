@@ -117,8 +117,8 @@ class Gaussian:
 
     def product(self, dim, keepdim=False):
         return Gaussian(
-            torch.sum(self._precision, dim, keepdim=keepdim),
-            torch.sum(self._mean_times_precision, dim, keepdim=keepdim)
+            torch.nansum(self._precision, dim, keepdim=keepdim),
+            torch.nansum(self._mean_times_precision, dim, keepdim=keepdim)
         )
 
     def set_mean_and_variance(self, m, v):
@@ -166,9 +166,9 @@ class Gaussian:
         p0, mtp0 = self.natural
         p1, mtp1 = other.natural
         p = torch.where(other.is_uniform, p0, p0 - p1)
+        p = p.clamp(Gaussian.uniform_precision, Gaussian.point_mass_precision)
         mtp = torch.where(other.is_uniform, mtp0, mtp0 - mtp1)
-        if torch.any(p.lt(0.)):
-            raise RuntimeError("cannot divide by larger precision")
+        mtp = torch.where(p<=Gaussian._min_precision, torch.zeros_like(mtp), mtp)
         return Gaussian(p, mtp)
 
     def __getitem__(self, item):

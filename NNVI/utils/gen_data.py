@@ -25,7 +25,7 @@ def generate_dataset(
     # inner product model
     A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
     A_proba = torch.sigmoid(A_logit)
-    A = (torch.rand_like(A_proba) < A_proba).float()
+    A = (torch.rand_like(A_proba) < A_proba).double()
 
     # mean model
     X_mean = B0 + torch.matmul(Z, B)

@@ -184,7 +184,7 @@ class JointModel:
         # covariate contribution
         m = tf.tensordot(self.nodes["latent"].mean(), self.parameters["weight"].value(), 1) + \
             self.parameters["bias"].value()
-        v = tf.tensordot(self.nodes["latent"].variance(), self.parameters["weight"].value() ** 2, 1)
+        v = tf.tensordot(self.nodes["latent"].log_var(), self.parameters["weight"].value() ** 2, 1)
         covariate_contribution = self.nodes["covariates_continuous"].mean() ** 2
         covariate_contribution += self.nodes["covariates_continuous"].variance_safe()
         covariate_contribution += m ** 2 + v

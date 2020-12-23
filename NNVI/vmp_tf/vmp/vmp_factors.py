@@ -34,12 +34,12 @@ class Prior(VMPFactor):
 
     def to_elbo(self, x):
         # model contribution
-        elbo = self._prior.variance() + self._prior.mean() ** 2
-        elbo += x.variance() + x.mean() ** 2
+        elbo = self._prior.log_var() + self._prior.mean() ** 2
+        elbo += x.log_var() + x.mean() ** 2
         elbo += -2. * x.mean() * self._prior.mean()
-        elbo /= self._prior.variance()
+        elbo /= self._prior.log_var()
         # elbo += tf.math.log(2 * np.pi)
-        elbo += tf.math.log(self._prior.variance())
+        elbo += tf.math.log(self._prior.log_var())
         elbo = -.5 * tf.reduce_sum(elbo)
         # node contribution
         elbo += x.entropy()
@@ -69,14 +69,14 @@ class GaussianComparison(VMPFactor):
     def to_x(self, mean, variance):
         mean = mean / self.message_to_mean
         m = mean.mean()
-        v = mean.variance() + variance
+        v = mean.log_var() + variance
         self.message_to_x = GaussianArray.from_array(m, v)
         return self.message_to_x
 
     def to_elbo(self, mean, x, variance):
         # model contribution
         v = variance * tf.ones(x.shape())
-        elbo = mean.variance() + mean.mean() ** 2
+        elbo = mean.log_var() + mean.mean() ** 2
         elbo += x.variance_safe() + x.mean() ** 2
         elbo += -2. * x.mean() * mean.mean()
         elbo /= v
@@ -104,7 +104,7 @@ class Sum(VMPFactor):
         x = x / self.message_to_x
         self.message_to_sum = GaussianArray.from_array(
             tf.math.reduce_sum(x.mean(), -1),
-            tf.math.reduce_sum(x.variance(), -1)
+            tf.math.reduce_sum(x.log_var(), -1)
         )
         return self.message_to_sum
 
@@ -115,7 +115,7 @@ class Sum(VMPFactor):
         v = tf.where(
             x.is_uniform(),
             np.inf,
-            tf.expand_dims(sum.variance(), -1) + tf.math.reduce_sum(x.variance(), -1, keepdims=True) - x.variance()
+            tf.expand_dims(sum.log_var(), -1) + tf.math.reduce_sum(x.log_var(), -1, keepdims=True) - x.log_var()
         )
         self.message_to_x = GaussianArray.from_array(m, v)
         return self.message_to_x
@@ -133,8 +133,8 @@ class Product(VMPFactor):
         x = x / self.message_to_x
         m0 = tf.expand_dims(x.mean(), 0)
         m1 = tf.expand_dims(x.mean(), 1)
-        v0 = tf.expand_dims(x.variance(), 0)
-        v1 = tf.expand_dims(x.variance(), 1)
+        v0 = tf.expand_dims(x.log_var(), 0)
+        v1 = tf.expand_dims(x.log_var(), 1)
         m = m0 * m1
         v = m0 ** 2 * v1 + m1 ** 2 * v0 + v0 * v1
         self.message_to_product = GaussianArray.from_array(m, v)
@@ -145,12 +145,12 @@ class Product(VMPFactor):
         x = x / self.message_to_x
         # here x contains the message from the other term in the product
         # message to x0 using x as the message from c1
-        p = product.precision() * tf.expand_dims(x.variance() + x.mean() ** 2, 1)
+        p = product.precision() * tf.expand_dims(x.log_var() + x.mean() ** 2, 1)
         mtp = product.mean_times_precision() * tf.expand_dims(x.mean(), 1)
         p0 = tf.math.reduce_sum(p, 1)
         mtp0 = tf.math.reduce_sum(mtp, 1)
         # message to x1 using x as the message from x0
-        p = product.precision() * tf.expand_dims(x.variance() + x.mean() ** 2, 0)
+        p = product.precision() * tf.expand_dims(x.log_var() + x.mean() ** 2, 0)
         mtp = product.mean_times_precision() * tf.expand_dims(x.mean(), 0)
         p1 = tf.math.reduce_sum(p, 0)
         mtp1 = tf.math.reduce_sum(mtp, 0)
@@ -173,7 +173,7 @@ class WeightedSum(VMPFactor):
     def to_result(self, x, weight, bias):
         x = x / self.message_to_x
         m = tf.tensordot(x.mean(), weight, 1) + bias
-        v = tf.tensordot(x.variance(), weight ** 2, 1)
+        v = tf.tensordot(x.log_var(), weight ** 2, 1)
         self.message_to_result = GaussianArray.from_array(m, v)
         return self.message_to_result
 
@@ -182,8 +182,8 @@ class WeightedSum(VMPFactor):
         x = x / self.message_to_x
         m = (tf.expand_dims(result.mean() - bias - tf.tensordot(x.mean(), weight, 1), 1) +
              tf.expand_dims(x.mean(), -1) * tf.expand_dims(weight, 0)) / tf.expand_dims(weight, 0)
-        v = (tf.expand_dims(result.variance() + tf.tensordot(x.variance(), weight ** 2, 1), 1) -
-             tf.expand_dims(x.variance(), -1) * tf.expand_dims(weight ** 2, 0)) / tf.expand_dims(weight ** 2, 0)
+        v = (tf.expand_dims(result.log_var() + tf.tensordot(x.log_var(), weight ** 2, 1), 1) -
+             tf.expand_dims(x.log_var(), -1) * tf.expand_dims(weight ** 2, 0)) / tf.expand_dims(weight ** 2, 0)
         p = 1.0 / v
         mtp = m * p
         self.message_to_x = GaussianArray.from_array_natural(
@@ -207,22 +207,22 @@ class AddVariance(VMPFactor):
     def to_x(self, mean, variance):
         mean = mean / self.message_to_mean
         m = mean.mean()
-        v = mean.variance() + variance
+        v = mean.log_var() + variance
         self.message_to_x = GaussianArray.from_array(m, v)
         return self.message_to_x
 
     def to_mean(self, x, variance):
         x = x / self.message_to_x
         m = x.mean()
-        v = x.variance() + variance
+        v = x.log_var() + variance
         self.message_to_mean = GaussianArray.from_array(m, v)
         return self.message_to_mean
 
     def to_elbo(self, mean, x, variance):
         # model contribution
         variance = variance * tf.ones_like(x.precision())
-        elbo = mean.variance() + mean.mean() ** 2
-        elbo += x.variance() + x.mean() ** 2  # first term should always be 0.?
+        elbo = mean.log_var() + mean.mean() ** 2
+        elbo += x.log_var() + x.mean() ** 2  # first term should always be 0.?
         elbo += -2. * x.mean() * mean.mean()
         elbo /= variance
         # elbo += tf.math.log(2 * np.pi)
@@ -248,8 +248,8 @@ class Probit(VMPFactor):
         stnr = x.mean() * tf.math.sqrt(x.precision()) * tf.cast(2*A - 1, tf.float32)
         vf = tfp.distributions.Normal(0., 1.).prob(stnr) / tfp.distributions.Normal(0., 1.).cdf(stnr)
         wf = vf * (stnr + vf)
-        m = x.mean() + tf.math.sqrt(x.variance()) * vf * tf.cast(2*A - 1, tf.float32)
-        v = x.variance() * (1. - wf)
+        m = x.mean() + tf.math.sqrt(x.log_var()) * vf * tf.cast(2 * A - 1, tf.float32)
+        v = x.log_var() * (1. - wf)
         self.message_to_x = GaussianArray.from_array(m, v)
         return self.message_to_x
 
@@ -275,15 +275,15 @@ class ProbitNoisy(VMPFactor):
         # add noise
         from_x = GaussianArray.from_array(
             mean=from_x.mean(),
-            variance=from_x.variance() + self.variance.value()
+            variance=from_x.log_var() + self.variance.value()
         )
         # compute outgoing message
         A = A.proba()  # TODO this assumes 0/1, need to fix later
         stnr = from_x.mean() * tf.math.sqrt(from_x.precision()) * tf.cast(2*A - 1, tf.float32)
         vf = tfp.distributions.Normal(0., 1.).prob(stnr) / tfp.distributions.Normal(0., 1.).cdf(stnr)
         wf = vf * (stnr + vf)
-        m = from_x.mean() + tf.math.sqrt(from_x.variance()) * vf * tf.cast(2*A - 1, tf.float32)
-        v = from_x.variance() * (1. - wf)
+        m = from_x.mean() + tf.math.sqrt(from_x.log_var()) * vf * tf.cast(2 * A - 1, tf.float32)
+        v = from_x.log_var() * (1. - wf)
         # add noise
         v += self.variance.value()
         self.message_to_x = GaussianArray.from_array(m, v)
@@ -295,7 +295,7 @@ class ProbitNoisy(VMPFactor):
         # add noise
         from_x = GaussianArray.from_array(
             mean=from_x.mean(),
-            variance=from_x.variance() + self.variance.value()
+            variance=from_x.log_var() + self.variance.value()
         )
         # compute probability
         proba = 1. - tfp.distributions.Normal(*from_x.mean_and_variance()).cdf(0.0)
@@ -305,10 +305,10 @@ class ProbitNoisy(VMPFactor):
         mean = x
         x = GaussianArray.from_array(
             mean=x.mean(),
-            variance=x.variance() + self.variance.value()
+            variance=x.log_var() + self.variance.value()
         )
-        elbo = mean.variance() + mean.mean() ** 2
-        elbo += x.variance() + x.mean() ** 2
+        elbo = mean.log_var() + mean.mean() ** 2
+        elbo += x.log_var() + x.mean() ** 2
         elbo += -2. * x.mean() * mean.mean()
         elbo /= self.variance.value()
         # elbo += tf.math.log(2 * np.pi)

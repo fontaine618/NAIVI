@@ -23,7 +23,7 @@ result = factor.to_result(x, B, B0)
 new_x = factor.to_x(x, result, B, B0)
 
 m = tf.tensordot(x.mean(), B, 1) + B0
-v = tf.tensordot(x.variance(), B**2, 1)
+v = tf.tensordot(x.log_var(), B ** 2, 1)
 result = GaussianArray.from_array(m, v)
 
 

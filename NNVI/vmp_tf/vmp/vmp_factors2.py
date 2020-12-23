@@ -116,7 +116,7 @@ class AddVariance(VMPFactor):
     def to_child(self):
         mean = self.parent / self.message_to_parent
         m = mean.mean()
-        v = mean.variance() + self.variance.value()
+        v = mean.log_var() + self.variance.value()
         message_to_child = GaussianArray.from_array(m, v)
         self.child.update(self.message_to_child, message_to_child)
         self.message_to_child = message_to_child
@@ -174,9 +174,9 @@ class Probit(VMPFactor):
         stnr = x.mean() * tf.math.sqrt(x.precision()) * tf.cast(2 * A_safe - 1, tf.float32)
         vf = tfp.distributions.Normal(0., 1.).prob(stnr) / tfp.distributions.Normal(0., 1.).cdf(stnr)
         wf = vf * (stnr + vf)
-        m = x.mean() + tf.math.sqrt(x.variance()) * vf * tf.cast(2 * A_safe - 1, tf.float32)
+        m = x.mean() + tf.math.sqrt(x.log_var()) * vf * tf.cast(2 * A_safe - 1, tf.float32)
         m = tf.where(A_safe == 0.5, 0., m)
-        v = x.variance() * (1. - wf)
+        v = x.log_var() * (1. - wf)
         v = tf.where(A_safe == 0.5, 1.0e10, v)
         message_to_parent = GaussianArray.from_array(m, v)
         self.parent.update(self.message_to_parent, message_to_parent)
@@ -266,7 +266,7 @@ class Sum(VMPFactor):
         x = self.parent / self.message_to_parent
         message_to_child = GaussianArray.from_array(
             tf.math.reduce_sum(x.mean(), -1),
-            tf.math.reduce_sum(x.variance(), -1)
+            tf.math.reduce_sum(x.log_var(), -1)
         )
         self.child.update(self.message_to_child, message_to_child)
         self.message_to_child = message_to_child
@@ -278,7 +278,7 @@ class Sum(VMPFactor):
         v = tf.where(
             x.is_uniform(),
             np.inf,
-            tf.expand_dims(s.variance(), -1) + tf.math.reduce_sum(x.variance(), -1, keepdims=True) - x.variance()
+            tf.expand_dims(s.log_var(), -1) + tf.math.reduce_sum(x.log_var(), -1, keepdims=True) - x.log_var()
         )
         message_to_parent = GaussianArray.from_array(m, v)
         self.parent.update(self.message_to_parent, message_to_parent)
@@ -404,7 +404,7 @@ class WeightedSum(VMPFactor):
         weight = self.weight.value()
         bias = self.bias.value()
         m = tf.tensordot(x.mean(), weight, 1) + bias
-        v = tf.tensordot(x.variance(), weight ** 2, 1)
+        v = tf.tensordot(x.log_var(), weight ** 2, 1)
         message_to_child = GaussianArray.from_array(m, v)
         self.child.update(self.message_to_child, message_to_child)
         self.message_to_child = message_to_child
@@ -416,8 +416,8 @@ class WeightedSum(VMPFactor):
         bias = self.bias.value()
         m = (tf.expand_dims(result.mean() - bias - tf.tensordot(x.mean(), weight, 1), 1) +
              tf.expand_dims(x.mean(), -1) * tf.expand_dims(weight, 0)) / tf.expand_dims(weight, 0)
-        v = (tf.expand_dims(result.variance() + tf.tensordot(x.variance(), weight ** 2, 1), 1) -
-             tf.expand_dims(x.variance(), -1) * tf.expand_dims(weight ** 2, 0)) / tf.expand_dims(weight ** 2, 0)
+        v = (tf.expand_dims(result.log_var() + tf.tensordot(x.log_var(), weight ** 2, 1), 1) -
+             tf.expand_dims(x.log_var(), -1) * tf.expand_dims(weight ** 2, 0)) / tf.expand_dims(weight ** 2, 0)
         p = 1.0 / v
         mtp = m * p
         message_to_parent = GaussianArray.from_array_natural(
