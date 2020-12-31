@@ -1,8 +1,6 @@
 import torch
 import torch.nn as nn
-import numpy as np
 from typing import Tuple
-from NNVI.vmp.bernoulli import Bernoulli
 from NNVI.vmp.gaussian import Gaussian
 import NNVI.vmp.factors as f
 
@@ -109,16 +107,40 @@ class AdjacencyModel(f.VMPFactor, nn.Module):
     def forward(self):
         for sel in self._select_positions:
             sel.forward()
+        if self._positions[0].mean.abs().gt(10.).any():
+            raise RuntimeError("_positions 0")
+        if self._positions[1].mean.abs().gt(10.).any():
+            raise RuntimeError("_positions 1")
         for sel in self._select_heterogeneity:
             sel.forward()
+        if self._heterogeneity[0].mean.abs().gt(10.).any():
+            raise RuntimeError("_heterogeneity 0")
+        if self._heterogeneity[1].mean.abs().gt(10.).any():
+            raise RuntimeError("_heterogeneity 1")
         self._inner_product.forward()
+        if self._inner_products.mean.abs().gt(100.).any():
+            raise RuntimeError("_inner_products")
         self._sum.forward()
+        if self._logits.mean.abs().gt(100.).any():
+            raise RuntimeError("_logits")
         self._logistic.forward()
 
     def backward(self):
         self._logistic.backward()
+        if self._logits.mean.abs().gt(100.).any():
+            raise RuntimeError("_logits")
         self._sum.backward()
+        if self._inner_products.mean.abs().gt(100.).any():
+            raise RuntimeError("_inner_products")
+        if self._heterogeneity[0].mean.abs().gt(10.).any():
+            raise RuntimeError("_heterogeneity 0")
+        if self._heterogeneity[1].mean.abs().gt(10.).any():
+            raise RuntimeError("_heterogeneity 1")
         self._inner_product.backward()
+        if self._positions[0].mean.abs().gt(10.).any():
+            raise RuntimeError("_positions 0")
+        if self._positions[1].mean.abs().gt(10.).any():
+            raise RuntimeError("_positions 1")
         for sel in self._select_heterogeneity:
             sel.backward()
         for sel in self._select_positions:

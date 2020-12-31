@@ -1,6 +1,17 @@
 import torch
+import math
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+class Select(nn.Module):
+
+    def __init__(self, N, K):
+        super(Select, self).__init__()
+        self.values = nn.Parameter(torch.randn(N, K) / math.sqrt(N * K), requires_grad=True)
+
+    def forward(self, indices):
+        return self.values[indices, :]
 
 
 class PriorEncoder(nn.Module):
@@ -10,18 +21,17 @@ class PriorEncoder(nn.Module):
         self.dim = dim
         self.prior_mean = torch.tensor(prior[0])
         self.prior_log_var = torch.tensor(prior[1]).log()
-        self.mean_encoder = nn.Linear(dim[0], dim[1], bias=False).float()
-        self.log_var_encoder = nn.Linear(dim[0], dim[1], bias=False).float()
+        self.mean_encoder = Select(dim[0], dim[1])
+        self.log_var_encoder = Select(dim[0], dim[1])
 
     def forward(self, indices):
-        one_hot = F.one_hot(indices.to(torch.int64), self.dim[0]).float()
-        mean = self.mean_encoder(one_hot)
-        var = (self.log_var_encoder(one_hot) * 2.).exp()
+        mean = self.mean_encoder(indices)
+        var = (self.log_var_encoder(indices) * 2.).exp()
         return mean, var
 
     def kl_divergence(self):
-        mean = self.mean_encoder.weight
-        log_var = self.log_var_encoder.weight
+        mean = self.mean_encoder.values
+        log_var = self.log_var_encoder.values
         var = log_var.exp()
         prior_var = self.prior_log_var.exp()
         kl = - (log_var - self.prior_log_var) - 1.

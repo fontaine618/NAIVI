@@ -1,6 +1,18 @@
 import torch
+import math
 import torch.nn as nn
 import torch.nn.functional as F
+
+
+class Select(nn.Module):
+
+    def __init__(self, dim):
+        super(Select, self).__init__()
+        bound = 1. / math.sqrt(dim[0]*dim[1])
+        self.values = nn.Parameter(torch.randn(dim) * bound, requires_grad=True)
+
+    def forward(self, indices):
+        return self.values[indices, :]
 
 
 class PriorEncoder(nn.Module):
@@ -10,13 +22,15 @@ class PriorEncoder(nn.Module):
         self.dim = dim
         self.prior_mean = torch.tensor(prior[0]).cuda()
         self.prior_log_sd = torch.tensor(prior[1]).log().cuda()
-        self.mean_encoder = nn.Linear(dim[0], dim[1], bias=False).float()
-        self.log_sd_encoder = nn.Linear(dim[0], dim[1], bias=False).float()
+        self.mean_encoder = Select(dim)
+        self.log_sd_encoder = Select(dim)
+        with torch.no_grad():
+            self.log_sd_encoder.values.data.fill_(-2.)
 
-    def forward(self, one_hot, n_sample=1):
+    def forward(self, indices, n_sample=1):
         # get mean and sd
-        mean = self.mean_encoder(one_hot).unsqueeze(1)
-        sd = self.log_sd_encoder(one_hot).exp().unsqueeze(1)
+        mean = self.mean_encoder(indices).unsqueeze(1)
+        sd = self.log_sd_encoder(indices).exp().unsqueeze(1)
         # sample
         d = list(mean.size())
         d[1] = n_sample
@@ -25,8 +39,8 @@ class PriorEncoder(nn.Module):
         return x
 
     def kl_divergence(self):
-        mean = self.mean_encoder.weight
-        log_sd = self.log_sd_encoder.weight
+        mean = self.mean_encoder.values
+        log_sd = self.log_sd_encoder.values
         var = (2. * log_sd).exp()
         prior_var = (2. * self.prior_log_sd).exp()
         kl = - 2. * (log_sd - self.prior_log_sd) - 1.
@@ -44,9 +58,8 @@ class Encoder(nn.Module):
         self.latent_heterogeneity_encoder = PriorEncoder((N, 1), heterogeneity_prior)
 
     def forward(self, indices, n_sample=1):
-        one_hot = F.one_hot(indices.to(torch.int64), self.N).float()
-        latent_position = self.latent_position_encoder(one_hot, n_sample)
-        latent_heterogeneity = self.latent_heterogeneity_encoder(one_hot, n_sample)
+        latent_position = self.latent_position_encoder(indices, n_sample)
+        latent_heterogeneity = self.latent_heterogeneity_encoder(indices, n_sample)
         return latent_position, latent_heterogeneity
 
     def kl_divergence(self):

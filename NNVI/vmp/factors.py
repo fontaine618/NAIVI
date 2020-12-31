@@ -202,6 +202,8 @@ class Logistic(VMPFactor, nn.Module):
 
     def to_elbo(self):
         m, v = self.parent.mean_and_variance
+        if m.abs().gt(100.).any():
+            raise RuntimeError
         t = torch.sqrt(m ** 2 + v)
         elbo = torch.sigmoid(t).log() + (self.child.proba - 0.5) * m - 0.5 * t
         elbo = torch.where(self.child.is_uniform, torch.zeros_like(elbo), elbo)
@@ -398,9 +400,15 @@ class Select(VMPFactor, nn.Module):
         p_sum = torch.zeros(self.parent.shape, device=p.device, dtype=p.dtype)
         mtp_sum = torch.zeros(self.parent.shape, device=p.device, dtype=p.dtype)
 
-        for i in range(self.parent.shape[0]):
-            p_sum[i,] = p[self.which[i,],].nansum(0)
-            mtp_sum[i,] = mtp[self.which[i,],].nansum(0)
+        # for i in range(self.parent.shape[0]):
+        #     p_sum[i, ] = p[self.which[i, ], ].nansum(0)
+        #     mtp_sum[i, ] = mtp[self.which[i, ], ].nansum(0)
+
+        # random updates seems to help a bit?
+        n = self.parent.shape[0]
+        for i in set(torch.randint(0, n, (n//2, ))):
+            p_sum[i, ] = p[self.which[i, ], ].nansum(0)
+            mtp_sum[i, ] = mtp[self.which[i, ], ].nansum(0)
 
         message_to_parent = Gaussian(p, mtp)
         message_to_parent_sum = Gaussian(p_sum, mtp_sum)
@@ -450,46 +458,29 @@ class Product(VMPFactor, nn.Module):
         self.to_child()
 
     def backward(self):
-        self.to_parent()
+        self.to_parent(0)
+        self.to_parent(1)
 
-    def to_parent(self):
+    def to_parent(self, i):
         message_from_child = self.child / self.message_to_child
-        p, mtp = message_from_child.natural
-        message_from_parents = tuple(
-            p / mtp for p, mtp in zip(self.parents, self.message_to_parents)
-        )
-        m1, v1 = message_from_parents[1].mean_and_variance
-        m0, v0 = message_from_parents[0].mean_and_variance
-
-        # parent 0
-        p0 = p * (v1 + m1 ** 2)
-        mtp0 = mtp * m1
-        message_to_parents0 = Gaussian(p0, mtp0)
-        self.parents[0].update(self.message_to_parents[0], message_to_parents0)
-
-        # parent 0
-        p1 = p * (v0 + m0 ** 2)
-        mtp1 = mtp * m0
-        message_to_parents1 = Gaussian(p1, mtp1)
-        self.parents[1].update(self.message_to_parents[1], message_to_parents1)
-
-        self.message_to_parents = (message_to_parents0, message_to_parents1)
+        om, ov = self.parents[1 - i].mean_and_variance
+        cp, cmtp = message_from_child.natural
+        p = cp * (ov + om ** 2)
+        mtp = cmtp * om
+        message_to_parent = Gaussian(p, mtp)
+        self.parents[i].update(self.message_to_parents[i], message_to_parent)
+        self.message_to_parents[i].set_to(message_to_parent)
 
     def to_child(self):
-        message_from_parents = tuple(
-            p / mtp
-            for p, mtp in zip(self.parents, self.message_to_parents)
-        )
+        message_from_parents = self.parents
         m0, v0 = message_from_parents[0].mean_and_variance
         m1, v1 = message_from_parents[1].mean_and_variance
-
         mean = m0 * m1
         var = m0 ** 2 * v1 + m1 ** 2 * v0 + v0 * v1
-
         child = Gaussian.from_array(mean, var)
-        message_to_child = (child * self.message_to_child) / self.child
-
-        self.child.update(self.message_to_child, message_to_child)
+        message_from_child = self.child / self.message_to_child
+        message_to_child = child / message_from_child
+        self.child.set_to(child)
         self.message_to_child = message_to_child
 
 
@@ -504,8 +495,6 @@ class InnerProduct(VMPFactor, nn.Module):
         self._deterministic = True
         self.parents = parents
         self.child = child
-        self.message_to_child = Gaussian.uniform(self.child.shape)
-        self.message_to_parents = tuple(Gaussian.uniform(p.shape) for p in self.parents)
         self._products = Gaussian.uniform(self.parents[0].shape)
         self._product = Product(parents, self._products)
         self._linear = Linear(self._products, child)

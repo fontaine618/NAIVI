@@ -64,10 +64,13 @@ class VIMC:
                 self.batch_update(batch, optimizer, train, n_sample)
             llk_train, out = self.epoch_metrics(Z_true, epoch, n_sample, test, train)
             if np.abs(prev_llk - llk_train) / np.abs(llk_train) < eps:
-                print("-" * l)
-                return out
+                break
             else:
                 prev_llk = llk_train
+        # clean up
+        llk_train, out = self.epoch_metrics(Z_true, epoch, 10, test, train)
+        print("-" * l)
+        return out
 
     def verbose_init(self):
         # verbose
@@ -82,6 +85,13 @@ class VIMC:
         print(l2)
         print("-" * l)
         return l
+
+    def init(self, positions=None, heterogeneity=None):
+        with torch.no_grad():
+            if positions is not None:
+                self.model.encoder.latent_position_encoder.mean_encoder.values.data = positions
+            if heterogeneity is not None:
+                self.model.encoder.latent_heterogeneity_encoder.mean_encoder.values.data = heterogeneity
 
     def epoch_metrics(self, Z_true, epoch, n_sample, test, train):
         with torch.no_grad():
@@ -159,9 +169,9 @@ class VIMC:
                 mean_cts, X_cts,
                 proba_bin, X_bin,
                 proba_adj, A
-            ).item() / self.denum
+            ) / self.denum
             auc, mse = self.prediction_metrics(X_bin, X_cts, mean_cts, n_sample, proba_bin)
-        return llk, mse, auc
+        return llk.item(), mse, auc
 
     def prediction_metrics(self, X_bin, X_cts, mean_cts, n_sample, proba_bin):
         mse = 0.
@@ -185,12 +195,12 @@ class VIMC:
     def latent_positions(self, n_sample=1):
         i = torch.arange(self.model.adjacency_model.N).cuda()
         Z, _ = self.model.encoder(i, n_sample)
-        return Z.cpu()
+        return Z
 
     def latent_heterogeneity(self, n_sample=1):
         i = torch.arange(self.model.adjacency_model.N).cuda()
         _, a = self.model.encoder(i, n_sample)
-        return a.cpu()
+        return a
 
     def latent_distance(self, Z, n_sample):
         ZZ = self.latent_positions(n_sample)

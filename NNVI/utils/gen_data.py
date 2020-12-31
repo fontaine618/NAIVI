@@ -13,10 +13,9 @@ def generate_dataset(
     B0 = torch.zeros((1, p))
 
     # produce all link indices
-    i = [[(i, j) for j in range(i + 1, N)] for i in range(0, N - 1)]
-    i = torch.tensor(sum(i, []))
-    i0 = i[:, 0]
-    i1 = i[:, 1]
+    i = torch.tril_indices(N, N, -1)
+    i0 = i[0, :]
+    i1 = i[1, :]
 
     # generate latent
     Z = torch.randn((N, K))

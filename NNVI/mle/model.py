@@ -67,9 +67,10 @@ class MLE:
             llk_train, out = self.epoch_metrics(Z_true, epoch, test, train)
             if np.abs(prev_llk - llk_train) / np.abs(llk_train) < eps:
                 print("-" * l)
-                return out
+                break
             else:
                 prev_llk = llk_train
+        return out
 
     def verbose_init(self):
         # verbose
@@ -103,6 +104,12 @@ class MLE:
         form = "{:<4} |" + " {:<10.4f}" * 3 + "|" + " {:<10.4f}" * 2 + "|" + " {:<10.4f}" * 3
         print(form.format(*out))
         return llk_train, out
+
+    def init(self, positions=None, heterogeneity=None):
+        if positions is not None:
+            self.model.encoder.latent_position_encoder.values.data = positions
+        if heterogeneity is not None:
+            self.model.encoder.latent_heterogeneity_encoder.values.data = heterogeneity
 
     def batch_update(self, batch, optimizer, train):
         # get batch
@@ -179,10 +186,10 @@ class MLE:
         return auc, mse
 
     def latent_positions(self):
-        return self.model.encoder.latent_position_encoder.weight.transpose(0, 1).cpu()
+        return self.model.encoder.latent_position_encoder.values.data.cpu()
 
     def latent_heterogeneity(self):
-        return self.model.encoder.latent_heterogeneity_encoder.weight.transpose(0, 1).cpu()
+        return self.model.encoder.latent_heterogeneity_encoder.values.data.cpu()
 
     def latent_distance(self, Z):
         ZZ = self.latent_positions()

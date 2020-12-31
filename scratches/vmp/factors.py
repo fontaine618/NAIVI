@@ -120,7 +120,7 @@ self
 
 
 # -----------------------------------------------------------------------------
-# Sum
+# Select
 import torch
 import numpy as np
 from NNVI.vmp.gaussian import Gaussian
@@ -144,19 +144,20 @@ self
 
 
 # -----------------------------------------------------------------------------
-# Sum
+# Product
 import torch
 import numpy as np
 from NNVI.vmp.gaussian import Gaussian
 from NNVI.vmp.factors import Product
 
-N = 5
-K = 3
+N = 3
+K = 2
 
-p0 = Gaussian.from_shape((N, K), 0., 1.)
-p1 = Gaussian.from_shape((N, K), 0., 1.)
+p0 = Gaussian.from_array(torch.randn(N, K), torch.ones(N, K))
+p1 = Gaussian.from_array(torch.randn(N, K), torch.ones(N, K))
 parents = (p0, p1)
-child = Gaussian.from_shape((N, K), 0., 2.)
+child = Gaussian.from_array(torch.randn(N, K), torch.full((N, K), 2.))
+child = Gaussian.uniform((N, K))
 
 self = Product(parents, child)
 
@@ -175,13 +176,14 @@ from NNVI.vmp.gaussian import Gaussian
 from NNVI.vmp.factors import Linear
 from NNVI.vmp.factors import InnerProduct
 
-N = 5
-K = 3
+N = 3
+K = 5
 
-p0 = Gaussian.from_shape((N, K), 0., 1.)
-p1 = Gaussian.from_shape((N, K), 0., 1.)
+p0 = Gaussian.from_array(torch.randn(N, K), torch.ones(N, K))
+p1 = Gaussian.from_array(torch.randn(N, K), torch.ones(N, K))
 parents = (p0, p1)
-child = Gaussian.from_shape((N, 1), 0., 5.)
+child = Gaussian.from_array(torch.randn(N, 1), torch.full((N, 1), 2.))
+# child = Gaussian.uniform((N, 1))
 
 self = InnerProduct(parents, child)
 

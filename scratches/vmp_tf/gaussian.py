@@ -1,6 +1,6 @@
 import tensorflow as tf
 import sys
-sys.path.append("/home/simon/Documents/NNVI/NNVI")
+sys.path.append("/NNVI")
 from models.distributions.gaussianarray import GaussianArray
 from NNVI.vmp_tf.vmp.vmp_factors import Sum, WeightedSum, Probit
 

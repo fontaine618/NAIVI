@@ -40,7 +40,7 @@ class JointModel(nn.Module):
         elbo += self.covariate_model.elbo(pmx, pvx, X_cts, X_bin)
         elbo += self.adjacency_model.elbo(pm0, pv0, pm1, pv1, hm0, hv0, hm1, hv1, A)
         elbo -= self.encoder.kl_divergence()
-        return elbo
+        return - elbo
 
 
 class ADVI:
@@ -72,9 +72,10 @@ class ADVI:
             llk_train, out = self.epoch_metrics(Z_true, epoch, test, train)
             if np.abs(prev_llk - llk_train) / np.abs(llk_train) < eps:
                 print("-" * l)
-                return out
+                break
             else:
                 prev_llk = llk_train
+        return out
 
     def verbose_init(self):
         # verbose
@@ -89,6 +90,12 @@ class ADVI:
         print(l2)
         print("-" * l)
         return l
+
+    def init(self, positions=None, heterogeneity=None):
+        if positions is not None:
+            self.model.encoder.latent_position_encoder.mean_encoder.values.data = positions
+        if heterogeneity is not None:
+            self.model.encoder.latent_heterogeneity_encoder.mean_encoder.values.data = heterogeneity
 
     def epoch_metrics(self, Z_true, epoch, test, train):
         with torch.no_grad():
@@ -124,7 +131,7 @@ class ADVI:
         # objective
         loss = self.model.elbo(i0, i1, j, X_cts, X_bin, A) / self.denum
         # compute gradients
-        (-loss).backward()
+        loss.backward()
         # take gradient step
         optimizer.step()
 
@@ -171,10 +178,10 @@ class ADVI:
         return auc, mse
 
     def latent_positions(self):
-        return self.model.encoder.latent_position_encoder.mean_encoder.weight.transpose(0, 1).cpu()
+        return self.model.encoder.latent_position_encoder.mean_encoder.values.cpu()
 
     def latent_heterogeneity(self):
-        return self.model.encoder.latent_heterogeneity_encoder.mean_encoder.weight.transpose(0, 1).cpu()
+        return self.model.encoder.latent_heterogeneity_encoder.mean_encoder.values.cpu()
 
     def latent_distance(self, Z):
         ZZ = self.latent_positions()

@@ -4,8 +4,8 @@ from NNVI.utils.gen_data import generate_dataset
 # -----------------------------------------------------------------------------
 # Create Data
 # -----------------------------------------------------------------------------
-N = 500
-K = 5
+N = 5
+K = 2
 p_cts = 100
 p_bin = 0
 var_cts = 1.
@@ -16,6 +16,20 @@ Z, a, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0 = generate_da
     N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cts, missing_rate=missing_rate,
     alpha_mean=alpha_mean, seed=1
 )
+
+
+# -----------------------------------------------------------------------------
+# Encoder test
+# -----------------------------------------------------------------------------
+from NNVI.mle.encoder import Encoder, Select
+
+self = Encoder(K, N)
+indices = i0
+
+self(i0)
+
+self = Select(N, K)
+self(i0)
 
 # -----------------------------------------------------------------------------
 # Fit Model
