@@ -91,11 +91,15 @@ class ADVI:
         print("-" * l)
         return l
 
-    def init(self, positions=None, heterogeneity=None):
+    def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
         if positions is not None:
             self.model.encoder.latent_position_encoder.mean_encoder.values.data = positions
         if heterogeneity is not None:
             self.model.encoder.latent_heterogeneity_encoder.mean_encoder.values.data = heterogeneity
+        if bias is not None:
+            self.model.covariate_model.linear.linear.bias.data = bias.view(-1)
+        if weight is not None:
+            self.model.covariate_model.linear.linear.weight.data = weight.t()
 
     def epoch_metrics(self, Z_true, epoch, test, train):
         with torch.no_grad():
@@ -162,9 +166,9 @@ class ADVI:
             # get fitted values
             mean_cts, proba_bin, proba_adj = self.model.predict(i0, i1, j)
             # get metrics
-            llk = self.model.elbo(i0, i1, j, X_cts, X_bin, A).item() / self.denum
+            llk = self.model.elbo(i0, i1, j, X_cts, X_bin, A) / self.denum
             auc, mse = self.prediction_metrics(X_bin, X_cts, mean_cts, proba_bin)
-        return llk, mse, auc
+        return llk.item(), mse, auc
 
     def prediction_metrics(self, X_bin, X_cts, mean_cts, proba_bin):
         mse = 0.
@@ -178,10 +182,10 @@ class ADVI:
         return auc, mse
 
     def latent_positions(self):
-        return self.model.encoder.latent_position_encoder.mean_encoder.values.cpu()
+        return self.model.encoder.latent_position_encoder.mean_encoder.values
 
     def latent_heterogeneity(self):
-        return self.model.encoder.latent_heterogeneity_encoder.mean_encoder.values.cpu()
+        return self.model.encoder.latent_heterogeneity_encoder.mean_encoder.values
 
     def latent_distance(self, Z):
         ZZ = self.latent_positions()

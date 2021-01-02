@@ -105,11 +105,15 @@ class MLE:
         print(form.format(*out))
         return llk_train, out
 
-    def init(self, positions=None, heterogeneity=None):
+    def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
         if positions is not None:
             self.model.encoder.latent_position_encoder.values.data = positions
         if heterogeneity is not None:
             self.model.encoder.latent_heterogeneity_encoder.values.data = heterogeneity
+        if bias is not None:
+            self.model.covariate_model.mean_model.bias.data = bias.view(-1)
+        if weight is not None:
+            self.model.covariate_model.mean_model.weight.data = weight.t()
 
     def batch_update(self, batch, optimizer, train):
         # get batch
@@ -170,9 +174,9 @@ class MLE:
                 mean_cts, X_cts,
                 proba_bin, X_bin,
                 proba_adj, A
-            ).item() / self.denum
+            ) / self.denum
             auc, mse = self.prediction_metrics(X_bin, X_cts, mean_cts, proba_bin)
-        return llk, mse, auc
+        return llk.item(), mse, auc
 
     def prediction_metrics(self, X_bin, X_cts, mean_cts, proba_bin):
         mse = 0.
@@ -186,10 +190,10 @@ class MLE:
         return auc, mse
 
     def latent_positions(self):
-        return self.model.encoder.latent_position_encoder.values.data.cpu()
+        return self.model.encoder.latent_position_encoder.values.data
 
     def latent_heterogeneity(self):
-        return self.model.encoder.latent_heterogeneity_encoder.values.data.cpu()
+        return self.model.encoder.latent_heterogeneity_encoder.values.data
 
     def latent_distance(self, Z):
         ZZ = self.latent_positions()

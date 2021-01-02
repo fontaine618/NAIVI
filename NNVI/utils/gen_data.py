@@ -1,9 +1,11 @@
 import torch
 import numpy as np
 
+torch.set_default_dtype(torch.float64)
+
 def generate_dataset(
         N, K, p_cts, p_bin, var_adj=1., var_cov=1., missing_rate=0.2, alpha_mean=-1.,
-        seed=1, link_model="Logistic", bin_model="Logistic"
+        seed=1, link_model="Logistic", bin_model="Logistic", cuda=True
 ):
     torch.manual_seed(seed)
     # parameters

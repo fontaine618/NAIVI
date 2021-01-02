@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def invariant_distance(y_true, y_pred):
@@ -12,9 +13,12 @@ def invariant_distance(y_true, y_pred):
 
 
 def projection_distance(y_true, y_pred):
-    with torch.no_grad():
-        u, _, _ = torch.svd(y_true)
-        proj_true = torch.matmul(u, u.transpose(0, 1))
-        u, _, _ = torch.svd(y_pred)
-        proj_pred = torch.matmul(u, u.transpose(0, 1))
-    return ((proj_pred - proj_true) ** 2).sum().item()
+    try:
+        with torch.no_grad():
+            u, _, _ = torch.svd(y_true)
+            proj_true = torch.matmul(u, u.transpose(0, 1))
+            u, _, _ = torch.svd(y_pred)
+            proj_pred = torch.matmul(u, u.transpose(0, 1))
+        return ((proj_pred - proj_true) ** 2).sum().item()
+    except:
+        return np.nan

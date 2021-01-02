@@ -86,12 +86,16 @@ class VIMC:
         print("-" * l)
         return l
 
-    def init(self, positions=None, heterogeneity=None):
+    def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
         with torch.no_grad():
             if positions is not None:
                 self.model.encoder.latent_position_encoder.mean_encoder.values.data = positions
             if heterogeneity is not None:
                 self.model.encoder.latent_heterogeneity_encoder.mean_encoder.values.data = heterogeneity
+            if bias is not None:
+                self.model.covariate_model.mean_model.bias.data = bias.view(-1)
+            if weight is not None:
+                self.model.covariate_model.mean_model.weight.data = weight.t()
 
     def epoch_metrics(self, Z_true, epoch, n_sample, test, train):
         with torch.no_grad():

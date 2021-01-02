@@ -6,16 +6,18 @@ class JointDataset(Dataset):
 
     def __init__(self, i0, i1, A, X_cts=None, X_bin=None):
         super().__init__()
-        self.i0 = i0
-        self.i1 = i1
-        self.A = A
+        self.i0 = i0.cuda()
+        self.i1 = i1.cuda()
+        self.A = A.cuda()
         self.X_cts = X_cts
         self.X_bin = X_bin
         self.N = len(i0)
         if X_cts is not None:
             self.p_cts = X_cts.size(1)
+            self.X_cts.cuda()
         if X_bin is not None:
             self.p_bin = X_bin.size(1)
+            self.X_bin.cuda()
 
     def __len__(self):
         return self.N
