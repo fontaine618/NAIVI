@@ -9,8 +9,9 @@
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=20000m
+#SBATCH --mem-per-cpu=12g
 #SBATCH --gpus-per-node=1
+#SBATCH --mem-per-gpu=12g
 #SBATCH --output=/home/%u/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
 source /home/simfont/nnvi/bin/activate
