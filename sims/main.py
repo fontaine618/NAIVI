@@ -1,7 +1,3 @@
-import sys
-
-sys.path.append("/home/simfont/NNVI")
-
 import numpy as np
 from pypet import Environment
 from pypet.utils.explore import cartesian_product

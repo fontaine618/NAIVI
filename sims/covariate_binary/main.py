@@ -1,3 +1,8 @@
+import sys
+
+PATH = "/home/simfont/NNVI/"
+sys.path.append(PATH)
+
 import numpy as np
 import torch
 from sims.main import main
@@ -5,7 +10,7 @@ from sims.main import main
 if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
     main(
-        path="/home/simon/Documents/NNVI/sims/",
+        path=PATH,
         name="covariate_binary",
         explore_dict={
             "data.N": np.array([100, 1000]),
