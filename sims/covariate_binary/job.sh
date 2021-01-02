@@ -13,6 +13,6 @@
 #SBATCH --gpus-per-node=1
 #SBATCH --output=/home/%u/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
-source /home/simfont/scratch/NNVI/venv/bin/activate
+source /home/simfont/nnvi/bin/activate
 python3 main.py
 
