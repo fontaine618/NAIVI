@@ -9,7 +9,6 @@
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --mem-per-cpu=12g
 #SBATCH --gpus-per-node=1
 #SBATCH --mem-per-gpu=12g
 #SBATCH --output=/home/%u/%x-%j.log
