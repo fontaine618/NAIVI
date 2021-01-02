@@ -1,8 +1,6 @@
 import sys
-
 PATH = "/home/simfont/NNVI/"
 sys.path.append(PATH)
-
 import numpy as np
 import torch
 from sims.main import main
