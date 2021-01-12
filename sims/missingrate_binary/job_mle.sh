@@ -1,7 +1,7 @@
 #!/bin/bash
 # The interpreter used to execute the script
 #“#SBATCH” directives that convey submission options:
-#SBATCH --job-name=nnvi_missingrate_continuous_mle
+#SBATCH --job-name=nnvi_missingrate_binary_mle
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
 #SBATCH --time=100:00:00

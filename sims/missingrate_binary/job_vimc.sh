@@ -1,7 +1,7 @@
 #!/bin/bash
 # The interpreter used to execute the script
 #“#SBATCH” directives that convey submission options:
-#SBATCH --job-name=nnvi_missingrate_continuous_advi
+#SBATCH --job-name=nnvi_missingrate_binary_vimc
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
 #SBATCH --time=100:00:00
@@ -14,5 +14,5 @@
 #SBATCH --output=/home/%u/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
 source /home/simfont/nnvi/bin/activate
-python3 main_advi.py
+python3 main_vimc.py
 
