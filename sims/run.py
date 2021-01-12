@@ -30,47 +30,47 @@ def run(traj):
     print("="*80)
     print(seed, N, p_cts, p_bin, K, missing_rate, alpha_mean, K_model, algo)
     input = seed, N, p_cts, p_bin, K, missing_rate, alpha_mean, K_model, algo
-    #try:
-    # ---------------------------------------------------------------------
-    # generate data
-    Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0 = generate_dataset(
-        N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cov, missing_rate=missing_rate,
-        alpha_mean=alpha_mean, seed=seed
-    )
-    train = JointDataset(i0, i1, A, X_cts, X_bin)
-    test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing)
-    density = A.mean().item()
-    # initial values
-    initial = {
-        "bias": B0.cuda(),
-        "weight": B.cuda(),
-        "positions": Z.cuda(),
-        "heterogeneity": alpha.cuda()
-    }
-    # ---------------------------------------------------------------------
-    # initialize model
-    if algo == "ADVI":
-        model = ADVI(K_model, N, p_cts, p_bin)
-        fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}
-    elif algo == "VIMC":
-        model = VIMC(K_model, N, p_cts, p_bin)
-        fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "n_sample": n_sample}
-    elif algo == "VMP":
-        raise RuntimeError("VMP not implemented yet")
-    else:
-        model = MLE(K, N, p_cts, p_bin)
-        fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}
-    # set initial values
-    model.model.cuda()
-    model.init(**initial)
+    try:
+        # ---------------------------------------------------------------------
+        # generate data
+        Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0 = generate_dataset(
+            N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cov, missing_rate=missing_rate,
+            alpha_mean=alpha_mean, seed=seed
+        )
+        train = JointDataset(i0, i1, A, X_cts, X_bin)
+        test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing)
+        density = A.mean().item()
+        # initial values
+        initial = {
+            "bias": B0.cuda(),
+            "weight": B.cuda(),
+            "positions": Z.cuda(),
+            "heterogeneity": alpha.cuda()
+        }
+        # ---------------------------------------------------------------------
+        # initialize model
+        if algo == "ADVI":
+            model = ADVI(K_model, N, p_cts, p_bin)
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}
+        elif algo == "VIMC":
+            model = VIMC(K_model, N, p_cts, p_bin)
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "n_sample": n_sample}
+        elif algo == "VMP":
+            raise RuntimeError("VMP not implemented yet")
+        else:
+            model = MLE(K, N, p_cts, p_bin)
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}
+        # set initial values
+        model.model.cuda()
+        model.init(**initial)
 
-    # ---------------------------------------------------------------------
-    # fit model
-    t0 = time.time()
-    output = model.fit(train, test, Z.cuda(), **fit_args, batch_size=len(train)) + [density, time.time() - t0]
-#except RuntimeError as e:
-    #print(e)
-    #output = [np.nan for _ in range(11)]
-#finally:
-    print(*output)
-    return input, output
+        # ---------------------------------------------------------------------
+        # fit model
+        t0 = time.time()
+        output = model.fit(train, test, Z.cuda(), **fit_args, batch_size=len(train)) + [density, time.time() - t0]
+    except RuntimeError as e:
+        print(e)
+        output = [np.nan for _ in range(11)]
+    finally:
+        print(*output)
+        return input, output
