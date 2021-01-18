@@ -1,17 +1,20 @@
 import torch
+import numpy as np
 from NNVI.utils.gen_data import generate_dataset
 from NNVI.utils.data import JointDataset
 from NNVI.advi.model import ADVI
 from NNVI.mle.model import MLE
 from NNVI.vimc.model import VIMC
+from NNVI.mice.model import MICE
+
 
 # -----------------------------------------------------------------------------
 # Create Data
 # -----------------------------------------------------------------------------
 
-N = 500
+N = 1000
 K = 5
-p_cts = 10
+p_cts = 100
 p_bin = 0
 var_cts = 1.
 missing_rate = 0.1
@@ -40,7 +43,7 @@ self.fit(train, test, Z.cuda(), batch_size=len(train), eps=1.e-6, max_iter=200, 
 
 self = ADVI(K, N, p_cts, p_bin)
 self.init(positions=Z.cuda(), heterogeneity=alpha.cuda())
-self.fit(train, test, Z, batch_size=len(train), eps=1.e-6, max_iter=200, lr=0.01)
+self.fit(train, test, Z.cuda(), batch_size=len(train), eps=1.e-6, max_iter=200, lr=0.01)
 
 # -----------------------------------------------------------------------------
 # MLE fit
@@ -49,4 +52,17 @@ self.fit(train, test, Z, batch_size=len(train), eps=1.e-6, max_iter=200, lr=0.01
 self = MLE(K, N, p_cts, p_bin)
 self.init(positions=Z.cuda(), heterogeneity=alpha.cuda())
 self.fit(train, test, Z, batch_size=len(train), eps=1.e-6, max_iter=200, lr=0.1)
+
+# -----------------------------------------------------------------------------
+# MICE fit
+# -----------------------------------------------------------------------------
+
+self = MICE(K, N, p_cts, p_bin)
+self.fit(train, test)
+
+
+self = KNN(K, N, p_cts, p_bin)
+self.fit(train, test)
+
+
 
