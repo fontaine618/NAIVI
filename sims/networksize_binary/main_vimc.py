@@ -9,7 +9,7 @@ if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
     main(
         path=PATH,
-        name="networksize_binary_vimc",
+        name="networksize_binary_vimc_short",
         explore_dict={
             "data.N": np.array([50, 100, 200, 500, 1000]),
             #"data.N": np.array([50, 100, 200, 500, 1000, 2000]),
