@@ -4,7 +4,7 @@
 #SBATCH --job-name=nnvi_density_continuous_mice
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=10:00:00
+#SBATCH --time=100:00:00
 #SBATCH --account=stats_dept1
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1

@@ -51,10 +51,10 @@ def run(traj):
         # ---------------------------------------------------------------------
         # initialize model
         if algo == "ADVI":
-            model = ADVI(K_model, N, p_cts, p_bin).cuda()
+            model = ADVI(K_model, N, p_cts, p_bin)
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}
         elif algo == "VIMC":
-            model = VIMC(K_model, N, p_cts, p_bin).cuda()
+            model = VIMC(K_model, N, p_cts, p_bin)
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "n_sample": n_sample}
         elif algo == "VMP":
             raise RuntimeError("VMP not implemented yet")
@@ -62,7 +62,7 @@ def run(traj):
             model = MICE(K_model, N, p_cts, p_bin)
             fit_args = {}
         else:
-            model = MLE(K, N, p_cts, p_bin).cuda()
+            model = MLE(K, N, p_cts, p_bin)
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}
         # set initial values
         model.init(**initial)
