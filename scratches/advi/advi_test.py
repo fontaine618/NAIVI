@@ -61,8 +61,4 @@ self = MICE(K, N, p_cts, p_bin)
 self.fit(train, test)
 
 
-self = KNN(K, N, p_cts, p_bin)
-self.fit(train, test)
-
-
 

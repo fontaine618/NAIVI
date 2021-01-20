@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 import time
-from facebook.data import get_data, get_centers
+from facebook.data import get_data
 from NNVI.utils.data import JointDataset
 from NNVI.advi.model import ADVI
 from NNVI.mle.model import MLE
@@ -11,27 +11,27 @@ from NNVI.mice.model import MICE
 PATH = "/home/simon/Documents/NNVI/facebook/data/raw/"
 # PATH = "/home/simfont/NNVI/facebook/data/raw/"
 
-centers = get_centers(PATH)
-
-for node in centers:
-    i0, i1, A, X_cts, X_bin = get_data(PATH, node)
-    print(X_bin.size())
+# centers = get_centers(PATH)
+#
+# for node in centers:
+#     i0, i1, A, X_cts, X_bin = get_data(PATH, node)
+#     print(X_bin.size())
 
 def run(traj):
     # extract parameters
-    center = 0
-    missing_rate = 0.10
-    seed = 0
-    K = 0
-    alpha_mean = 0.
+    center = traj.par.data.center
+    missing_rate = traj.par.data.missing_rate
+    seed = traj.par.data.seed
+    K = traj.par.data.K
+    alpha_mean = traj.par.data.alpha_mean
     # extract model parameters
-    K_model = 5 # traj.par.model.K
+    K_model = traj.par.model.K
     # extract fit parameters
-    algo = "MLE" #traj.par.fit.algo
-    max_iter = 500 # traj.par.fit.max_iter
-    n_sample = 1 # traj.par.fit.n_sample
-    eps = 1.0e-6 # traj.par.fit.eps
-    lr = 0.1 # traj.par.fit.lr
+    algo = traj.par.fit.algo
+    max_iter = traj.par.fit.max_iter
+    n_sample = traj.par.fit.n_sample
+    eps = traj.par.fit.eps
+    lr = traj.par.fit.lr
     # get data
     i0, i1, A, X_cts, X_bin = get_data(PATH, center)
     # recover data
@@ -55,10 +55,10 @@ def run(traj):
     test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing)
     # initialization
     initial = {
-        "bias": torch.randn((1, p)).cuda(),
+        "bias": torch.zeros((1, p)).cuda(),
         "weight": torch.randn((K_model, p)).cuda(),
         "positions": torch.randn((N, K_model)).cuda(),
-        "heterogeneity": torch.randn((N, 1)).cuda() - 2.
+        "heterogeneity": torch.randn((N, 1)).cuda()*0.5 - 1.85
     }
     # ---------------------------------------------------------------------
     # initialize model
