@@ -11,7 +11,8 @@ class MICE:
 
     def __init__(self, K, N, p_cts, p_bin):
         estimator = BayesianRidge()
-        self.model = IterativeImputer(random_state=0, estimator=estimator)
+        self.model = IterativeImputer(random_state=0, estimator=estimator,
+                                      imputation_order="random", max_iter=10)
         self.p_cts = p_cts
         self.p_bin = p_bin
         self.N = N

@@ -1,5 +1,6 @@
 import sys
 PATH = "/home/simfont/NNVI/"
+PATH = "/home/simon/Documents/NNVI/"
 sys.path.append(PATH)
 import numpy as np
 import torch
@@ -9,10 +10,10 @@ if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
     main(
         path=PATH,
-        name="networksize_binary_vimc_short",
+        name="networksize_binary_vimc_2000",
         explore_dict={
-            "data.N": np.array([50, 100, 200, 500, 1000]),
-            #"data.N": np.array([50, 100, 200, 500, 1000, 2000]),
+            #"data.N": np.array([50, 100, 200, 500, 1000]),
+            "data.N": np.array([2000]),
             "data.K": np.array([5]),
             "data.p_cts": np.array([0]),
             "data.p_bin": np.array([10, 100, 500]),

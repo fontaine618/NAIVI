@@ -1,6 +1,7 @@
 import pandas as pd
 import os
 import matplotlib.pyplot as plt
+from matplotlib.lines import Line2D
 plt.style.use("seaborn")
 
 PATH = "/home/simon/Documents/NNVI/sims/"
@@ -27,19 +28,19 @@ CURVES = [
     "p_bin", "p_cts",
     "p_bin", "p_cts",
 ]
-ALGOS = ["MLE", "ADVI", "VIMC"]
-colors = {"MLE": "#D16103", "ADVI": "#52854C", "VIMC": "#293352", "VMP": "VEM-VMP"}
+ALGOS = ["VIMC", "ADVI", "MLE", "MICE"]
+colors = {"MLE": "#4c72b0", "ADVI": "#55a868", "VIMC": "#c44e52", "MICE": "#8172b2"}
 WHICH = [1000, 1000, 100, 100, 100, 100, 100, 100]
 
-DICT = {"MLE": "MLE", "ADVI": "VI-ELBO", "VIMC": "VIMC",
-        "N": "Network size", "p_bin": "Nb. covariates", "p_cts": "Nb. covariates",
+DICT = {"MLE": "MLE", "ADVI": "NAIVI-QB", "VIMC": "NAIVI-MC", "MICE": "MICE",
+        "N": "Network size", "p_bin": "Nb. attributes", "p_cts": "Nb. covariates",
         "density": "Network density", "missing_rate": "Missing rate",
         "cts": "Continuous", "bin": "Binary"}
 
 cov_type = "cts"
 cov_type = "bin"
 
-fig, axs = plt.subplots(2, 4, sharex="col", figsize=(10, 6), sharey="row")
+fig, axs = plt.subplots(2, 4, sharex="col", figsize=(5, 3), sharey="row")
 
 for i, (exp, bin, xaxis, curves, which) in enumerate(zip(EXPERIMENTS, BINARY, XAXIS, CURVES, WHICH)):
     print(exp)
@@ -69,23 +70,27 @@ for i, (exp, bin, xaxis, curves, which) in enumerate(zip(EXPERIMENTS, BINARY, XA
         axs[0][j].plot(mean[xaxis], mean[yaxis], color=colors[a], label=DICT[a])
         axs[0][j].fill_between(mean[xaxis], mean[yaxis]-std[yaxis],
                                mean[yaxis]+std[yaxis], color=colors[a], alpha=0.2)
-
-        axs[1][j].plot(mean[xaxis], mean["dist_inv"], color=colors[a])
-        axs[1][j].fill_between(mean[xaxis], mean["dist_inv"]-std["dist_inv"],
-                               mean["dist_inv"]+std["dist_inv"], color=colors[a], alpha=0.2)
+        if a != "MICE":
+            axs[1][j].plot(mean[xaxis], mean["dist_inv"], color=colors[a])
+            axs[1][j].fill_between(mean[xaxis], mean["dist_inv"]-std["dist_inv"],
+                                   mean["dist_inv"]+std["dist_inv"], color=colors[a], alpha=0.2)
     if xaxis in ["N", "p_cts", "p_bin"]:
         axs[0][j].set_xscale("log")
     axs[0][j].set_title("Setting {}".format("ABCDEFG"[j]))
     axs[1][j].set_xlabel(DICT[xaxis])
-axs[0][0].legend(loc="upper left" if cov_type=="cts" else "lower right", title="Algorithm")
-axs[0][0].set_ylabel("Test MSE" if cov_type == "cts" else "Test AUROC")
-axs[1][0].set_ylabel("Z Distance")
-fig.tight_layout()
+    axs[1][j].set_ylim(0., 0.8)
 
-fig.suptitle("{} covariates".format(DICT[cov_type]),
-             fontsize=14, x=0.06 if cov_type=="cts" else 0.07, y=0.99,
-             horizontalalignment='left', verticalalignment='top')
-fig.tight_layout()
-fig.subplots_adjust(top=0.9)
+# legend
+lines = [Line2D([0], [0], color=colors[a]) for a in ALGOS]
+labels = [DICT[a] for a in ALGOS]
+fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
+# ylabels
+axs[0][0].set_ylabel("MSE" if cov_type == "cts" else "AUROC")
+axs[1][0].set_ylabel("$D(\widehat Z, Z)$")
+axs[0][0].get_yaxis().set_label_coords(-0.4, 0.5)
+axs[1][0].get_yaxis().set_label_coords(-0.4, 0.5)
+# layout
+fig.tight_layout(h_pad=0.5, w_pad=0.)
+fig.subplots_adjust(bottom=0.30)
 
 fig.savefig(PATH + "figs/{}_results.pdf".format(cov_type))

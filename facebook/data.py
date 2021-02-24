@@ -14,20 +14,21 @@ def get_centers(PATH):
     return sorted(list(nodes))
 
 
-def get_data(PATH, node, return_dict=False):
+def get_data(PATH, node, return_dict=False, include_ego=False):
     # import files
     edges = pd.read_csv("{}{}.edges".format(PATH, node), header=None, sep=" ")
     features = pd.read_csv("{}{}.feat".format(PATH, node),
                            header=None, sep=" ", index_col=0)
-    ego_feat = pd.read_csv("{}{}.egofeat".format(PATH, node), header=None, sep=" ").reset_index()
-    # include ego features
-    features.loc[node] = ego_feat.iloc[0]
+    if include_ego:
+        ego_feat = pd.read_csv("{}{}.egofeat".format(PATH, node), header=None, sep=" ").reset_index()
+        features.loc[node] = ego_feat.iloc[0]
     # get all nodes
     nodes = set(edges.to_numpy().reshape(-1))
     nodes.update(features.index)
     # add nodes to ego
-    edges_to_ego = pd.DataFrame({0: node, 1:[i for i in nodes if i!=node]})
-    edges = pd.concat([edges, edges_to_ego], ignore_index=True)
+    if include_ego:
+        edges_to_ego = pd.DataFrame({0: node, 1: [i for i in nodes if i!=node]})
+        edges = pd.concat([edges, edges_to_ego], ignore_index=True)
     # recreate the adjacency matrix
     edges_sorted = edges.copy()
     edges_sorted[0] = np.where(edges[0] > edges[1], edges[0], edges[1])
