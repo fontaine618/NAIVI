@@ -38,3 +38,10 @@ class Select(nn.Module):
             pos = self.values
             pos = pos - torch.mean(pos, 1, keepdim=True)
             self.values.data = pos
+
+    def init(self, mean):
+        self.values.data = mean
+
+    @property
+    def mean(self):
+        return self.values

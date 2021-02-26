@@ -38,6 +38,13 @@ class PriorEncoder(nn.Module):
         kl += (mean ** 2 + var - 2. * mean * self.prior_mean + self.prior_mean ** 2) / prior_var
         return 0.5 * kl.sum()
 
+    def init(self, mean):
+        self.mean_encoder.values.data = mean
+
+    @property
+    def mean(self):
+        return self.mean_encoder.values
+
 
 class Encoder(nn.Module):
 
