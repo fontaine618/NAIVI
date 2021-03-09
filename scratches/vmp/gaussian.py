@@ -1,5 +1,5 @@
 import torch
-from NNVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.gaussian import Gaussian
 
 p = torch.ones((2, 3)) * 2.
 mtp = torch.ones((2, 3)) * 3.
@@ -31,7 +31,7 @@ Gaussian.cat([self, other, other2], 0)
 
 
 import torch
-from NNVI.vmp.bernoulli import Bernoulli
+from NAIVI.vmp.bernoulli import Bernoulli
 
 self = Bernoulli(torch.rand((3, 2))).cuda()
 self.entropy()

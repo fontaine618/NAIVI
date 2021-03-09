@@ -1,5 +1,5 @@
 import sys
-PATH = "/home/simfont/NNVI/"
+PATH = "/home/simfont/NAIVI/"
 sys.path.append(PATH)
 import numpy as np
 import torch

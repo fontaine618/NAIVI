@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from facebook.data import get_data, get_centers
 
-PATH = "/home/simon/Documents/NNVI/facebook/data/raw/"
-# PATH = "/home/simfont/NNVI/facebook/data/raw/"
+PATH = "//facebook/data/raw/"
+# PATH = "/home/simfont/NAIVI/facebook/data/raw/"
 
 centers = get_centers(PATH)
 

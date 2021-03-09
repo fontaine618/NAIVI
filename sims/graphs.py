@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 plt.style.use("seaborn")
 
-PATH = "/home/simon/Documents/NNVI/sims/"
+PATH = "//sims/"
 EXPERIMENTS = [
     "covariate_binary",
     "covariate_continuous",

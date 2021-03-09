@@ -1,6 +1,6 @@
 import sys
-PATH = "/home/simfont/NNVI/"
-PATH = "/home/simon/Documents/NNVI/"
+PATH = "/home/simfont/NAIVI/"
+PATH = "//"
 sys.path.append(PATH)
 import numpy as np
 import torch

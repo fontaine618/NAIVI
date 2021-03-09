@@ -7,7 +7,7 @@ from matplotlib import collections as mc
 
 # setup
 plt.style.use("seaborn")
-PATH = "/home/simon/Documents/NNVI/facebook/"
+PATH = "//facebook/"
 DICT = {"MLE": "MLE", "ADVI": "NAIVI-QB", "VIMC": "NAIVI-MC", "MICE": "MICE",
         "N": "Network size", "p_bin": "Nb. attributes", "p_cts": "Nb. covariates",
         "density": "Network density", "missing_rate": "Missing rate",

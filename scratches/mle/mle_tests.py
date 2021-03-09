@@ -1,5 +1,5 @@
 import torch
-from NNVI.utils.gen_data import generate_dataset
+from NAIVI.utils.gen_data import generate_dataset
 
 # -----------------------------------------------------------------------------
 # Create Data
@@ -21,7 +21,7 @@ Z, a, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0 = generate_da
 # -----------------------------------------------------------------------------
 # Encoder test
 # -----------------------------------------------------------------------------
-from NNVI.mle.encoder import Encoder, Select
+from NAIVI.mle.encoder import Encoder, Select
 
 self = Encoder(K, N)
 indices = i0
@@ -35,11 +35,11 @@ self(i0)
 # Fit Model
 # -----------------------------------------------------------------------------
 
-from NNVI.utils.data import JointDataset
+from NAIVI.utils.data import JointDataset
 train = JointDataset(i0, i1, A, X_cts, X_bin)
 test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing)
 
-from NNVI.mle.model import MLE
+from NAIVI.mle.model import MLE
 self = MLE(K, N, p_cts, p_bin)
 self.fit(train, test, Z, batch_size=len(train), eps=1.e-5, max_iter=1000, lr=0.01)
 
@@ -49,7 +49,7 @@ self.fit(train, test, Z, batch_size=len(train), eps=1.e-5, max_iter=1000, lr=0.0
 
 # 592  | 7048.9775  0.9146     0.9208    | 0.0954     0.3897    | 8106.0229  1.1999     0.8518
 
-from NNVI.vimc.model import VIMC
+from NAIVI.vimc.model import VIMC
 self = VIMC(K, N, p_cts, p_bin, position_prior=(0., 1.), heterogeneity_prior=(0., 1.))
 self.fit(train, test, Z, batch_size=len(train), eps=1.e-5, max_iter=1000, lr=0.01, n_sample=10)
 

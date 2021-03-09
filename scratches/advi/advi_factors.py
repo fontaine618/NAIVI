@@ -2,8 +2,8 @@ import torch
 import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
-from NNVI.advi.encoder import PriorEncoder, Encoder
-from NNVI.advi.factors import Linear, AddVariance, Logistic, InnerProduct, Sum
+from NAIVI.advi.encoder import PriorEncoder, Encoder
+from NAIVI.advi.factors import Linear, AddVariance, Logistic, InnerProduct, Sum
 
 N = 7
 K = 3

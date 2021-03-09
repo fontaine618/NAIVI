@@ -1,5 +1,5 @@
 import torch
-from NNVI.utils.gen_data import generate_dataset
+from NAIVI.utils.gen_data import generate_dataset
 torch.set_default_dtype(torch.float64)
 
 # -----------------------------------------------------------------------------
@@ -28,8 +28,8 @@ A.mean()
 
 # -----------------------------------------------------------------------------
 # AdjacencyModel
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.models import AdjacencyModel
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.models import AdjacencyModel
 
 
 positions = Gaussian.from_array(torch.randn_like(Z), torch.full_like(Z, 2.))
@@ -69,8 +69,8 @@ self._sum.message_to_child.mean[A==0.].mean()
 
 # -----------------------------------------------------------------------------
 # CovariateModel
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.models import CovariateModel
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.models import CovariateModel
 
 
 positions = Gaussian.from_array(torch.randn_like(Z), torch.full_like(Z, 1.))

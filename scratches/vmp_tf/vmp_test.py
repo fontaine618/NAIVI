@@ -2,12 +2,12 @@ import torch
 import tensorflow as tf
 import numpy as np
 # data
-from NNVI.utils.gen_data import generate_dataset
+from NAIVI.utils.gen_data import generate_dataset
 # VMP
-from NNVI.vmp_tf.vmp.joint_model2 import JointModel2
+from NAIVI.vmp_tf.vmp.joint_model2 import JointModel2
 # MLE
-from NNVI.utils.data import JointDataset
-from NNVI.mle.model import MLE
+from NAIVI.utils.data import JointDataset
+from NAIVI.mle.model import MLE
 
 # -----------------------------------------------------------------------------
 # Create Data

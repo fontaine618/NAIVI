@@ -5,7 +5,7 @@ plt.style.use("seaborn")
 
 # path
 SIM_NAME = "covariate_binary"
-SIM_PATH = "/home/simon/Documents/NNVI/simulations/" + SIM_NAME
+SIM_PATH = "/home/simon/Documents/NAIVI/simulations/" + SIM_NAME
 RES_FILE = SIM_PATH + "/results/" + SIM_NAME + ".hdf5"
 
 # load pypet trajectory

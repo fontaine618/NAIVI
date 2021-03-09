@@ -1,11 +1,11 @@
 import torch
 import numpy as np
-from NNVI.utils.gen_data import generate_dataset
-from NNVI.utils.data import JointDataset
-from NNVI.advi.model import ADVI
-from NNVI.mle.model import MLE
-from NNVI.vimc.model import VIMC
-from NNVI.mice.model import MICE
+from NAIVI.utils.gen_data import generate_dataset
+from NAIVI.utils.data import JointDataset
+from NAIVI.advi.model import ADVI
+from NAIVI.mle.model import MLE
+from NAIVI.vimc.model import VIMC
+from NAIVI.mice.model import MICE
 
 
 # -----------------------------------------------------------------------------

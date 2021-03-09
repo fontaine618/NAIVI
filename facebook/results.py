@@ -1,7 +1,7 @@
 import pandas as pd
 import os
 
-PATH = "/home/simon/Documents/NNVI/facebook/"
+PATH = "//facebook/"
 
 dir = os.listdir(PATH)
 folders = [x for x in dir if x.find(".") < 0]

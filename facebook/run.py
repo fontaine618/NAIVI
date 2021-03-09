@@ -2,14 +2,14 @@ import numpy as np
 import torch
 import time
 from facebook.data import get_data
-from NNVI.utils.data import JointDataset
-from NNVI.advi.model import ADVI
-from NNVI.mle.model import MLE
-from NNVI.vimc.model import VIMC
-from NNVI.mice.model import MICE
+from NAIVI.utils.data import JointDataset
+from NAIVI.advi.model import ADVI
+from NAIVI.mle.model import MLE
+from NAIVI.vimc.model import VIMC
+from NAIVI.mice.model import MICE
 
-PATH = "/home/simon/Documents/NNVI/facebook/data/raw/"
-# PATH = "/home/simfont/NNVI/facebook/data/raw/"
+PATH = "//facebook/data/raw/"
+# PATH = "/home/simfont/NAIVI/facebook/data/raw/"
 
 # centers = get_centers(PATH)
 #

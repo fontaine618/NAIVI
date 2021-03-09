@@ -1,22 +1,23 @@
-from NNVI.utils.gen_data import generate_dataset
-from NNVI.utils.data import JointDataset
-from NNVI.advi.model import ADVI
-from NNVI.mle.model import MLE
-from NNVI.vimc.model import VIMC
-from NNVI.mice.model import MICE
+from NAIVI.utils.gen_data import generate_dataset
+from NAIVI.utils.data import JointDataset
+from NAIVI import ADVI
+from NAIVI import MLE
+from NAIVI import VIMC
+from NAIVI import MICE
+import torch
 
 
 # -----------------------------------------------------------------------------
 # Create Data
 # -----------------------------------------------------------------------------
 
-N = 50
+N = 500
 K = 5
 p_cts = 100
 p_bin = 0
 var_cts = 1.
-missing_rate = 0.10
-alpha_mean = -3.00
+missing_rate = 0.20
+alpha_mean = -1.85
 seed = 0
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0 = generate_dataset(
@@ -24,47 +25,42 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0 = generat
     alpha_mean=alpha_mean, seed=seed
 )
 
-train = JointDataset(i0, i1, A, X_cts, X_bin)
-test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing)
+mnar = False
+train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
+test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing,
+                    return_missingness=mnar, test=True)
+if mnar:
+    B0 = torch.cat([B0, B0], 1)
+    B = torch.cat([B, B], 1)
 
-# import pandas as pd
-# X = pd.DataFrame(X_cts_missing.numpy())
-# var = X.var()
-# print(var.min(), var.max(), var.mean())
-#
-# corr = X.corr()
-#
-# import matplotlib.pyplot as plt
-# plt.imshow(corr, vmin=-1., vmax=1., cmap="RdBu")
-# plt.colorbar()
-# plt.savefig("asdas.pdf")
-# plt.clf()
-# corr[corr.abs() ==1.] = 0.
-# corr.abs().max().max()
+init = {"positions": Z, "heterogeneity": alpha, "bias": B0, "weight": B}
+init = {k: v * (0.8 + 0.2*torch.rand_like(v)) for k, v in init.items()}
 # -----------------------------------------------------------------------------
 # VIMC fit
 # -----------------------------------------------------------------------------
 
-self = VIMC(K, N, p_cts, p_bin, 10)
-self.init(positions=Z, heterogeneity=alpha)
-self.fit(train, test, Z, batch_size=len(train), eps=1.e-6,
-         max_iter=200, lr=0.01)
+self = VIMC(K, N, p_cts, p_bin, n_samples=1, mnar=mnar)
+self.init(**init)
+self.fit(train, test, Z, batch_size=len(train),
+         eps=5.e-6, max_iter=2000, lr=1.)
 
 # -----------------------------------------------------------------------------
 # ADVI fit
 # -----------------------------------------------------------------------------
 
-self = ADVI(K, N, p_cts, p_bin)
-self.init(positions=Z, heterogeneity=alpha)
-self.fit(train, test, Z, batch_size=len(train), eps=1.e-6, max_iter=200, lr=0.01)
+self = ADVI(K, N, p_cts, p_bin, mnar=mnar)
+self.init(**init)
+self.fit(train, test, Z, batch_size=len(train),
+         eps=5.e-6, max_iter=2000, lr=1.)
 
 # -----------------------------------------------------------------------------
 # MLE fit
 # -----------------------------------------------------------------------------
 
-self = MLE(K, N, p_cts, p_bin)
-self.init(positions=Z, heterogeneity=alpha)
-self.fit(train, test, Z, batch_size=len(train), eps=1.e-6, max_iter=200, lr=0.1)
+self = MLE(K, N, p_cts, p_bin, mnar=mnar)
+self.init(**init)
+self.fit(train, test, Z, batch_size=len(train),
+         eps=5.e-6, max_iter=2000, lr=0.1)
 
 # -----------------------------------------------------------------------------
 # MICE fit

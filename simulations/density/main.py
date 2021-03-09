@@ -2,13 +2,13 @@ import os
 import sys
 
 SIM_NAME = "density"
-SIM_PATH = "/home/simon/Documents/NNVI/simulations/" + SIM_NAME
+SIM_PATH = "/home/simon/Documents/NAIVI/simulations/" + SIM_NAME
 
 from pypet import Environment
 from pypet.utils.explore import cartesian_product
 import numpy as np
 from simulations.gen_data import generate_dataset
-from NNVI.vmp_tf.vmp.joint_model2 import JointModel2
+from NAIVI.vmp_tf.vmp.joint_model2 import JointModel2
 import pandas as pd
 import tensorflow as tf
 

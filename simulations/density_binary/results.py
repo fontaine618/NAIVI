@@ -5,7 +5,7 @@ plt.style.use("seaborn")
 
 # path
 SIM_NAME = "density_binary"
-SIM_PATH = "/home/simon/Documents/NNVI/simulations/" + SIM_NAME
+SIM_PATH = "/home/simon/Documents/NAIVI/simulations/" + SIM_NAME
 RES_FILE = SIM_PATH + "/results/" + SIM_NAME + ".hdf5"
 
 # load pypet trajectory
@@ -72,7 +72,7 @@ ns = {
 }
 
 # alpha_mean to density
-densities = pd.read_csv("/home/simon/Documents/NNVI/simulations/density/results/density.csv", index_col=0)
+densities = pd.read_csv("//simulations/density/results/density.csv", index_col=0)
 
 # plot
 fig, axs = plt.subplots(2, 1, figsize=(4, 6), sharex=True)

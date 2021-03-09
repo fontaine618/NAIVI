@@ -1,8 +1,8 @@
 import tensorflow as tf
 import sys
-sys.path.append("/NNVI")
+sys.path.append("/NAIVI")
 from models.distributions.gaussianarray import GaussianArray
-from NNVI.vmp_tf.vmp.vmp_factors import Sum, WeightedSum, Probit
+from NAIVI.vmp_tf.vmp.vmp_factors import Sum, WeightedSum, Probit
 
 factor = Sum()
 

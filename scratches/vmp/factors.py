@@ -2,8 +2,8 @@
 # GaussianFactor
 import torch
 import numpy as np
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import GaussianFactor
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import GaussianFactor
 
 # stochastic case
 shape = (2, 3)
@@ -43,10 +43,10 @@ self.to_elbo()
 # Logistic
 import torch
 import numpy as np
-from NNVI.vmp.utils import sigmoid_integrals
-from NNVI.vmp.bernoulli import Bernoulli
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import Logistic
+from NAIVI.vmp.utils import sigmoid_integrals
+from NAIVI.vmp.bernoulli import Bernoulli
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import Logistic
 
 shape = (3, 2)
 mean = torch.randn(shape)
@@ -73,8 +73,8 @@ self.to_elbo()
 # Linear
 import torch
 import numpy as np
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import Linear
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import Linear
 
 N = 5
 K = 3
@@ -97,8 +97,8 @@ self
 # Sum
 import torch
 import numpy as np
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import Sum
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import Sum
 
 N = 5
 
@@ -123,8 +123,8 @@ self
 # Select
 import torch
 import numpy as np
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import Select
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import Select
 
 N = 5
 n = N * (N-1) // 2
@@ -147,8 +147,8 @@ self
 # Product
 import torch
 import numpy as np
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import Product
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import Product
 
 N = 3
 K = 2
@@ -172,9 +172,9 @@ self
 # InnerProduct
 import torch
 import numpy as np
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import Linear
-from NNVI.vmp.factors import InnerProduct
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import Linear
+from NAIVI.vmp.factors import InnerProduct
 
 N = 3
 K = 5
@@ -198,8 +198,8 @@ self
 # Split
 import torch
 import numpy as np
-from NNVI.vmp.gaussian import Gaussian
-from NNVI.vmp.factors import Split
+from NAIVI.vmp.gaussian import Gaussian
+from NAIVI.vmp.factors import Split
 
 N = 5
 

@@ -5,7 +5,7 @@ import itertools as it
 import pandas as pd
 plt.style.use("seaborn")
 
-PATH = "/home/simon/Documents/NNVI/facebook/"
+PATH = "//facebook/"
 
 A = 0.
 mu = 10.

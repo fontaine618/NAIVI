@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from NNVI.mle.model import JointModel
+from NAIVI.mle.model import JointModel
 
 N = 10
 K = 2

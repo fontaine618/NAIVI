@@ -1,11 +1,11 @@
 import os
 import sys
 
-PATH = "/home/simfont/scratch/NNVI/"
+PATH = "/home/simfont/scratch/NAIVI/"
 
 print(sys.path)
 sys.path.append(PATH)
-sys.path.append(PATH + "NNVI/")
+sys.path.append(PATH + "NAIVI/")
 sys.path.append(PATH + "venv/")
 sys.path.append(PATH + "venv/lib/")
 print(sys.path)
@@ -15,7 +15,7 @@ from pypet.utils.explore import cartesian_product
 from pypet import pypetconstants
 import numpy as np
 from simulations.gen_data import generate_dataset
-from NNVI.vmp_tf.vmp.joint_model2 import JointModel2
+from NAIVI.vmp_tf.vmp.joint_model2 import JointModel2
 import pandas as pd
 import tensorflow as tf
 

@@ -1,5 +1,5 @@
 import sys
-PATH = "/home/simon/Documents/NNVI/facebook/"
+PATH = "//facebook/"
 sys.path.append(PATH)
 import numpy as np
 import torch

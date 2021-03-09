@@ -8,7 +8,7 @@ from facebook.data import get_centers, get_data
 
 
 # all ego networks
-PATH = "/home/simon/Documents/NNVI/facebook/data/raw/"
+PATH = "//facebook/data/raw/"
 centers = get_centers(PATH)
 out = []
 for node in centers:
@@ -26,8 +26,8 @@ table.set_index("Center", inplace=True)
 
 plt.style.use("seaborn")
 
-DATA_PATH = "/home/simon/Documents/NNVI/facebook/data/raw/"
-FIG_PATH = "/home/simon/Documents/NNVI/facebook/figs/"
+DATA_PATH = "//facebook/data/raw/"
+FIG_PATH = "//facebook/figs/"
 
 centers = get_centers(DATA_PATH)
 

@@ -1,5 +1,5 @@
 import torch
-from NNVI.advi.encoder import PriorEncoder, Encoder
+from NAIVI.advi.encoder import PriorEncoder, Encoder
 
 
 N = 10
