@@ -1,4 +1,5 @@
 import torch
+import copy
 import numpy as np
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
@@ -10,19 +11,50 @@ class NAIVI:
     def __init__(self, model=None):
         self.model = model
         self.denum = 1.
-        self.mnar_penalty = 0.
+        self.reg = 0.
+        self.cv_fit_ = None
 
-    def fit(self, train, test=None, Z_true=None, mnar_penalty=0.,
+    def cv_path(self, train, reg=[0.1, 0.2], n_folds=5, cv_seed=0, **kwargs):
+        cv_folds = train.cv_folds(n_folds, cv_seed)
+        cv_fit = {
+            fold: copy.deepcopy(self).fit_path(*cv_folds[fold], reg=reg, **kwargs)
+            for fold in range(n_folds)
+        }
+        cv_loss = {
+            r: torch.tensor([cv_fit[i][r][7] for i in range(n_folds)]).mean().item()
+            for r in reg
+        }
+        self.cv_fit_ = cv_fit
+        return cv_loss
+
+    def fit_path(self, train, test=None, reg=[0.1, 0.2], **kwargs):
+        out = {}
+        for r in reg:
+            out_r = self.fit(train, test, reg=r, **kwargs)
+            with torch.no_grad():
+                coef_norm = self.model.covariate_model.weight.norm("fro", 1)
+                non_zero = torch.where(coef_norm > 0., 1, 0).sum().item()
+                out_r.append(non_zero)
+            out[r] = out_r
+        return out
+
+    def fit(self, train, test=None, Z_true=None, reg=0.,
             batch_size=100, eps=1.e-6, max_iter=100,
             lr=0.001, weight_decay=0., verbose=True):
-        Z_true = Z_true.cuda()
-        self.mnar_penalty = mnar_penalty
+        if Z_true is not None:
+            Z_true = Z_true.cuda()
+        self.reg = reg
         # compute scaling factor
         self.compute_denum(train)
-        optimizer = torch.optim.SGD(
-            self.model.parameters(),
-            lr=lr,
-        )
+        params = [
+            {'params': p, "lr": lr}
+            for p in self.model.parameters()
+        ]
+        optimizer = torch.optim.Adagrad(params)
+        # optimizer = torch.optim.SGD(
+        #     self.model.parameters(),
+        #     lr=lr,
+        # )
         # optimizer = torch.optim.Adam(
         #     self.model.parameters(),
         #     lr=lr,
@@ -45,6 +77,8 @@ class NAIVI:
                 break
         if verbose:
             print("-" * n_char)
+            for gr in optimizer.param_groups:
+                print(gr["lr"])
         return out
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
@@ -60,11 +94,15 @@ class NAIVI:
 
     def epoch_metrics(self, Z_true, epoch, test, train, max_abs_grad):
         with torch.no_grad():
+            # add penalty to loss
+            penalty = self.compute_penalty()
             # training metrics
             llk_train, mse_train, auroc_train = self.evaluate(train)
+            llk_train += self.reg * penalty
             # testing metrics
             if test is not None:
                 llk_test, mse_test, auroc_test = self.evaluate(test)
+                llk_test += self.reg * penalty
             else:
                 llk_test, mse_test, auroc_test = 0., 0., 0.
             # distance
@@ -79,6 +117,13 @@ class NAIVI:
         form = "{:<4} {:<10.2e} |" + " {:<10.4f}" * 3 + "|" + " {:<10.4f}" * 2 + "|" + " {:<10.4f}" * 3
         log = form.format(*out)
         return llk_train, out, log
+
+    def compute_penalty(self):
+        with torch.no_grad():
+            coef_norm = self.model.covariate_model.weight.norm("fro", 1)
+            if self.reg > 0.:
+                coef_norm[:coef_norm.shape[0]//2] = 0.
+            return coef_norm.sum().item()
 
     def compute_denum(self, data):
         i0, i1, A, j, X_cts, X_bin = data[:]
@@ -155,10 +200,35 @@ class NAIVI:
         loss /= self.denum
         # compute gradients
         loss.backward()
+        # store previous regression coefficient
+        self.store_coef()
         # take gradient step
         optimizer.step()
-        # projected gradient
+        # proximal step for regression coefficient
+        self.proximal_step(optimizer.param_groups[0]["lr"])
+        # projected gradient for MLE
         self.model.project()
+
+    def proximal_step(self, lr):
+        with torch.no_grad():
+            reg = self.reg
+            coef = self.model.covariate_model.weight
+            prev_data = coef.prev_data
+            grad = coef.grad
+            data = prev_data - lr * grad
+            if reg > 0.:
+                norm = data.norm("fro", 1)
+                mult = 1. - reg * lr / norm
+                mult = torch.where(mult < 0., 0., mult)
+                which = torch.ones_like(mult)
+                which[:which.shape[0]//2] = 0.
+                mult = torch.where(which == 0., 1., mult)
+                data *= mult.reshape((-1, 1))
+            coef.data = data
+
+    def store_coef(self):
+        with torch.no_grad():
+            self.model.covariate_model.weight.prev_data = self.model.covariate_model.weight.data
 
     def evaluate(self, data):
         with torch.no_grad():

@@ -38,6 +38,10 @@ class CovariateModel(nn.Module):
             nll += - torch.nansum(llk) * self.n_bin / max(1., (~X_bin.isnan()).sum())
         return - nll
 
+    @property
+    def weight(self):
+        return self.mean_model.weight
+
 
 class AdjacencyModel(nn.Module):
 

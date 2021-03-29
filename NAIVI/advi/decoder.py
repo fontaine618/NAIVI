@@ -39,6 +39,10 @@ class CovariateModel(nn.Module):
             elbo += self.model_bin.elbo(mean_bin, var_bin, X_bin)
         return elbo
 
+    @property
+    def weight(self):
+        return self.mean_model.weight
+
 
 class AdjacencyModel(nn.Module):
 

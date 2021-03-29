@@ -40,8 +40,8 @@ class JointModel(nn.Module):
         pm0, pv0, hm0, hv0, pm1, pv1, hm1, hv1, pmx, pvx = self.encode(i0, i1, iX)
         elbo = 0.
         elbo += self.covariate_model.elbo(pmx, pvx, X_cts, X_bin)
-        elbo += self.adjacency_model.elbo(pm0, pv0, pm1, pv1, hm0, hv0, hm1, hv1, A)
-        elbo -= self.encoder.kl_divergence()
+        elbo += self.adjacency_model.elbo(pm0, pv0, pm1, pv1, hm0, hv0, hm1, hv1, A) * 0.0001
+        elbo -= self.encoder.kl_divergence() * 0.0001
         return elbo
 
     def loss_and_fitted_values(self, i0, i1, j, X_cts=None, X_bin=None, A=None):
