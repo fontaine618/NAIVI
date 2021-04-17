@@ -51,7 +51,9 @@ class PriorEncoder(nn.Module):
         return 0.5 * kl.sum()
 
     def init(self, mean):
-        self.mean_encoder.values.data = mean
+        with torch.no_grad():
+            self.log_var_encoder.values.data.fill_(-2.)
+            self.mean_encoder.values.data = mean
 
     @property
     def mean(self):

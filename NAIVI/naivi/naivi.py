@@ -27,16 +27,39 @@ class NAIVI:
         self.cv_fit_ = cv_fit
         return cv_loss
 
-    def fit_path(self, train, test=None, reg=[0.1, 0.2], **kwargs):
+    def fit_path(self, train, test=None, reg=[0.1, 0.2], init=None, **kwargs):
         out = {}
         for r in reg:
+            self.init(**init)
             out_r = self.fit(train, test, reg=r, **kwargs)
             with torch.no_grad():
                 coef_norm = self.model.covariate_model.weight.norm("fro", 1)
-                non_zero = torch.where(coef_norm > 0., 1, 0).sum().item()
+                which = torch.where(coef_norm > 0., 1, 0)
+                non_zero = which.sum().item()
                 out_r.append(non_zero)
+                out_r.append(which.cpu().numpy())
             out[r] = out_r
-        return out
+        results = {
+            n: []
+            for n in ["reg", "llk_train", "mse_train", "auroc_train",
+               "dist_inv", "dist_proj", "llk_test", "mse_test", "auroc_test",
+            "nb_non_zero", "non_zero"]
+        }
+        for r, (_, _, llk_train, mse_train, auroc_train,
+                dist_inv, dist_proj, llk_test, mse_test, auroc_test,
+                nb_non_zero, non_zero) in out.items():
+            results["reg"].append(r)
+            results["llk_train"].append(llk_train)
+            results["mse_train"].append(mse_train)
+            results["auroc_train"].append(auroc_train)
+            results["dist_inv"].append(dist_inv)
+            results["dist_proj"].append(dist_proj)
+            results["llk_test"].append(llk_test)
+            results["mse_test"].append(mse_test)
+            results["auroc_test"].append(auroc_test)
+            results["nb_non_zero"].append(nb_non_zero)
+            results["non_zero"].append(non_zero)
+        return results
 
     def fit(self, train, test=None, Z_true=None, reg=0.,
             batch_size=100, eps=1.e-6, max_iter=100,
@@ -51,15 +74,7 @@ class NAIVI:
             for p in self.model.parameters()
         ]
         optimizer = torch.optim.Adagrad(params)
-        # optimizer = torch.optim.SGD(
-        #     self.model.parameters(),
-        #     lr=lr,
-        # )
-        # optimizer = torch.optim.Adam(
-        #     self.model.parameters(),
-        #     lr=lr,
-        #     weight_decay=weight_decay
-        # )
+        # optimizer = torch.optim.Adam(params)
         if verbose:
             n_char = self.verbose_init()
         epoch = 0
@@ -77,8 +92,6 @@ class NAIVI:
                 break
         if verbose:
             print("-" * n_char)
-            for gr in optimizer.param_groups:
-                print(gr["lr"])
         return out
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
@@ -98,11 +111,11 @@ class NAIVI:
             penalty = self.compute_penalty()
             # training metrics
             llk_train, mse_train, auroc_train = self.evaluate(train)
-            llk_train += self.reg * penalty
+            # llk_train += self.reg * penalty
             # testing metrics
             if test is not None:
                 llk_test, mse_test, auroc_test = self.evaluate(test)
-                llk_test += self.reg * penalty
+                # llk_test += self.reg * penalty
             else:
                 llk_test, mse_test, auroc_test = 0., 0., 0.
             # distance
@@ -218,7 +231,7 @@ class NAIVI:
             data = prev_data - lr * grad
             if reg > 0.:
                 norm = data.norm("fro", 1)
-                mult = 1. - reg * lr / norm
+                mult = (1. - reg * lr / norm).double()
                 mult = torch.where(mult < 0., 0., mult)
                 which = torch.ones_like(mult)
                 which[:which.shape[0]//2] = 0.

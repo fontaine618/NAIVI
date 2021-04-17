@@ -29,15 +29,16 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0 = 
 mnar = True
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
 test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar, test=True)
-self = ADVI(K, N, p_cts, p_bin, mnar=mnar)
+self = MLE(K, N, p_cts, p_bin, mnar=mnar)
 if mnar:
     B0 = torch.cat([B0, C0], 1)
     B = torch.cat([B, C], 1)
 init = {"positions": Z, "heterogeneity": alpha, "bias": B0, "weight": B}
-init = {k: v * (0.9 + 0.10*torch.rand_like(v)) for k, v in init.items()}
+init = {k: v * (0.5 + 0.5*torch.rand_like(v)) for k, v in init.items()}
 self.init(**init)
 
-self.fit_path(train, test, reg=[0.0002, 0.0001, 0.00007, 0.00003, 0.00001], max_iter=100, lr=0.001)
+self.fit_path(train, test, reg=[10., 5., 2., 1., 0.5, 0.2, 0.1], max_iter=100, lr=0.001,
+              init=init, Z_true=Z)
 B.T
 self.model.covariate_model.weight
 

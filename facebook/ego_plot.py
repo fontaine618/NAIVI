@@ -8,7 +8,7 @@ from facebook.data import get_centers, get_data
 
 
 # all ego networks
-PATH = "//facebook/data/raw/"
+PATH = "./facebook/data/raw/"
 centers = get_centers(PATH)
 out = []
 for node in centers:
@@ -26,8 +26,8 @@ table.set_index("Center", inplace=True)
 
 plt.style.use("seaborn")
 
-DATA_PATH = "//facebook/data/raw/"
-FIG_PATH = "//facebook/figs/"
+DATA_PATH = "./facebook/data/raw/"
+FIG_PATH = "./facebook/figs/"
 
 centers = get_centers(DATA_PATH)
 
@@ -59,7 +59,8 @@ corrmat = corrmat[:, order]
 corrmat = corrmat[order, :]
 
 
-fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(11.5, 2.5))
+# fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(11.5, 2.5))
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 5))
 # Ego network
 pos = nx.drawing.spring_layout(ego_graph)
 nx.draw(ego_graph, pos=pos, ax=ax1,
@@ -98,5 +99,9 @@ for center, row in table.iterrows():
 plt.colorbar(plot, ax=ax4, label="Density")
 ax4.set_title("All ego networks")
 
+ax3.patch.set_facecolor('#EEEEEE')
+ax4.patch.set_facecolor('#EEEEEE')
+
 fig.tight_layout()
-fig.savefig(FIG_PATH + "ego_network.pdf")
+# fig.savefig(FIG_PATH + "ego_network.pdf")
+fig.savefig(FIG_PATH + "ego_network_slides.pdf")

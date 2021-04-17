@@ -7,7 +7,7 @@ from matplotlib import collections as mc
 
 # setup
 plt.style.use("seaborn")
-PATH = "//facebook/"
+PATH = "./facebook/"
 DICT = {"MLE": "MLE", "ADVI": "NAIVI-QB", "VIMC": "NAIVI-MC", "MICE": "MICE",
         "N": "Network size", "p_bin": "Nb. attributes", "p_cts": "Nb. covariates",
         "density": "Network density", "missing_rate": "Missing rate",
@@ -69,4 +69,9 @@ labels = [DICT[a] for a in ALGOS]
 fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 fig.tight_layout(h_pad=0.5, w_pad=0.2)
 fig.subplots_adjust(bottom=0.35)
-fig.savefig(PATH + "figs/Kfb_results.pdf")
+
+for ax in axs:
+    ax.patch.set_facecolor('#EEEEEE')
+
+# fig.savefig(PATH + "figs/Kfb_results.pdf")
+fig.savefig(PATH + "figs/Kfb_results_slides.pdf")
