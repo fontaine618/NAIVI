@@ -52,7 +52,7 @@ class PriorEncoder(nn.Module):
 
     def init(self, mean):
         with torch.no_grad():
-            self.log_var_encoder.values.data.fill_(-2.)
+            self.log_sd_encoder.values.data.fill_(-2.)
             self.mean_encoder.values.data = mean
 
     @property

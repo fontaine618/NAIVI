@@ -1,6 +1,6 @@
 import sys
 PATH = "/home/simfont/NAIVI/"
-PATH = "/home/simon/Documents/NAIVI/"
+PATH = "/home/simon/Documents/NAIVI/results/"
 sys.path.append(PATH)
 import numpy as np
 import torch
@@ -10,7 +10,7 @@ if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
     main(
         path=PATH,
-        name="missingrate_continuous_mice",
+        name="missingrate_continuous_simple",
         explore_dict={
             "data.N": np.array([500]),
             "data.K": np.array([5]),
@@ -20,6 +20,6 @@ if __name__ == "__main__":
             "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-1.85]),
             "model.K": np.array([5]),
-            "fit.algo": ["MICE"]
+            "fit.algo": ["NetworkSmoothing", "Mean", "MissForest", ]
         }
     )

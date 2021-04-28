@@ -60,7 +60,7 @@ corrmat = corrmat[order, :]
 
 
 # fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4, figsize=(11.5, 2.5))
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 5))
+fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(7, 5.45))
 # Ego network
 pos = nx.drawing.spring_layout(ego_graph)
 nx.draw(ego_graph, pos=pos, ax=ax1,
@@ -99,9 +99,9 @@ for center, row in table.iterrows():
 plt.colorbar(plot, ax=ax4, label="Density")
 ax4.set_title("All ego networks")
 
-ax3.patch.set_facecolor('#EEEEEE')
-ax4.patch.set_facecolor('#EEEEEE')
+# ax3.patch.set_facecolor('#EEEEEE')
+# ax4.patch.set_facecolor('#EEEEEE')
 
 fig.tight_layout()
-# fig.savefig(FIG_PATH + "ego_network.pdf")
-fig.savefig(FIG_PATH + "ego_network_slides.pdf")
+fig.savefig(FIG_PATH + "ego_network.pdf")
+# fig.savefig(FIG_PATH + "ego_network_slides.pdf")

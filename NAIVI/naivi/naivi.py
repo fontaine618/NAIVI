@@ -73,8 +73,8 @@ class NAIVI:
             {'params': p, "lr": lr}
             for p in self.model.parameters()
         ]
-        optimizer = torch.optim.Adagrad(params)
-        # optimizer = torch.optim.Adam(params)
+        # optimizer = torch.optim.Adagrad(params)
+        optimizer = torch.optim.Adam(params)
         if verbose:
             n_char = self.verbose_init()
         epoch = 0

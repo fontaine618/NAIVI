@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib import collections as mc
 from matplotlib.lines import Line2D
 plt.style.use("seaborn")
-PATH = "//facebook/"
+PATH = "./facebook/"
 DICT = {"MLE": "MLE", "ADVI": "NAIVI-QB", "VIMC": "NAIVI-MC", "MICE": "MICE",
         "N": "Network size", "p_bin": "Nb. attributes", "p_cts": "Nb. covariates",
         "density": "Network density", "missing_rate": "Missing rate",
@@ -38,7 +38,8 @@ centers = tmp.index.values
 # plot
 nrow = 1
 ncol = len(MISSING_RATES)
-fig, axs = plt.subplots(nrow, ncol, figsize=(2.5*ncol, 2.5), sharex="col", sharey="row")
+# fig, axs = plt.subplots(nrow, ncol, figsize=(2.5*ncol, 2.5), sharex="col", sharey="row")
+fig, axs = plt.subplots(nrow, ncol, figsize=(7, 3), sharex="col", sharey="row")
 for i, rate in enumerate(MISSING_RATES):
     for algo in ALGOS:
         m = means.loc[(rate, algo, ), "test_auroc"].loc[centers]
@@ -54,12 +55,13 @@ for i, rate in enumerate(MISSING_RATES):
     axs[i].set_xticklabels(tmp.astype(int), rotation="vertical")
     axs[i].set_title("{:.0f} % missing".format(rate*100))
     axs[i].set_xlabel("Network size")
-axs[0].set_ylabel("AUROC")
+axs[0].set_ylabel("AUC")
 # legend
 lines = [Line2D([0], [0], color=COLORS[a]) for a in ALGOS]
 labels = [DICT[a] for a in ALGOS]
 fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 
 fig.tight_layout()
-fig.subplots_adjust(bottom=0.40)
+# fig.subplots_adjust(bottom=0.40)
+fig.subplots_adjust(bottom=0.33)
 fig.savefig(PATH + "figs/fb_results.pdf")

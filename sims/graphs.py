@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 plt.style.use("seaborn")
 
-PATH = "//sims/"
+PATH = "./sims/"
 EXPERIMENTS = [
     "covariate_binary",
     "covariate_continuous",
@@ -40,7 +40,8 @@ DICT = {"MLE": "MLE", "ADVI": "NAIVI-QB", "VIMC": "NAIVI-MC", "MICE": "MICE",
 cov_type = "cts"
 cov_type = "bin"
 
-fig, axs = plt.subplots(2, 4, sharex="col", figsize=(5, 3), sharey="row")
+# fig, axs = plt.subplots(2, 4, sharex="col", figsize=(5, 3), sharey="row")
+fig, axs = plt.subplots(2, 4, sharex="col", figsize=(7, 3.5), sharey="row")
 
 for i, (exp, bin, xaxis, curves, which) in enumerate(zip(EXPERIMENTS, BINARY, XAXIS, CURVES, WHICH)):
     print(exp)
@@ -85,12 +86,13 @@ lines = [Line2D([0], [0], color=colors[a]) for a in ALGOS]
 labels = [DICT[a] for a in ALGOS]
 fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 # ylabels
-axs[0][0].set_ylabel("MSE" if cov_type == "cts" else "AUROC")
+axs[0][0].set_ylabel("MSE" if cov_type == "cts" else "AUC")
 axs[1][0].set_ylabel("$D(\widehat Z, Z)$")
-axs[0][0].get_yaxis().set_label_coords(-0.4, 0.5)
-axs[1][0].get_yaxis().set_label_coords(-0.4, 0.5)
+axs[0][0].get_yaxis().set_label_coords(-0.25, 0.5)
+axs[1][0].get_yaxis().set_label_coords(-0.25, 0.5)
 # layout
 fig.tight_layout(h_pad=0.5, w_pad=0.)
-fig.subplots_adjust(bottom=0.30)
+# fig.subplots_adjust(bottom=0.30)
+fig.subplots_adjust(bottom=0.25)
 
 fig.savefig(PATH + "figs/{}_results.pdf".format(cov_type))

@@ -47,7 +47,8 @@ stds = results.groupby(["center", "algo", "K_model"]).agg("std")
 # plot
 nrow = 1
 ncol = len(CENTERS)
-fig, axs = plt.subplots(nrow, ncol, figsize=(1.66*ncol, 2.5), sharey="row")
+# fig, axs = plt.subplots(nrow, ncol, figsize=(1.66*ncol, 2.5), sharey="row")
+fig, axs = plt.subplots(nrow, ncol, figsize=(7, 3), sharey="row")
 for i, c in enumerate(CENTERS):
     n = means.loc[(c, ), "N"].mean().astype(int)
     for algo in ALGOS:
@@ -61,17 +62,18 @@ for i, c in enumerate(CENTERS):
     axs[i].set_title("#{} ($N=${})".format(c, n))
     axs[i].set_xlabel("Latent dimension")
     axs[i].set_xlim(0, 20)
-axs[0].set_ylabel("AUROC")
+axs[0].set_ylabel("AUC")
 # axs[-1].legend(loc="lower right")
 # legend
 lines = [Line2D([0], [0], color=colors[a]) for a in ALGOS]
 labels = [DICT[a] for a in ALGOS]
 fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 fig.tight_layout(h_pad=0.5, w_pad=0.2)
-fig.subplots_adjust(bottom=0.35)
+# fig.subplots_adjust(bottom=0.35)
+fig.subplots_adjust(bottom=0.25)
 
-for ax in axs:
-    ax.patch.set_facecolor('#EEEEEE')
+# for ax in axs:
+#     ax.patch.set_facecolor('#EEEEEE')
 
-# fig.savefig(PATH + "figs/Kfb_results.pdf")
-fig.savefig(PATH + "figs/Kfb_results_slides.pdf")
+fig.savefig(PATH + "figs/Kfb_results.pdf")
+# fig.savefig(PATH + "figs/Kfb_results_slides.pdf")

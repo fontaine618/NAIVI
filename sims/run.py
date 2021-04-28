@@ -6,6 +6,9 @@ from NAIVI.advi.model import ADVI
 from NAIVI.mle.model import MLE
 from NAIVI.vimc.model import VIMC
 from NAIVI.mice.model import MICE
+from NAIVI.mf import MissForest
+from NAIVI.constant import Mean
+from NAIVI.smoothing import NetworkSmoothing
 
 
 def run(traj):
@@ -58,8 +61,17 @@ def run(traj):
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "n_sample": n_sample}
         elif algo == "VMP":
             raise RuntimeError("VMP not implemented yet")
-        elif algo == "MICE":
+        elif algo =="MICE":
             model = MICE(K_model, N, p_cts, p_bin)
+            fit_args = {}
+        elif algo =="MissForest":
+            model = MissForest(K_model, N, p_cts, p_bin)
+            fit_args = {}
+        elif algo =="Mean":
+            model = Mean(K_model, N, p_cts, p_bin)
+            fit_args = {}
+        elif algo =="NetworkSmoothing":
+            model = NetworkSmoothing(K_model, N, p_cts, p_bin)
             fit_args = {}
         else:
             model = MLE(K, N, p_cts, p_bin)
