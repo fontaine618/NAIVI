@@ -111,7 +111,7 @@ class MICE:
             mse = mean_squared_error(mean_cts[which_cts], X_cts[which_cts]).item()
         if X_bin is not None:
             which_bin = ~X_bin.isnan()
-            auc = auroc(proba_bin[which_bin], X_bin[which_bin]).item()
+            auc = auroc(proba_bin[which_bin], X_bin[which_bin].int()).item()
         return auc, mse
 
     def latent_positions(self):
