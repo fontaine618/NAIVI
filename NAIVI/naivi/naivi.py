@@ -4,6 +4,7 @@ import numpy as np
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
 from NAIVI.utils.metrics import invariant_distance, projection_distance
+from torch.optim.lr_scheduler import LambdaLR
 
 
 class NAIVI:
@@ -14,7 +15,7 @@ class NAIVI:
         self.reg = 0.
         self.cv_fit_ = None
 
-    def cv_path(self, train, reg=[0.1, 0.2], n_folds=5, cv_seed=0, **kwargs):
+    def cv_path(self, train, reg=None, n_folds=5, cv_seed=0, **kwargs):
         cv_folds = train.cv_folds(n_folds, cv_seed)
         cv_fit = {
             fold: copy.deepcopy(self).fit_path(*cv_folds[fold], reg=reg, **kwargs)
@@ -27,7 +28,7 @@ class NAIVI:
         self.cv_fit_ = cv_fit
         return cv_loss
 
-    def fit_path(self, train, test=None, reg=[0.1, 0.2], init=None, **kwargs):
+    def fit_path(self, train, test=None, reg=None, init=None, **kwargs):
         out = {}
         for r in reg:
             self.init(**init)
@@ -73,21 +74,26 @@ class NAIVI:
             {'params': p, "lr": lr}
             for p in self.model.parameters()
         ]
-        # optimizer = torch.optim.Adagrad(params)
-        optimizer = torch.optim.Adam(params)
-        if verbose:
-            n_char = self.verbose_init()
+        optimizer = torch.optim.Adagrad(params)
+        # optimizer = torch.optim.SGD(params)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1./(1+epoch)**0.5)
+        n_char = self.verbose_init() if verbose else 0
         epoch = 0
         out = None
         for epoch in range(max_iter):
+            optimizer.zero_grad()
             # custom split
             batches = torch.split(torch.randperm(len(train)), batch_size)
             for batch in batches:
                 self.batch_update(batch, optimizer, train, epoch)
+            scheduler.step()
             converged, max_abs_grad = self.check_convergence(eps)
             llk_train, out, log = self.epoch_metrics(Z_true, epoch, test, train, max_abs_grad)
             if verbose and epoch % 10 == 0:
                 print(log)
+                for param_group in optimizer.param_groups:
+                    print(param_group['lr'])
+                    break
             if converged:
                 break
         if verbose:

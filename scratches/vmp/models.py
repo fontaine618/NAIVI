@@ -1,5 +1,5 @@
 import torch
-from NAIVI.utils.gen_data import generate_dataset
+from NAIVI_experiments.gen_data import generate_dataset
 torch.set_default_dtype(torch.float64)
 
 # -----------------------------------------------------------------------------

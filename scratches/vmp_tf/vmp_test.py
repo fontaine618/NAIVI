@@ -2,7 +2,7 @@ import torch
 import tensorflow as tf
 import numpy as np
 # data
-from NAIVI.utils.gen_data import generate_dataset
+from NAIVI_experiments.gen_data import generate_dataset
 # VMP
 from NAIVI.vmp_tf.vmp.joint_model2 import JointModel2
 # MLE

@@ -1,4 +1,4 @@
-from NAIVI.utils.gen_data_mnar import generate_dataset
+from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.utils.data import JointDataset
 from NAIVI import ADVI
 from NAIVI import MLE

@@ -1,6 +1,6 @@
 import numpy as np
 import time
-from NAIVI.utils.gen_data import generate_dataset
+from NAIVI_experiments.gen_data import generate_dataset
 from NAIVI.utils.data import JointDataset
 from NAIVI.advi.model import ADVI
 from NAIVI.mle.model import MLE

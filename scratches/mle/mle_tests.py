@@ -1,5 +1,5 @@
 import torch
-from NAIVI.utils.gen_data import generate_dataset
+from NAIVI_experiments.gen_data import generate_dataset
 
 # -----------------------------------------------------------------------------
 # Create Data

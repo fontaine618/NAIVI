@@ -1,6 +1,4 @@
-import torch
-import numpy as np
-from NAIVI.utils.gen_data import generate_dataset
+from NAIVI_experiments.gen_data import generate_dataset
 from NAIVI.utils.data import JointDataset
 from NAIVI.advi.model import ADVI
 from NAIVI.mle.model import MLE
@@ -103,7 +101,6 @@ test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing)
 self = MICE(K, N, p_cts, p_bin)
 out = self.fit(train, test)
 
-from sklearn.experimental import enable_iterative_imputer
 from sklearn.linear_model import BayesianRidge
 from sklearn.impute import IterativeImputer
 self = MICE(K, N, p_cts, p_bin)
