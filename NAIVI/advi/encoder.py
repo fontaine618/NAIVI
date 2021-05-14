@@ -24,11 +24,11 @@ class PriorEncoder(nn.Module):
         self.mean_encoder = Select(dim[0], dim[1])
         self.log_var_encoder = Select(dim[0], dim[1])
         with torch.no_grad():
-            self.log_var_encoder.values.data.fill_(-4.)
+            self.log_var_encoder.values.data.fill_(-2.)
 
     def forward(self, indices):
         mean = self.mean_encoder(indices)
-        var = self.log_var_encoder(indices).exp() # TODO
+        var = self.log_var_encoder(indices).exp()
         return mean, var
 
     def kl_divergence(self):
@@ -42,7 +42,7 @@ class PriorEncoder(nn.Module):
 
     def init(self, mean):
         with torch.no_grad():
-            self.log_var_encoder.values.data.fill_(-4.)
+            self.log_var_encoder.values.data.fill_(-2.)
             self.mean_encoder.values.data = mean
 
     @property

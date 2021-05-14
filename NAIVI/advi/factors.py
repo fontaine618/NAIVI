@@ -50,7 +50,7 @@ class Logistic(nn.Module):
         self.p = p # unused, only for consistency with probit model
         self.gaussian = torch.distributions.normal.Normal(0., 1.)
         # these should be class attributes, but to get correct device they are instance attr
-        self._p = nn.Parameter(torch.tensor([[[
+        self._p = torch.tensor([[[
             0.003246343272134,
             0.051517477033972,
             0.195077912673858,
@@ -59,8 +59,8 @@ class Logistic(nn.Module):
             0.131076880695470,
             0.027912418727972,
             0.001449567805354
-        ]]]), requires_grad=False)
-        self._s = nn.Parameter(torch.tensor([[[
+        ]]]).cuda()
+        self._s = torch.tensor([[[
             1.365340806296348,
             1.059523971016916,
             0.830791313765644,
@@ -69,7 +69,13 @@ class Logistic(nn.Module):
             0.396313345166341,
             0.308904252267995,
             0.238212616409306
-        ]]]), requires_grad=False)
+        ]]]).cuda()
+
+    # def cuda(self, device=None):
+    #     print("this is reached?")
+    #     self._p = self._p.cuda(device)
+    #     self._s = self._s.cuda(device)
+    #     super().cuda(device)
 
     def forward(self, mean, var):
         mean = mean.unsqueeze(-1)

@@ -25,7 +25,7 @@ class PriorEncoder(nn.Module):
         self.mean_encoder = Select(dim)
         self.log_sd_encoder = Select(dim)
         with torch.no_grad():
-            self.log_sd_encoder.values.data.fill_(-2.)
+            self.log_sd_encoder.values.data.fill_(-0.)
 
     def forward(self, indices, n_sample=1):
         # get mean and sd
@@ -52,7 +52,7 @@ class PriorEncoder(nn.Module):
 
     def init(self, mean):
         with torch.no_grad():
-            self.log_sd_encoder.values.data.fill_(-2.)
+            self.log_sd_encoder.values.data.fill_(-0.)
             self.mean_encoder.values.data = mean
 
     @property

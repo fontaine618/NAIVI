@@ -1,6 +1,6 @@
 import torch
-import copy
-import numpy as np
+# import copy
+# import numpy as np
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
 from NAIVI.utils.metrics import invariant_distance, projection_distance
@@ -13,20 +13,20 @@ class NAIVI:
         self.model = model
         self.denum = 1.
         self.reg = 0.
-        self.cv_fit_ = None
+        # self.cv_fit_ = None
 
-    def cv_path(self, train, reg=None, n_folds=5, cv_seed=0, **kwargs):
-        cv_folds = train.cv_folds(n_folds, cv_seed)
-        cv_fit = {
-            fold: copy.deepcopy(self).fit_path(*cv_folds[fold], reg=reg, **kwargs)
-            for fold in range(n_folds)
-        }
-        cv_loss = {
-            r: torch.tensor([cv_fit[i][r][7] for i in range(n_folds)]).mean().item()
-            for r in reg
-        }
-        self.cv_fit_ = cv_fit
-        return cv_loss
+    # def cv_path(self, train, reg=None, n_folds=5, cv_seed=0, **kwargs):
+    #     cv_folds = train.cv_folds(n_folds, cv_seed)
+    #     cv_fit = {
+    #         fold: copy.deepcopy(self).fit_path(*cv_folds[fold], reg=reg, **kwargs)
+    #         for fold in range(n_folds)
+    #     }
+    #     cv_loss = {
+    #         r: torch.tensor([cv_fit[i][r][7] for i in range(n_folds)]).mean().item()
+    #         for r in reg
+    #     }
+    #     self.cv_fit_ = cv_fit
+    #     return cv_loss
 
     def fit_path(self, train, test=None, reg=None, init=None, **kwargs):
         out = {}
@@ -65,40 +65,53 @@ class NAIVI:
     def fit(self, train, test=None, Z_true=None, reg=0.,
             batch_size=100, eps=1.e-6, max_iter=100,
             lr=0.001, weight_decay=0., verbose=True):
-        if Z_true is not None:
-            Z_true = Z_true.cuda()
+        Z_true = Z_true.cuda() if Z_true is not None else None
         self.reg = reg
-        # compute scaling factor
         self.compute_denum(train)
-        params = [
-            {'params': p, "lr": lr}
-            for p in self.model.parameters()
-        ]
-        optimizer = torch.optim.Adagrad(params)
-        # optimizer = torch.optim.SGD(params)
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1./(1+epoch)**0.5)
+        optimizer, scheduler = self.prepare_optimizer(lr)
         n_char = self.verbose_init() if verbose else 0
-        epoch = 0
-        out = None
+        epoch, out = 0, None
         for epoch in range(max_iter):
+            # for step in ["E", "M"]:
+            #     optimizer.zero_grad(set_to_none=True)
+            #     self.select_params_for_step(step)
+            #     for _ in range(5):
             optimizer.zero_grad()
-            # custom split
-            batches = torch.split(torch.randperm(len(train)), batch_size)
-            for batch in batches:
-                self.batch_update(batch, optimizer, train, epoch)
+            # batches = torch.split(torch.randperm(len(train)), batch_size)
+            # for batch in batches:
+            #     self.batch_update(batch, optimizer, train, epoch)
+            self.batch_update(None, optimizer, train, epoch)
             scheduler.step()
             converged, max_abs_grad = self.check_convergence(eps)
             llk_train, out, log = self.epoch_metrics(Z_true, epoch, test, train, max_abs_grad)
             if verbose and epoch % 10 == 0:
                 print(log)
-                for param_group in optimizer.param_groups:
-                    print(param_group['lr'])
-                    break
             if converged:
                 break
         if verbose:
             print("-" * n_char)
         return out
+
+    def select_params_for_step(self, step):
+        e = (step == "E")
+        m = (step == "M")
+        for p in self.model.encoder.parameters():
+            p.requires_grad = e
+        for p in self.model.covariate_model.parameters():
+            p.requires_grad = m
+        for p in self.model.adjacency_model.parameters():
+            p.requires_grad = m
+
+    def prepare_optimizer(self, lr):
+        params = [
+            {'params': p, "lr": lr}
+            for p in self.model.parameters()
+        ]
+        optimizer = torch.optim.Adagrad(params)
+        # optimizer = torch.optim.Adam(params)
+        # optimizer = torch.optim.SGD(params)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** 0.75)
+        return optimizer, scheduler
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
         with torch.no_grad():
@@ -157,14 +170,17 @@ class NAIVI:
                      self.model.adjacency_model.n_links
 
     def latent_positions(self):
-        return self.model.encoder.latent_position_encoder.mean
+        with torch.no_grad():
+            return self.model.encoder.latent_position_encoder.mean
 
     def latent_heterogeneity(self):
-        return self.model.encoder.latent_heterogeneity_encoder.mean
+        with torch.no_grad():
+            return self.model.encoder.latent_heterogeneity_encoder.mean
 
     def latent_distance(self, Z):
-        ZZ = self.latent_positions()
-        return invariant_distance(Z, ZZ), projection_distance(Z, ZZ)
+        with torch.no_grad():
+            ZZ = self.latent_positions()
+            return invariant_distance(Z, ZZ), projection_distance(Z, ZZ)
 
     @staticmethod
     def get_batch(data, batch=None):
@@ -228,26 +244,31 @@ class NAIVI:
         # projected gradient for MLE
         self.model.project()
 
+    @property
+    def covariate_weight(self):
+        return self.model.covariate_model.weight
+
     def proximal_step(self, lr):
-        with torch.no_grad():
-            reg = self.reg
-            coef = self.model.covariate_model.weight
-            prev_data = coef.prev_data
-            grad = coef.grad
-            data = prev_data - lr * grad
-            if reg > 0.:
-                norm = data.norm("fro", 1)
-                mult = (1. - reg * lr / norm).double()
-                mult = torch.where(mult < 0., 0., mult)
-                which = torch.ones_like(mult)
-                which[:which.shape[0]//2] = 0.
-                mult = torch.where(which == 0., 1., mult)
-                data *= mult.reshape((-1, 1))
-            coef.data = data
+        if self.covariate_weight.grad is not None:
+            with torch.no_grad():
+                reg = self.reg
+                coef = self.covariate_weight
+                prev_data = coef.prev_data
+                grad = coef.grad
+                data = prev_data - lr * grad
+                if reg > 0.:
+                    norm = data.norm("fro", 1)
+                    mult = (1. - reg * lr / norm).double()
+                    mult = torch.where(mult < 0., 0., mult)
+                    which = torch.ones_like(mult)
+                    which[:which.shape[0]//2] = 0.
+                    mult = torch.where(which == 0., 1., mult)
+                    data *= mult.reshape((-1, 1))
+                coef.data = data
 
     def store_coef(self):
         with torch.no_grad():
-            self.model.covariate_model.weight.prev_data = self.model.covariate_model.weight.data
+            self.covariate_weight.prev_data = self.covariate_weight.data
 
     def evaluate(self, data):
         with torch.no_grad():

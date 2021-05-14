@@ -30,17 +30,34 @@ class CovariateModel(nn.Module):
             X_cts_masked = X_cts.masked_fill(X_cts.isnan(), 0.)
             llk = (mean_cts - X_cts_masked) ** 2 / (2. * var) + 0.5 * torch.log(2. * math.pi * var)
             llk = llk.masked_fill(X_cts.isnan(), 0.)
-            nll += torch.nansum(llk) * self.n_cts / max(1., (~X_cts.isnan()).sum())
+            nll += torch.nansum(llk) # * self.n_cts / max(1., (~X_cts.isnan()).sum())
         if (X_bin is not None) and (proba_bin is not None):
             X_bin_masked = X_bin.masked_fill(X_bin.isnan(), 0.)
             llk = X_bin_masked * torch.log(proba_bin) + (1.-X_bin_masked) * torch.log(1. - proba_bin)
             llk = llk.masked_fill(X_bin.isnan(), 0.)
-            nll += - torch.nansum(llk) * self.n_bin / max(1., (~X_bin.isnan()).sum())
+            nll += - torch.nansum(llk) # * self.n_bin / max(1., (~X_bin.isnan()).sum())
         return - nll
 
     @property
     def weight(self):
         return self.mean_model.weight
+
+    @property
+    def bias(self):
+        return self.mean_model.bias
+
+    # For GLM compatibility
+    def loss(self,
+             mean_cts=None, X_cts=None,
+             proba_bin=None, X_bin=None,
+             ):
+        loss = - self.log_likelihood(mean_cts, X_cts, proba_bin, X_bin)
+        return loss
+
+    def loss_and_fitted_values(self, latent_positions, X_cts=None, X_bin=None):
+        mean_cts, proba_bin = self.forward(latent_positions)
+        loss = self.loss(mean_cts, X_cts, proba_bin, X_bin)
+        return loss, mean_cts, proba_bin
 
 
 class AdjacencyModel(nn.Module):
@@ -60,8 +77,7 @@ class AdjacencyModel(nn.Module):
         return proba
 
     def log_likelihood(self, proba=None, A=None):
-        nll = torch.tensor(0.).cuda()
+        llk = torch.tensor(0.).cuda()
         if (A is not None) and (proba is not None):
             llk = A * torch.log(proba) + (1.-A) * torch.log(1. - proba)
-            nll += - torch.nansum(llk)
-        return - nll
+        return torch.nansum(llk)

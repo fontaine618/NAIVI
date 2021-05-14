@@ -20,5 +20,5 @@ def projection_distance(y_true, y_pred):
             u, _, _ = torch.svd(y_pred)
             proj_pred = torch.matmul(u, u.transpose(0, 1))
         return ((proj_pred - proj_true) ** 2).sum().item()
-    except:
+    except Exception:
         return np.nan
