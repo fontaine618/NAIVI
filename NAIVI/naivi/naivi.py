@@ -1,6 +1,5 @@
 import torch
-# import copy
-# import numpy as np
+import numpy as np
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
 from NAIVI.utils.metrics import invariant_distance, projection_distance
@@ -46,6 +45,9 @@ class NAIVI:
                "dist_inv", "dist_proj", "llk_test", "mse_test", "auroc_test",
             "nb_non_zero", "non_zero"]
         }
+        best_loss = np.inf
+        best_r = None
+        best_out = None
         for r, (_, _, llk_train, mse_train, auroc_train,
                 dist_inv, dist_proj, llk_test, mse_test, auroc_test,
                 nb_non_zero, non_zero) in out.items():
@@ -60,7 +62,11 @@ class NAIVI:
             results["auroc_test"].append(auroc_test)
             results["nb_non_zero"].append(nb_non_zero)
             results["non_zero"].append(non_zero)
-        return results
+            if llk_train < best_loss:
+                best_loss = llk_train
+                best_r = r
+                best_out = out[r]
+        return results, best_r, best_out
 
     def fit(self, train, test=None, Z_true=None, reg=0.,
             batch_size=100, eps=1.e-6, max_iter=100,
@@ -110,7 +116,7 @@ class NAIVI:
         optimizer = torch.optim.Adagrad(params)
         # optimizer = torch.optim.Adam(params)
         # optimizer = torch.optim.SGD(params)
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** 0.75)
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** 1.0)
         return optimizer, scheduler
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
@@ -130,11 +136,11 @@ class NAIVI:
             penalty = self.compute_penalty()
             # training metrics
             llk_train, mse_train, auroc_train = self.evaluate(train)
-            # llk_train += self.reg * penalty
+            llk_train += self.reg * penalty
             # testing metrics
             if test is not None:
                 llk_test, mse_test, auroc_test = self.evaluate(test)
-                # llk_test += self.reg * penalty
+                llk_test += self.reg * penalty
             else:
                 llk_test, mse_test, auroc_test = 0., 0., 0.
             # distance
@@ -146,7 +152,7 @@ class NAIVI:
                llk_train, mse_train, auroc_train,
                dist_inv, dist_proj,
                llk_test, mse_test, auroc_test]
-        form = "{:<4} {:<10.2e} |" + " {:<10.4f}" * 3 + "|" + " {:<10.4f}" * 2 + "|" + " {:<10.4f}" * 3
+        form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3
         log = form.format(*out)
         return llk_train, out, log
 
@@ -201,7 +207,7 @@ class NAIVI:
 
     @staticmethod
     def verbose_init():
-        form = "{:<4} {:<10} |" + " {:<10}" * 3 + "|" + " {:<10}" * 2 + "|" + " {:<10}" * 3
+        form = "{:<4} {:<10} |" + " {:<11}" * 3 + "|" + " {:<8}" * 2 + "|" + " {:<11}" * 3
         names = ["iter", "grad norm", "loss", "mse", "auroc", "inv.", "proj.", "loss", "mse", "auroc"]
         groups = ["", "", "Train", "", "", "Distance", "", "Test", "", ""]
         l1 = form.format(*groups)
@@ -275,7 +281,7 @@ class NAIVI:
             A, X_bin, X_cts, i0, i1, j = self.get_batch(data, None)
             # get fitted values
             llk, mean_cts, proba_bin, proba_adj = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
-            llk /= self.denum
+            # llk /= self.denum
             auc, mse = self.prediction_metrics(X_bin, X_cts, mean_cts, proba_bin)
         return llk.item(), mse, auc
 
