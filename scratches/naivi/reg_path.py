@@ -2,6 +2,7 @@ from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.utils.data import JointDataset
 from NAIVI import ADVI, VIMC, MLE, MICE
 import torch
+import numpy as np
 
 # -----------------------------------------------------------------------------
 # Create Data
@@ -9,8 +10,8 @@ import torch
 
 N = 500
 K = 5
-p_cts = 100
-p_bin = 0
+p_cts = 0
+p_bin = 100
 var_cts = 1.
 missing_mean = -0.50 #-3 ~ 7%, -2 ~ 15%, -1 ~ 30% , 0. ~ 50%
 alpha_mean = -1.85
@@ -38,12 +39,12 @@ if mnar:
     B = torch.cat([B, C], 1)
 init = {"positions": Z, "heterogeneity": alpha, "bias": B0, "weight": B}
 # self = MLE(K, N, p_cts, p_bin, mnar=mnar)
-# self = ADVI(K, N, p_cts, p_bin, mnar=mnar)
-self = VIMC(K, N, p_cts, p_bin, mnar=mnar)
+self = ADVI(K, N, p_cts, p_bin, mnar=mnar)
+# self = VIMC(K, N, p_cts, p_bin, mnar=mnar)
 # init = {k: v * (0.9 + 0.2*torch.rand_like(v)) for k, v in init.items()}
 self.init(**init)
 
-self.fit_path(train, test, reg=[10., 5., 2., 1., 0.5, 0.2, 0.1], max_iter=1000, lr=0.1,
+out = self.fit_path(train, test, reg=10**np.linspace(1., -1., 10), max_iter=10, lr=0.1,
               init=init, Z_true=Z)
 
 

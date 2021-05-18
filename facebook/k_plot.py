@@ -4,19 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
 from matplotlib import collections as mc
+from NAIVI_experiments.display import colormap, to_display
 
 # setup
 plt.style.use("seaborn")
 PATH = "./facebook/"
-DICT = {"MLE": "MLE", "ADVI": "NAIVI-QB", "VIMC": "NAIVI-MC", "MICE": "MICE",
-        "N": "Network size", "p_bin": "Nb. attributes", "p_cts": "Nb. covariates",
-        "density": "Network density", "missing_rate": "Missing rate",
-        "cts": "Continuous", "bin": "Binary"}
-COLORS = {"MLE": "#4c72b0", "ADVI": "#55a868", "VIMC": "#c44e52", "MICE": "#8172b2"}
-colors = {"MLE": "#4c72b0", "ADVI": "#55a868", "VIMC": "#c44e52", "MICE": "#8172b2"}
+COLORS = colormap
+DICT = to_display
 
 # ALGOS = ["VIMC", "ADVI", "MLE", "MICE"]
-ALGOS = ["VIMC", "ADVI", "MLE", "MICE"]
+ALGOS = ["ADVI", "VIMC", "MLE", "NetworkSmoothing", "MICE", "MissForest", "Mean"]
 CENTERS = [698, 0, 1684]
 XS = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) #, 12, 15, 20])
 MISSING_RATE = 0.5
@@ -30,12 +27,13 @@ results = pd.concat([
     pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
     for ex in exps
 ])
-# patch mice
-mice = results.loc[results["algo"] == "MICE"]
-for k in np.array([2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20]):
-    micek = mice.copy()
-    micek["K_model"] = k
-    results = pd.concat([results, micek])
+# patch simple
+for alg in ["NetworkSmoothing", "MICE", "MissForest", "Mean"]:
+    mice = results.loc[results["algo"] == alg]
+    for k in np.array([2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20]):
+        micek = mice.copy()
+        micek["K_model"] = k
+        results = pd.concat([results, micek])
 
 # means +/- std
 # drop = results["train_loss"] == 0.
@@ -48,7 +46,7 @@ stds = results.groupby(["center", "algo", "K_model"]).agg("std")
 nrow = 1
 ncol = len(CENTERS)
 # fig, axs = plt.subplots(nrow, ncol, figsize=(1.66*ncol, 2.5), sharey="row")
-fig, axs = plt.subplots(nrow, ncol, figsize=(7, 3), sharey="row")
+fig, axs = plt.subplots(nrow, ncol, figsize=(9, 5), sharey="row")
 for i, c in enumerate(CENTERS):
     n = means.loc[(c, ), "N"].mean().astype(int)
     for algo in ALGOS:
@@ -56,7 +54,7 @@ for i, c in enumerate(CENTERS):
         s = stds.loc[(c, algo, ), "test_auroc"]
         xs = m.index
         axs[i].plot(xs, m, color=COLORS[algo], label=DICT[algo])
-        axs[i].fill_between(xs, m-s, m+s, color=COLORS[algo], alpha=0.2)
+        # axs[i].fill_between(xs, m-s, m+s, color=COLORS[algo], alpha=0.2)
     # axs[i].set_xticks(xs)
     # axs[i].set_xticklabels(xs)
     axs[i].set_title("#{} ($N=${})".format(c, n))
@@ -65,12 +63,12 @@ for i, c in enumerate(CENTERS):
 axs[0].set_ylabel("AUC")
 # axs[-1].legend(loc="lower right")
 # legend
-lines = [Line2D([0], [0], color=colors[a]) for a in ALGOS]
+lines = [Line2D([0], [0], color=COLORS[a]) for a in ALGOS]
 labels = [DICT[a] for a in ALGOS]
 fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 fig.tight_layout(h_pad=0.5, w_pad=0.2)
 # fig.subplots_adjust(bottom=0.35)
-fig.subplots_adjust(bottom=0.25)
+fig.subplots_adjust(bottom=0.2)
 
 # for ax in axs:
 #     ax.patch.set_facecolor('#EEEEEE')
