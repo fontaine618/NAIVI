@@ -88,7 +88,7 @@ class MICE:
         auroc_test, mse_test = self.prediction_metrics(
             X_bin, X_cts, mean_cts, proba_bin
         )
-        out = [0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mse_test, auroc_test]
+        out = [0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mse_test, auroc_test]
         form = (
             "{:<4} |"
             + " {:<10.4f}" * 3

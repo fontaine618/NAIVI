@@ -15,8 +15,8 @@ from NAIVI.smoothing import NetworkSmoothing
 
 N = 500
 K = 5
-p_cts = 100
-p_bin = 0
+p_cts = 0
+p_bin = 100
 var_cts = 1.
 missing_rate = 0.10
 alpha_mean = -1.85

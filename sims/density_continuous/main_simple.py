@@ -15,7 +15,7 @@ if __name__ == "__main__":
             "data.N": np.array([500]),
             "data.K": np.array([5]),
             "data.p_bin": np.array([0]),
-            "data.p_cts": np.array([10, 100, 500]),
+            "data.p_cts": np.array([10, 100, ]),
             "data.missing_rate": np.array([0.1]),
             "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-3.2, -2.8, -2.4, -2., -1.6, -1.2, -0.8, -0.4, 0.0, 0.4]),

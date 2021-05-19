@@ -9,6 +9,7 @@ def main(path, name, explore_dict):
     comment = "\n".join([
         "{}: {}".format(k, v) for k, v in explore_dict.items()
     ])
+    print(comment)
     # pypet environment
     env = Environment(
         trajectory=name,
@@ -44,7 +45,7 @@ def main(path, name, explore_dict):
         "data.missing_mean", np.float64(-1.0), "Missing mean"
     )
     traj.f_add_parameter(
-        "data.seed", np.int64(1), "Random seed"
+        "data.seed", np.int64(0), "Random seed"
     )
     traj.f_add_parameter(
         "data.alpha_mean", np.float64(-1.85), "Mean of the heterogeneity parameter"

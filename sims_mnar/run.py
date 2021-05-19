@@ -66,8 +66,8 @@ def run(traj):
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
                         "batch_size": len(train), "reg": reg, "init": init}
         elif algo == "VIMC":
-            model = VIMC(K_model, N, p_cts, p_bin, mnar=mnar)
-            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "n_sample": n_sample,
+            model = VIMC(K_model, N, p_cts, p_bin, mnar=mnar, n_samples=n_sample)
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
                         "batch_size": len(train), "reg": reg, "init": init}
         elif algo =="MICE":
             model = MICE(K_model, N, p_cts, p_bin)
@@ -93,12 +93,15 @@ def run(traj):
         t0 = time.time()
         if algo in ["MLE", "ADVI", "VIMC"]:
             _, _, out = model.fit_path(train, test, Z_true=Z.cuda(), **fit_args)
-            output, selected = out[:-1], out[-1]
-            acc = 0.
-            if mnar:
-                true = torch.where(B.abs().sum(0) > 0., 1, 0).numpy()
-                acc = ((true==selected)[(p_bin+p_cts):]).mean()
-            output += [acc]
+            if out is not None:
+                output, selected = out[:-1], out[-1]
+                acc = 0.
+                if mnar:
+                    true = torch.where(B.abs().sum(0) > 0., 1, 0).numpy()
+                    acc = ((true==selected)[(p_bin+p_cts):]).mean()
+                output += [acc]
+            else:
+                output = [np.nan for _ in range(12)]
         else:
             t0 = time.time()
             output = model.fit(train, test, Z_true=Z.cuda(), **fit_args)

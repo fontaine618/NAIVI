@@ -16,7 +16,7 @@ if __name__ == "__main__":
             "data.p_bin": np.array([100]),
             "data.p_cts": np.array([0]),
             "data.missing_mean": np.linspace(-3., 1., 13),
-            "data.seed": np.arange(0, 1, 10),
+            "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.50]),
             "fit.algo": ["ADVI"],

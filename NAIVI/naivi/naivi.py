@@ -229,7 +229,7 @@ class NAIVI:
         if X_bin is not None:
             which_bin = ~X_bin.isnan()
             if which_bin.sum() > 0.:
-                auc = auroc(proba_bin[which_bin], X_bin[which_bin]).item()
+                auc = auroc(proba_bin[which_bin], X_bin.int()[which_bin]).item()
         return auc, mse
 
     def batch_update(self, batch, optimizer, train, epoch):
