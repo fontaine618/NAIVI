@@ -43,13 +43,17 @@ class NAIVI:
             n: []
             for n in ["reg", "llk_train", "mse_train", "auroc_train",
                "dist_inv", "dist_proj", "llk_test", "mse_test", "auroc_test",
+                      "aic", "bic",
             "nb_non_zero", "non_zero"]
         }
-        best_loss = np.inf
+        best_critrion = np.inf
         best_r = None
         best_out = None
-        for r, (_, _, llk_train, mse_train, auroc_train,
-                dist_inv, dist_proj, llk_test, mse_test, auroc_test,
+        for r, (_, _,
+                llk_train, mse_train, auroc_train,
+                dist_inv, dist_proj,
+                llk_test, mse_test, auroc_test,
+                aic, bic,
                 nb_non_zero, non_zero) in out.items():
             results["reg"].append(r)
             results["llk_train"].append(llk_train)
@@ -60,10 +64,12 @@ class NAIVI:
             results["llk_test"].append(llk_test)
             results["mse_test"].append(mse_test)
             results["auroc_test"].append(auroc_test)
+            results["aic"].append(aic)
+            results["bic"].append(bic)
             results["nb_non_zero"].append(nb_non_zero)
             results["non_zero"].append(non_zero)
-            if llk_train < best_loss:
-                best_loss = llk_train
+            if bic < best_critrion:
+                best_critrion = bic
                 best_r = r
                 best_out = out[r]
         return results, best_r, best_out
@@ -133,14 +139,14 @@ class NAIVI:
     def epoch_metrics(self, Z_true, epoch, test, train, max_abs_grad):
         with torch.no_grad():
             # add penalty to loss
-            penalty = self.compute_penalty()
+            # penalty = self.compute_penalty()
             # training metrics
             llk_train, mse_train, auroc_train = self.evaluate(train)
-            llk_train += self.reg * penalty
+            # llk_train += self.reg * penalty
             # testing metrics
             if test is not None:
                 llk_test, mse_test, auroc_test = self.evaluate(test)
-                llk_test += self.reg * penalty
+                # llk_test += self.reg * penalty
             else:
                 llk_test, mse_test, auroc_test = 0., 0., 0.
             # distance
@@ -148,12 +154,20 @@ class NAIVI:
                 dist_inv, dist_proj = self.latent_distance(Z_true)
             else:
                 dist_inv, dist_proj = 0., 0.
+            # model size
+            nb_non_zero = self.model.covariate_model.weight.abs().gt(0.).sum().item()
+            # ICs
+            aic = llk_train * 2. + nb_non_zero
+            bic = llk_train * 2. + nb_non_zero * np.log(train.N)
         out = [epoch, max_abs_grad,
                llk_train, mse_train, auroc_train,
                dist_inv, dist_proj,
-               llk_test, mse_test, auroc_test]
-        form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3
-        log = form.format(*out)
+               llk_test, mse_test, auroc_test,
+               aic, bic]
+        form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + \
+               " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3 + "|" + \
+               " {:<11.4f}" * 2
+        log = form.format(*out[:12])
         return llk_train, out, log
 
     def compute_penalty(self):
@@ -207,9 +221,14 @@ class NAIVI:
 
     @staticmethod
     def verbose_init():
-        form = "{:<4} {:<10} |" + " {:<11}" * 3 + "|" + " {:<8}" * 2 + "|" + " {:<11}" * 3
-        names = ["iter", "grad norm", "loss", "mse", "auroc", "inv.", "proj.", "loss", "mse", "auroc"]
-        groups = ["", "", "Train", "", "", "Distance", "", "Test", "", ""]
+        form = "{:<4} {:<10} |" + " {:<11}" * 3 + "|" + " {:<8}" * 2 + "|" \
+               + " {:<11}" * 3 + "|" + " {:<11}" * 2
+        names = ["iter", "grad norm",
+                 "loss", "mse", "auroc",
+                 "inv.", "proj.",
+                 "loss", "mse", "auroc",
+                 "aic", "bic"]
+        groups = ["", "", "Train", "", "", "Distance", "", "Test", "", "", "ICs", ""]
         l1 = form.format(*groups)
         l2 = form.format(*names)
         n_char = len(l1)

@@ -101,7 +101,7 @@ def run(traj):
                     acc = ((true==selected)[(p_bin+p_cts):]).mean()
                 output += [acc]
             else:
-                output = [np.nan for _ in range(14)]
+                output = [np.nan for _ in range(12)]
         else:
             t0 = time.time()
             output = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
@@ -109,7 +109,7 @@ def run(traj):
         output += [density, missing_rate, time.time() - t0]
     except RuntimeError as e:
         print(e)
-        output = [np.nan for _ in range(17)]
+        output = [np.nan for _ in range(15)]
     finally:
         print(*output)
         return input, output

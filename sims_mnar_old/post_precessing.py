@@ -21,7 +21,6 @@ def post_processing(traj, result_list):
         "train_loss", "train_mse", "train_auroc",
         "dist_inv", "dist_proj",
         "test_loss", "test_mse", "test_auroc",
-        "aic", "bic",
         "non_zero", "accuracy",
         "density", "missing_rate", "time"
     ]
