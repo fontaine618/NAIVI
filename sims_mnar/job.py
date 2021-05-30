@@ -3,7 +3,7 @@ PATH = "/sims_mnar/"
 sys.path.append(PATH)
 import numpy as np
 import torch
-from sims_mnar_old.main import main
+from sims_mnar.main import main
 
 if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
