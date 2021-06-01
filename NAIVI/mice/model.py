@@ -60,21 +60,16 @@ class MICE:
         print("-" * l)
         return out
 
-    def verbose_init(self):
-        # verbose
-        form = "{:<4} |" + " {:<10}" * 3 + "|" + " {:<10}" * 2 + "|" + " {:<10}" * 3
-        names = [
-            "iter",
-            "loss",
-            "mse",
-            "auroc",
-            "inv.",
-            "proj.",
-            "loss",
-            "mse",
-            "auroc",
-        ]
-        groups = ["", "Train", "", "", "Distance", "", "Test", "", ""]
+    @staticmethod
+    def verbose_init():
+        form = "{:<4} {:<10} |" + " {:<11}" * 3 + "|" + " {:<8}" * 2 + "|" \
+               + " {:<11}" * 3 + "|" + " {:<11}" * 2
+        names = ["iter", "grad norm",
+                 "loss", "mse", "auroc",
+                 "inv.", "proj.",
+                 "loss", "mse", "auroc",
+                 "aic", "bic"]
+        groups = ["", "", "Train", "", "", "Distance", "", "Test", "", "", "ICs", ""]
         l1 = form.format(*groups)
         l2 = form.format(*names)
         l = len(l1)
