@@ -103,9 +103,9 @@ def run(traj):
         if algo in ["MLE", "ADVI", "VIMC"] and not mnar:
             del fit_args["init"]
             fit_args["reg"] = 0.
-            out = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
+            output = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
             if out is not None:
-                output += [0.]
+                output += [0., 0.]
             else:
                 output = [np.nan for _ in range(14)]
         else:
