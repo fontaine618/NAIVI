@@ -1,4 +1,4 @@
-from NAIVI_experiments.gen_data import generate_dataset
+from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.utils.data import JointDataset
 from NAIVI.advi.model import ADVI
 from NAIVI.mle.model import MLE
@@ -18,17 +18,20 @@ K = 5
 p_cts = 0
 p_bin = 100
 var_cts = 1.
-missing_rate = 0.10
+missing_mean = -0.5 #-3 ~ 7%, -2 ~ 15%, -1 ~ 30% , 0. ~ 50%
 alpha_mean = -1.85
 seed = 0
+mnar_sparsity = 0.5
 
-Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0 = generate_dataset(
-    N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cts, missing_rate=missing_rate,
-    alpha_mean=alpha_mean, seed=seed
+Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0 = generate_dataset(
+    N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cts, missing_mean=missing_mean,
+    alpha_mean=alpha_mean, seed=seed, mnar_sparsity=mnar_sparsity
 )
 
-train = JointDataset(i0, i1, A, X_cts, X_bin)
-test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing)
+mnar = True
+mnar = False
+train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
+test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar, test=True)
 # -----------------------------------------------------------------------------
 # MissForest fit
 # -----------------------------------------------------------------------------

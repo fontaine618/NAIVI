@@ -5,6 +5,7 @@ from pytorch_lightning.metrics.functional import mean_squared_error
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.linear_model import BayesianRidge
+from NAIVI.utils.base import verbose_init
 
 
 class MICE:
@@ -30,7 +31,7 @@ class MICE:
         weight_decay=0.0,
         n_sample=1,
     ):
-        l = self.verbose_init()
+        l = verbose_init()
         # get train data
         _, _, _, _, X_cts, X_bin = train[:]
         if X_cts is None:
@@ -59,25 +60,6 @@ class MICE:
         out = self.metrics(X_test_bin, X_test_cts, X_cts_pred, X_bin_pred)
         print("-" * l)
         return out
-
-    @staticmethod
-    def verbose_init():
-        form = "{:<4} {:<10} |" + " {:<11}" * 3 + "|" + " {:<8}" * 2 + "|" \
-               + " {:<11}" * 3 + "|" + " {:<11}" * 2
-        names = ["iter", "grad norm",
-                 "loss", "mse", "auroc",
-                 "inv.", "proj.",
-                 "loss", "mse", "auroc",
-                 "aic", "bic"]
-        groups = ["", "", "Train", "", "", "Distance", "", "Test", "", "", "ICs", ""]
-        l1 = form.format(*groups)
-        l2 = form.format(*names)
-        l = len(l1)
-        print("-" * l)
-        print(l1)
-        print(l2)
-        print("-" * l)
-        return l
 
     def metrics(self, X_bin, X_cts, mean_cts, proba_bin):
         auroc_test, mse_test = self.prediction_metrics(

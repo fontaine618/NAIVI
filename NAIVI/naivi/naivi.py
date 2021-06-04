@@ -3,6 +3,7 @@ import numpy as np
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
 from NAIVI.utils.metrics import invariant_distance, projection_distance
+from NAIVI.utils.base import verbose_init
 from torch.optim.lr_scheduler import LambdaLR
 
 
@@ -12,20 +13,6 @@ class NAIVI:
         self.model = model
         self.denum = 1.
         self.reg = 0.
-        # self.cv_fit_ = None
-
-    # def cv_path(self, train, reg=None, n_folds=5, cv_seed=0, **kwargs):
-    #     cv_folds = train.cv_folds(n_folds, cv_seed)
-    #     cv_fit = {
-    #         fold: copy.deepcopy(self).fit_path(*cv_folds[fold], reg=reg, **kwargs)
-    #         for fold in range(n_folds)
-    #     }
-    #     cv_loss = {
-    #         r: torch.tensor([cv_fit[i][r][7] for i in range(n_folds)]).mean().item()
-    #         for r in reg
-    #     }
-    #     self.cv_fit_ = cv_fit
-    #     return cv_loss
 
     def fit_path(self, train, test=None, reg=None, init=None, **kwargs):
         out = {}
@@ -81,7 +68,7 @@ class NAIVI:
         self.reg = reg
         self.compute_denum(train)
         optimizer, scheduler = self.prepare_optimizer(lr)
-        n_char = self.verbose_init() if verbose else 0
+        n_char = verbose_init() if verbose else 0
         epoch, out = 0, None
         for epoch in range(max_iter):
             # for step in ["E", "M"]:
@@ -220,25 +207,6 @@ class NAIVI:
         return A, X_bin, X_cts, i0, i1, j
 
     @staticmethod
-    def verbose_init():
-        form = "{:<4} {:<10} |" + " {:<11}" * 3 + "|" + " {:<8}" * 2 + "|" \
-               + " {:<11}" * 3 + "|" + " {:<11}" * 2
-        names = ["iter", "grad norm",
-                 "loss", "mse", "auroc",
-                 "inv.", "proj.",
-                 "loss", "mse", "auroc",
-                 "aic", "bic"]
-        groups = ["", "", "Train", "", "", "Distance", "", "Test", "", "", "ICs", ""]
-        l1 = form.format(*groups)
-        l2 = form.format(*names)
-        n_char = len(l1)
-        print("-" * n_char)
-        print(l1)
-        print(l2)
-        print("-" * n_char)
-        return n_char
-
-    @staticmethod
     def prediction_metrics(X_bin, X_cts, mean_cts, proba_bin):
         mse = 0.
         auc = 0.
@@ -287,7 +255,7 @@ class NAIVI:
                     mult = torch.where(mult < 0., 0., mult)
                     which = torch.ones_like(mult)
                     which[:which.shape[0]//2] = 0.
-                    mult = torch.where(which == 0., 1., mult)
+                    mult = torch.where(which.eq(0.), 1., mult)
                     data *= mult.reshape((-1, 1))
                 coef.data = data
 

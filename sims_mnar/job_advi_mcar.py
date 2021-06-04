@@ -1,5 +1,5 @@
 import sys
-PATH = "/home/simon/NAIVI/sims_mnar/"
+PATH = "/home/simon/Documents/NAIVI/sims_mnar/"
 sys.path.append(PATH)
 import numpy as np
 import torch

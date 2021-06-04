@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
+from NAIVI.utils.base import verbose_init
 
 
 class NetworkSmoothing:
@@ -22,7 +23,7 @@ class NetworkSmoothing:
         weight_decay=0.0,
         n_sample=1,
     ):
-        l = self.verbose_init()
+        l = verbose_init()
         # get train data
         i0, i1, A, _, X_cts, X_bin = train[:]
         if X_cts is None:
@@ -56,54 +57,25 @@ class NetworkSmoothing:
             _, _, _, _, X_test_cts, X_test_bin = test[:]
             if self.p_cts > 0:
                 X_cts_pred[np.isnan(X_test_cts) == 1.0] = np.nan
-                X_cts_pred = torch.tensor(X_cts_pred)
+                X_cts_pred = X_cts_pred.clone().detach()
             if self.p_bin > 0:
                 X_bin_pred[np.isnan(X_test_bin) == 1.0] = np.nan
                 X_bin_pred = X_bin_pred.clip(0.0, 1.0)
-                X_bin_pred = torch.tensor(X_bin_pred)
+                X_bin_pred = X_bin_pred.clone().detach()
 
             out = self.metrics(X_test_bin, X_test_cts, X_cts_pred, X_bin_pred, epoch)
         print("-" * l)
         return out
 
-    def verbose_init(self):
-        # verbose
-        form = "{:<4} |" + " {:<10}" * 3 + "|" + " {:<10}" * 2 + "|" + " {:<10}" * 3
-        names = [
-            "iter",
-            "loss",
-            "mse",
-            "auroc",
-            "inv.",
-            "proj.",
-            "loss",
-            "mse",
-            "auroc",
-        ]
-        groups = ["", "Train", "", "", "Distance", "", "Test", "", ""]
-        l1 = form.format(*groups)
-        l2 = form.format(*names)
-        l = len(l1)
-        print("-" * l)
-        print(l1)
-        print(l2)
-        print("-" * l)
-        return l
-
     def metrics(self, X_bin, X_cts, mean_cts, proba_bin, epoch):
         auroc_test, mse_test = self.prediction_metrics(
             X_bin, X_cts, mean_cts, proba_bin
         )
-        out = [epoch, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mse_test, auroc_test]
-        form = (
-            "{:<4} |"
-            + " {:<10.4f}" * 3
-            + "|"
-            + " {:<10.4f}" * 2
-            + "|"
-            + " {:<10.4f}" * 3
-        )
-        print(form.format(*out))
+        out = [epoch, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mse_test, auroc_test, 0., 0.]
+        form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + \
+               " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3 + "|" + \
+               " {:<11.4f}" * 2
+        print(form.format(*out[:12]))
         return out
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):

@@ -91,19 +91,24 @@ def run(traj):
         # ---------------------------------------------------------------------
         # fit model
         t0 = time.time()
-        if algo in ["MLE", "ADVI", "VIMC"]:
+        if algo in ["MLE", "ADVI", "VIMC"] and mnar:
             _, _, out = model.fit_path(train, test, Z_true=Z.cuda(), **fit_args)
             if out is not None:
                 output, selected = out[:-1], out[-1]
-                acc = 0.
-                if mnar:
-                    true = torch.where(B.abs().sum(0) > 0., 1, 0).numpy()
-                    acc = ((true==selected)[(p_bin+p_cts):]).mean()
+                true = torch.where(B.abs().sum(0) > 0., 1, 0).numpy()
+                acc = ((true==selected)[(p_bin+p_cts):]).mean()
                 output += [acc]
             else:
                 output = [np.nan for _ in range(14)]
+        if algo in ["MLE", "ADVI", "VIMC"] and not mnar:
+            del fit_args["init"]
+            fit_args["reg"] = 0.
+            out = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
+            if out is not None:
+                output += [0.]
+            else:
+                output = [np.nan for _ in range(14)]
         else:
-            t0 = time.time()
             output = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
             output += [0, 0.] # number of non-zero  and accuracy not applicable here
         output += [density, missing_rate, time.time() - t0]
