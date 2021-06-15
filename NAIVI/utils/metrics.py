@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+from torch.nn.functional import mse_loss
 
 
 def invariant_distance(y_true, y_pred):
@@ -22,3 +23,15 @@ def projection_distance(y_true, y_pred):
         return ((proj_pred - proj_true) ** 2).sum().item()
     except Exception:
         return np.nan
+
+
+def proba_distance(Z, a, ZZ, aa):
+    P = compute_prob(Z, a)
+    PP = compute_prob(ZZ, aa)
+    return mse_loss(P, PP)
+
+
+def compute_prob(Z, a):
+    with torch.no_grad():
+        Theta = Z @ Z.T + a + a.T
+        return torch.sigmoid(Theta)

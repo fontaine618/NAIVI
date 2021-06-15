@@ -84,7 +84,7 @@ def run(traj):
         fit_args = {}
     elif algo =="NetworkSmoothing":
         model = NetworkSmoothing(K_model, N, p_cts, p_bin)
-        fit_args = {}
+        fit_args = {"max_iter": 2}
     else:
         model = MLE(K, N, p_cts, p_bin)
         fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}

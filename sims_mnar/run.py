@@ -92,7 +92,7 @@ def run(traj):
         # fit model
         t0 = time.time()
         if algo in ["MLE", "ADVI", "VIMC"] and mnar:
-            _, _, out = model.fit_path(train, test, Z_true=Z.cuda(), **fit_args)
+            _, _, out = model.fit_path(train, test, Z_true=Z, alpha_true=alpha, **fit_args)
             if out is not None:
                 output, selected = out[:-1], out[-1]
                 true = torch.where(B.abs().sum(0) > 0., 1, 0).numpy()
@@ -103,8 +103,8 @@ def run(traj):
         if algo in ["MLE", "ADVI", "VIMC"] and not mnar:
             del fit_args["init"]
             fit_args["reg"] = 0.
-            output = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
-            if out is not None:
+            output = model.fit(train, test, Z_true=Z, alpha_true=alpha, **fit_args)
+            if output is not None:
                 output += [0., 0.]
             else:
                 output = [np.nan for _ in range(14)]

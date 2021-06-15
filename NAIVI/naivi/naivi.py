@@ -2,7 +2,7 @@ import torch
 import numpy as np
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
-from NAIVI.utils.metrics import invariant_distance, projection_distance
+from NAIVI.utils.metrics import invariant_distance, projection_distance, proba_distance
 from NAIVI.utils.base import verbose_init
 from torch.optim.lr_scheduler import LambdaLR
 
@@ -63,8 +63,9 @@ class NAIVI:
 
     def fit(self, train, test=None, Z_true=None, reg=0.,
             batch_size=100, eps=1.e-6, max_iter=100,
-            lr=0.001, weight_decay=0., verbose=True):
+            lr=0.001, weight_decay=0., verbose=True, alpha_true=None):
         Z_true = Z_true.cuda() if Z_true is not None else None
+        alpha_true = alpha_true.cuda() if alpha_true is not None else None
         self.reg = reg
         self.compute_denum(train)
         optimizer, scheduler = self.prepare_optimizer(lr)
@@ -82,7 +83,7 @@ class NAIVI:
             self.batch_update(None, optimizer, train, epoch)
             scheduler.step()
             converged, max_abs_grad = self.check_convergence(eps)
-            llk_train, out, log = self.epoch_metrics(Z_true, epoch, test, train, max_abs_grad)
+            llk_train, out, log = self.epoch_metrics(Z_true, epoch, test, train, max_abs_grad, alpha_true)
             if verbose and epoch % 10 == 0:
                 print(log)
             if converged:
@@ -123,7 +124,7 @@ class NAIVI:
             if weight is not None:
                 self.model.covariate_model.mean_model.weight.data = weight.t().cuda()
 
-    def epoch_metrics(self, Z_true, epoch, test, train, max_abs_grad):
+    def epoch_metrics(self, Z_true, epoch, test, train, max_abs_grad, alpha_true=None):
         with torch.no_grad():
             # add penalty to loss
             # penalty = self.compute_penalty()
@@ -138,7 +139,7 @@ class NAIVI:
                 llk_test, mse_test, auroc_test = 0., 0., 0.
             # distance
             if Z_true is not None:
-                dist_inv, dist_proj = self.latent_distance(Z_true)
+                dist_inv, dist_proj = self.latent_distance(Z_true, alpha_true)
             else:
                 dist_inv, dist_proj = 0., 0.
             # model size
@@ -184,10 +185,11 @@ class NAIVI:
         with torch.no_grad():
             return self.model.encoder.latent_heterogeneity_encoder.mean
 
-    def latent_distance(self, Z):
+    def latent_distance(self, Z, alpha):
         with torch.no_grad():
             ZZ = self.latent_positions()
-            return invariant_distance(Z, ZZ), projection_distance(Z, ZZ)
+            aa = self.latent_heterogeneity()
+            return invariant_distance(Z, ZZ), proba_distance(Z, alpha, ZZ, aa) # projection_distance(Z, ZZ)
 
     @staticmethod
     def get_batch(data, batch=None):

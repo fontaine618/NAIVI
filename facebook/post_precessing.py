@@ -17,14 +17,15 @@ def post_processing(traj, result_list):
 
     df_out = pd.DataFrame([res[1][1] for res in result_list])
     df_out.index = run_idx
+    print(df_out)
     df_out.columns = [
-        "n_iter",
+        "n_iter", "grad_norm",
         "train_loss", "train_mse", "train_auroc",
         "dist_inv", "dist_proj",
         "test_loss", "test_mse", "test_auroc",
+        "aic", "bic",
         "density", "time"
     ]
-    print(df_out)
 
     df = pd.concat([df_in, df_out], axis=1)
 

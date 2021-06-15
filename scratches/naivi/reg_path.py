@@ -23,6 +23,8 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0 = 
     alpha_mean=alpha_mean, seed=seed, mnar_sparsity=mnar_sparsity
 )
 
+
+
 # mnar = False
 # train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
 # test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar, test=True)
@@ -46,7 +48,7 @@ self = ADVI(K, N, p_cts, p_bin, mnar=mnar)
 self.init(**init)
 
 out = self.fit_path(train, test, reg=10**np.linspace(1., -1., 11), max_iter=100, lr=0.1,
-              init=init, Z_true=Z)
+              init=init, Z_true=Z, alpha_true=alpha)
 
 
 B.T

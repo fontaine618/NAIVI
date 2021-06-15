@@ -7,6 +7,7 @@ from NAIVI.advi.model import ADVI
 from NAIVI.mle.model import MLE
 from NAIVI.vimc.model import VIMC
 from NAIVI.mice.model import MICE
+from NAIVI.smoothing import NetworkSmoothing
 
 DATA_PATH = "./facebook/data/raw/"
 
@@ -61,7 +62,7 @@ input = (
     algo,
 )
 # dataset format
-mnar = False if algo == "MICE" else True
+mnar = False # if algo == "MICE" else True
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
 test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar, test=True)
 # initialization
@@ -120,6 +121,8 @@ output = model.fit(train, test, **fit_args), density, time.time() - t0
 
 output
 
+
+model = NetworkSmoothing(K, N, p_cts, p_bin)
 model = MICE(K_model, N, p_cts, p_bin)
 fit_args = {}
 model.fit(train, test)
