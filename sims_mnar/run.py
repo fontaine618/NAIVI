@@ -97,7 +97,7 @@ def run(traj):
                 output, selected = out[:-1], out[-1]
                 true = torch.where(B.abs().sum(0) > 0., 1, 0).numpy()
                 acc = ((true==selected)[(p_bin+p_cts):]).mean()
-                output += [acc]
+                output += [acc] + [density, missing_rate, time.time() - t0]
             else:
                 output = [np.nan for _ in range(14)]
         if algo in ["MLE", "ADVI", "VIMC"] and not mnar:
@@ -105,13 +105,13 @@ def run(traj):
             fit_args["reg"] = 0.
             output = model.fit(train, test, Z_true=Z, alpha_true=alpha, **fit_args)
             if output is not None:
-                output += [0., 0.]
+                output += [0., 0.] + [density, missing_rate, time.time() - t0]
             else:
                 output = [np.nan for _ in range(14)]
         else:
             output = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
             output += [0, 0.] # number of non-zero  and accuracy not applicable here
-        output += [density, missing_rate, time.time() - t0]
+            output += [density, missing_rate, time.time() - t0]
     except RuntimeError as e:
         print(e)
         output = [np.nan for _ in range(17)]

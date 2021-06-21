@@ -19,7 +19,7 @@ if __name__ == "__main__":
             "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0, 0.10, 0.50, 0.90, 1.00]),
-            "fit.algo": ["MICE", "Mean", "MissForest", "NetworkSmoothing"],
+            "fit.algo": ["MICE", "Mean", "NetworkSmoothing"],
             "model.K": np.array([5]),
             "model.mnar": [False]
         }

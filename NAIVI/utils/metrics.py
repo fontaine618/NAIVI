@@ -28,7 +28,7 @@ def projection_distance(y_true, y_pred):
 def proba_distance(Z, a, ZZ, aa):
     P = compute_prob(Z, a)
     PP = compute_prob(ZZ, aa)
-    return mse_loss(P, PP)
+    return mse_loss(P, PP).item()
 
 
 def compute_prob(Z, a):

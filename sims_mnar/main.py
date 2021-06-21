@@ -1,7 +1,7 @@
 import numpy as np
 from pypet import Environment
 from pypet.utils.explore import cartesian_product
-from sims_mnar.post_precessing import post_processing
+from sims_mnar.post_processing import post_processing
 from sims_mnar.run import run
 
 
