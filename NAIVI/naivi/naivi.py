@@ -81,7 +81,8 @@ class NAIVI:
             # for batch in batches:
             #     self.batch_update(batch, optimizer, train, epoch)
             self.batch_update(None, optimizer, train, epoch)
-            scheduler.step()
+            if scheduler is not None:
+                scheduler.step()
             converged, max_abs_grad = self.check_convergence(eps)
             llk_train, out, log = self.epoch_metrics(Z_true, epoch, test, train, max_abs_grad, alpha_true)
             if verbose and epoch % 10 == 0:
@@ -107,10 +108,11 @@ class NAIVI:
             {'params': p, "lr": lr}
             for p in self.model.parameters()
         ]
-        optimizer = torch.optim.Adagrad(params)
-        # optimizer = torch.optim.Adam(params)
+        # optimizer = torch.optim.Adagrad(params)
+        optimizer = torch.optim.Adam(params)
         # optimizer = torch.optim.SGD(params)
         scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** 1.0)
+        scheduler = None
         return optimizer, scheduler
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):

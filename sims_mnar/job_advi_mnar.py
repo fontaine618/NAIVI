@@ -11,7 +11,7 @@ if __name__ == "__main__":
         path=PATH,
         name="mnar_cts_advi_mnar",
         explore_dict={
-            "data.N": np.array([500]),
+            "data.N": np.array([100]),
             "data.K": np.array([5]),
             "data.p_bin": np.array([0]),
             "data.p_cts": np.array([100]),

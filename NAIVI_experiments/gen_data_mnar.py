@@ -3,6 +3,7 @@ import numpy as np
 
 torch.set_default_dtype(torch.float64)
 
+
 def generate_dataset(
         N, K, p_cts, p_bin, var_cov=1., alpha_mean=-1.,
         mnar_sparsity=0.5, missing_mean=-1.0, seed=1,
