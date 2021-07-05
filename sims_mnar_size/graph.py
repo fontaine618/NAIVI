@@ -5,7 +5,7 @@ from matplotlib.lines import Line2D
 from NAIVI_experiments.display import colormap, to_display
 import torch
 plt.style.use("seaborn")
-PATH = "/home/simon/Documents/NAIVI/sims_mnar_size/"
+PATH = "/home/simon/Documents/NAIVI/sims_mnar/"
 COLORS = colormap
 DICT = to_display
 ALGOS = [
@@ -26,9 +26,9 @@ MNARS = [
 # retrieve results
 dir = os.listdir(PATH)
 folders = [x for x in dir if x.find(".") < 0]
-exps = [x for x in folders] # if x.startswith("mnar_cts")]
+exps = [x for x in folders if x.startswith("mnar_cts")]
 results = pd.concat([
-    pd.read_csv("{}{}/summary.csv".format(PATH, ex), index_col=0)
+    pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
     for ex in exps
 ])
 results["model"] = [
