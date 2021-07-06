@@ -31,4 +31,4 @@ def post_processing(traj, result_list):
 
     print(df)
     traj.f_add_result("data_frame", df, "Summary across replications")
-    df.to_csv(traj.par.path + "/summary.csv")
+    df.to_csv(traj.par.path + "/results/summary.csv")

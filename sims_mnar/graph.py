@@ -43,7 +43,6 @@ means = results.groupby(groupings).agg("mean")
 stds = results.groupby(groupings).agg("std")
 us = results.groupby(groupings).agg("min")
 ls = results.groupby(groupings).agg("max")
-
 # sparsity
 SPARSITIES = [0., 0.1, 0.5, 0.9, 1.]
 METRICS = ["test_auroc", "dist_inv", "non_zero", "accuracy"]

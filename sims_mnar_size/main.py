@@ -17,7 +17,7 @@ def main(path, name, explore_dict):
         log_config=None,
         multiproc=False,
         ncores=1,
-        filename=path + name,
+        filename=path + name + "/results/",
         overwrite_file=True
     )
     traj = env.trajectory

@@ -66,6 +66,7 @@ def run(traj):
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
                         "batch_size": len(train), "reg": reg}
         elif algo == "VIMC":
+            n_sample = int(np.ceil(200/N))
             model = VIMC(K_model, N, p_cts, p_bin, mnar=mnar, n_samples=n_sample)
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
                         "batch_size": len(train), "reg": reg}

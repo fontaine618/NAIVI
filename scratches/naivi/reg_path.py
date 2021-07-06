@@ -13,7 +13,7 @@ K = 5
 p_cts = 100
 p_bin = 0
 var_cts = 1.
-missing_mean = -0.5 #-3 ~ 7%, -2 ~ 15%, -1 ~ 30% , 0. ~ 50%
+missing_mean = 1.5 #-3 ~ 7%, -2 ~ 15%, -1 ~ 30% , 0. ~ 50%
 alpha_mean = -1.85
 seed = 0
 mnar_sparsity = 0.5
@@ -23,6 +23,7 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0 = 
     alpha_mean=alpha_mean, seed=seed, mnar_sparsity=mnar_sparsity
 )
 
+torch.isnan(X_cts).double().mean()
 
 
 # mnar = False
