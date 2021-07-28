@@ -9,14 +9,14 @@ PATH = "/home/simon/Documents/NAIVI/sims_mnar_size/"
 COLORS = colormap
 DICT = to_display
 ALGOS = [
-    "ADVI", "ADVI",
+    # "ADVI", "ADVI",
      "VIMC", "VIMC",
      "MLE", "MLE",
      # "NetworkSmoothing", "MICE", "MissForest",
     # "Mean"
 ]
 MNARS = [
-    True, False,
+    # True, False,
      True, False,
      True, False,
      # False, False, False,
@@ -26,7 +26,7 @@ MNARS = [
 # retrieve results
 dir = os.listdir(PATH)
 folders = [x for x in dir if x.find(".") < 0]
-exps = [x for x in folders if x.endswith("ar")]
+exps = [x for x in folders if x.startswith("r_")]
 results = pd.concat([
     pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
     for ex in exps
@@ -45,13 +45,13 @@ us = results.groupby(groupings).agg("min")
 ls = results.groupby(groupings).agg("max")
 
 # sparsity
-SIZES = [20, 50, 100, 200, 500]
+SIZES = [50, 100, 200, 500]
 METRICS = ["test_mse", "dist_inv", "dist_proj"]
 ONLY_MNAR = [False, False, False, True, True]
 
 # plot
 fig, axs = plt.subplots(3, len(SIZES),
-                        figsize=(9, 5), sharex="all", sharey="row",
+                        figsize=(9, 5), sharex="all", sharey="none",
                         gridspec_kw={'height_ratios': [1, 1, 1]}
                         )
 for col, size in enumerate(SIZES):
@@ -83,8 +83,8 @@ axs[0][0].set_ylabel("MSE")
 axs[1][0].set_ylabel("$D(\widehat Z, Z)$")
 axs[2][0].set_ylabel("$D(\widehat P, P)$")
 axs[0][0].set_xlim(0., 0.75)
-axs[1][0].set_ylim(0., 0.70)
-axs[2][0].set_ylim(0., 0.016)
+# axs[1][0].set_ylim(0., 0.25)
+# axs[2][0].set_ylim(0., 0.007)
 # legend
 lines = [Line2D([0], [0], color=COLORS[algo], linestyle="--" if mnar else "-")
          for algo, mnar in zip(ALGOS, MNARS)]

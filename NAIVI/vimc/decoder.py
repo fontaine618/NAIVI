@@ -31,13 +31,13 @@ class CovariateModel(nn.Module):
             X_cts_masked = X_cts.masked_fill(X_cts.isnan(), 0.)
             llk = (mean_cts - X_cts_masked) ** 2 / (2. * var) + 0.5 * torch.log(2. * math.pi * var)
             llk = llk.masked_fill(X_cts.isnan(), 0.)
-            nll += torch.nansum(llk) #/ llk.size(-1)
+            nll += torch.nansum(llk) / llk.size(-1)
         if (X_bin is not None) and (proba_bin is not None):
             X_bin = X_bin.unsqueeze(1)
             X_bin_masked = X_bin.masked_fill(X_bin.isnan(), 0.)
             llk = X_bin_masked * torch.log(proba_bin) + (1.-X_bin_masked) * torch.log(1. - proba_bin)
             llk = llk.masked_fill(X_bin.isnan(), 0.)
-            nll += - torch.nansum(llk) #/ llk.size(-1)
+            nll += - torch.nansum(llk) / llk.size(-1)
         return - nll
 
     @property
@@ -66,5 +66,5 @@ class AdjacencyModel(nn.Module):
         if (A is not None) and (proba is not None):
             A = A.unsqueeze(1)
             llk = A * torch.log(proba) + (1.-A) * torch.log(1. - proba)
-            nll += - torch.nansum(llk) # / llk.size(1)
+            nll += - torch.nansum(llk) / llk.size(1)
         return - nll
