@@ -169,12 +169,11 @@ class NAIVI:
 
     def compute_denum(self, data):
         i0, i1, A, j, X_cts, X_bin = data[:]
-        self.model.adjacency_model.n_links = len(i0)
+        self.model.adjacency_model.n_links = 1 if i0 is None else len(i0)
         if X_cts is not None:
             self.model.covariate_model.n_cts = (~X_cts.isnan()).sum()
         if X_bin is not None:
             self.model.covariate_model.n_bin = (~X_bin.isnan()).sum()
-        self.model.adjacency_model.n_links = len(i0)
         self.denum = self.model.covariate_model.n_cts + \
                      self.model.covariate_model.n_bin + \
                      self.model.adjacency_model.n_links
@@ -200,10 +199,10 @@ class NAIVI:
             i0, i1, A, j, X_cts, X_bin = data[:]
         else:
             i0, i1, A, j, X_cts, X_bin = data[batch]
-        i0 = i0.cuda()
-        i1 = i1.cuda()
-        A = A.cuda()
-        j = j.cuda()
+        i0 = i0.cuda() if i0 is not None else i0
+        i1 = i1.cuda() if i1 is not None else i1
+        A = A.cuda() if A is not None else A
+        j = j.cuda() if isinstance(j, torch.Tensor) else j
         if X_cts is not None:
             X_cts = X_cts.cuda()
         if X_bin is not None:

@@ -91,4 +91,4 @@ axs[1][0].get_yaxis().set_label_coords(-0.25, 0.5)
 fig.tight_layout(h_pad=0.5, w_pad=0.)
 fig.subplots_adjust(bottom=0.20)
 
-fig.savefig(PATH + "figs/{}_results.pdf".format(cov_type))
+fig.savefig(PATH + "figs/{}_results_slides.pdf".format(cov_type))

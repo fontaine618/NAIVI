@@ -9,7 +9,7 @@ if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
     main(
         path=PATH,
-        name="r_consistency_nbattributes",
+        name="r_consistency_nbattributes_VIMC50",
         explore_dict={
             "data.N": np.array([200]),
             "data.K": np.array([2]),
@@ -19,7 +19,9 @@ if __name__ == "__main__":
             "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0]),
-            "fit.algo": ["VIMC", "ADVI", "MLE"],
+            # "fit.algo": ["VIMC", "ADVI", "MLE"],
+            "fit.algo": ["VIMC", ],
+            "fit.n_sample": np.array([50]),
             "model.K": np.array([2]),
             "model.mnar": [False]
         }

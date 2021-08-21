@@ -87,6 +87,8 @@ class Logistic(nn.Module):
         return proba
 
     def elbo(self, mean, var, y):
+        if y is None:
+            return 0.
         y_masked = y.masked_fill(y.isnan(), 0.)
         t = torch.sqrt(mean**2 + var)
         elbo = nn.LogSigmoid()(t) + (y_masked - 0.5) * mean - 0.5 * t

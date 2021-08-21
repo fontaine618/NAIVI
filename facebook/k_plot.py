@@ -13,8 +13,9 @@ COLORS = colormap
 DICT = to_display
 
 # ALGOS = ["VIMC", "ADVI", "MLE", "MICE"]
-ALGOS = ["ADVI", "VIMC", "MLE", "NetworkSmoothing", "MICE", "MissForest", "Mean"]
+ALGOS = ["ADVI", "MLE", "MICE", "Mean", "NetworkSmoothing"]
 CENTERS = [698, 0, 1684]
+CENTERS = [0]#, 1684]
 XS = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) #, 12, 15, 20])
 MISSING_RATE = 0.5
 
@@ -46,21 +47,22 @@ stds = results.groupby(["center", "algo", "K_model"]).agg("std")
 nrow = 1
 ncol = len(CENTERS)
 # fig, axs = plt.subplots(nrow, ncol, figsize=(1.66*ncol, 2.5), sharey="row")
-fig, axs = plt.subplots(nrow, ncol, figsize=(9, 5), sharey="row")
+fig, axs = plt.subplots(nrow, ncol, figsize=(5.5, 3.5), sharey="row")
 for i, c in enumerate(CENTERS):
     n = means.loc[(c, ), "N"].mean().astype(int)
     for algo in ALGOS:
         m = means.loc[(c, algo, ), "test_auroc"]
         s = stds.loc[(c, algo, ), "test_auroc"]
         xs = m.index
-        axs[i].plot(xs, m, color=COLORS[algo], label=DICT[algo])
-        # axs[i].fill_between(xs, m-s, m+s, color=COLORS[algo], alpha=0.2)
+        axs.plot(xs, m, color=COLORS[algo], label=DICT[algo])
+        axs.fill_between(xs, m-s, m+s, color=COLORS[algo], alpha=0.2)
+    axs.set_xticks([2, 4, 6, 8, 10, 12, 14, 16, 18, 20])
     # axs[i].set_xticks(xs)
     # axs[i].set_xticklabels(xs)
-    axs[i].set_title("#{} ($N=${})".format(c, n))
-    axs[i].set_xlabel("Latent dimension")
-    axs[i].set_xlim(0, 20)
-axs[0].set_ylabel("AUC")
+    axs.set_title("#{} ($N=${})".format(c, n))
+    axs.set_xlabel("Latent dimension")
+    axs.set_xlim(1, 20)
+axs.set_ylabel("AUC")
 # axs[-1].legend(loc="lower right")
 # legend
 lines = [Line2D([0], [0], color=COLORS[a]) for a in ALGOS]
@@ -68,10 +70,10 @@ labels = [DICT[a] for a in ALGOS]
 fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 fig.tight_layout(h_pad=0.5, w_pad=0.2)
 # fig.subplots_adjust(bottom=0.35)
-fig.subplots_adjust(bottom=0.2)
-
+fig.subplots_adjust(bottom=0.25)
+axs.patch.set_facecolor('#EEEEEE')
 # for ax in axs:
 #     ax.patch.set_facecolor('#EEEEEE')
 
-fig.savefig(PATH + "figs/Kfb_results.pdf")
-# fig.savefig(PATH + "figs/Kfb_results_slides.pdf")
+# fig.savefig(PATH + "figs/Kfb_results.pdf")
+fig.savefig(PATH + "figs/Kfb_results_slides.pdf")

@@ -8,13 +8,24 @@ class JointDataset(Dataset):
     def __init__(self, i0, i1, A, X_cts=None, X_bin=None,
                  cuda=True, return_missingness=False, test=False):
         super().__init__()
-        self.i0 = i0.cuda()
-        self.i1 = i1.cuda()
-        self.A = A.cuda()
+        if A is not None:
+            self.i0 = i0.cuda()
+            self.i1 = i1.cuda()
+            self.A = A.cuda()
+            self.N = torch.cat([i0, i1]).unique().shape[0]
+        else:
+            self.i0 = None
+            self.i1 = None
+            self.A = None
+            if X_cts is not None:
+                self.N = X_cts.shape[0]
+            elif X_bin is not None:
+                self.N = X_bin.shape[0]
+            else:
+                raise ValueError("need at least some attributes if no network")
         self.X_cts = X_cts
         self.X_bin = X_bin
         self.return_missingness = return_missingness
-        self.N = torch.cat([i0, i1]).unique().shape[0]
         self.p_bin_no_missingness = X_bin.shape[1] if X_bin is not None else 0
         if X_cts is None:
             X_cts = torch.zeros((self.N, 0))
@@ -39,10 +50,10 @@ class JointDataset(Dataset):
         return self.N
 
     def __getitem__(self, i):
-        i0 = self.i0[i]
-        i1 = self.i1[i]
-        A = self.A[i]
-        j = torch.cat([i0, i1], 0).unique()
+        i0 = self.i0[i]if self.i0 is not None else None
+        i1 = self.i1[i] if self.i1 is not None else None
+        A = self.A[i] if self.A is not None else None
+        j = torch.cat([i0, i1], 0).unique() if self.A is not None else i
         X_cts = None
         X_bin = None
         if self.X_cts is not None:
@@ -50,32 +61,3 @@ class JointDataset(Dataset):
         if self.X_bin is not None:
             X_bin = self.X_bin[j, :]
         return i0, i1, A, j, X_cts, X_bin
-
-    # def cv_fold(self, fold=0, n_folds=5, seed=0):
-    #     torch.manual_seed(seed)
-    #     X_cts = self.X_cts if self.X_cts is not None else torch.ones((self.N, 0))
-    #     X_bin = self.X_bin[:, 0:self.p_bin_no_missingness] if self.X_bin is not None else torch.ones((self.N, 0))
-    #     fold_cts = torch.randint(0, n_folds, X_cts.shape)
-    #     fold_bin = torch.randint(0, n_folds, X_bin.shape)
-    #     X_cts_fold = torch.where(fold_cts == fold, X_cts, np.nan)
-    #     X_cts = torch.where(fold_cts == fold, np.nan, X_cts)
-    #     X_bin_fold = torch.where(fold_bin == fold, X_bin, np.nan)
-    #     X_bin = torch.where(fold_bin == fold, np.nan, X_bin)
-    #     train = JointDataset(self.i0, self.i1, self.A, X_cts, X_bin,
-    #                          return_missingness=self.return_missingness)
-    #     test = JointDataset(self.i0, self.i1, self.A, X_cts_fold, X_bin_fold,
-    #                         return_missingness=self.return_missingness)
-    #     # patch train: set M=NaN for removed entries
-    #     M = train.X_bin[:, self.p_bin_no_missingness:]
-    #     if M.shape[1]>0:
-    #         which = torch.isnan(torch.cat([X_cts_fold, X_bin_fold], 1))
-    #         M = torch.where(which, M, np.nan)
-    #     train.X_bin[:, self.p_bin_no_missingness:] = M
-    #     # patch test
-    #     test.X_bin[:, self.p_bin_no_missingness:] = np.nan
-    #     return train, test
-    #
-    # def cv_folds(self, n_folds=5, seed=0):
-    #     return {
-    #         fold: self.cv_fold(fold, n_folds, seed) for fold in range(n_folds)
-    #     }
