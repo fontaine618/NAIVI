@@ -19,47 +19,54 @@ ALGOS = [
 	"MLE",
 ]
 # ex = "r_consistency_networksize"
-ex = "r_consistency_networksize_cov50"
-ex = "r_consistency_networksize_cov200"
-results = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
-# patch 2k
 # ex = "r_consistency_networksize_2000"
-# ex = "r_consistency_networksize_cov50_2000"
-# results2k = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
-# results = pd.concat([results, results2k])
+# ex = "r_consistency_networksize_cov50"
+# ex = "r_consistency_networksize_cov200"
+# results = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
+
+exs = ["r_consistency_networksize",
+"r_consistency_networksize_2000",
+       "r_consistency_networksize_cov50",
+       "r_consistency_networksize_cov50_2000"]
+results_list = [pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0) for ex in exs]
+results = pd.concat(results_list)
 # means +/- std
-groupings = ["algo", "N", ]
+groupings = ["p_cts", "algo", "N", ]
 means = results.groupby(groupings).agg("mean")
 stds = results.groupby(groupings).agg("std")
 us = results.groupby(groupings).agg("min")
 ls = results.groupby(groupings).agg("max")
 METRICS = ["dist_inv", "dist_proj", ]
-# plot
-fig, axs = plt.subplots(1, len(METRICS),
-                        figsize=(9, 4), sharex="all", sharey="none",
-                        gridspec_kw={'height_ratios': [1, ]}
-                        )
-for col, metric in enumerate(METRICS):
-	for algo in ALGOS:
-		ax = axs[col]
-		x = means.loc[(algo, ), ].index
-		m = means.loc[(algo, ), metric]
-		i = ~m.isna()
-		s = stds.loc[(algo, ), metric]
-		u = us.loc[(algo, ), metric]
-		l = ls.loc[(algo, ), metric]
-		ax.plot(x[i], m.loc[i],
-		        color=COLORS[algo],
-		        label=DICT[algo])
-		ax.fill_between(x[i], m.loc[i]-s.loc[i], m.loc[i]+s.loc[i], color=COLORS[algo], alpha=0.2)
-		ax.set_xlabel("Network size ($N$)")
 
-axs[0].set_ylabel("$D(\widehat Z, Z)$")
-axs[1].set_ylabel("$D(\widehat P, P)$")
-axs[0].set_yscale("log")
-axs[1].set_yscale("log")
-axs[0].set_xscale("log")
-axs[1].set_xscale("log")
+
+# plot
+fig, axs = plt.subplots(len(METRICS), 2,
+                        figsize=(8, 5), sharex="all", sharey="row",
+                        gridspec_kw={'height_ratios': [1, 1]}
+                        )
+for col, p_cts in enumerate([0, 50]):
+	for row, metric in enumerate(METRICS):
+		for algo in ALGOS:
+			ax = axs[row][col]
+			x = means.loc[(p_cts, algo, ), ].index
+			m = means.loc[(p_cts, algo, ), metric]
+			i = ~m.isna()
+			s = stds.loc[(p_cts, algo, ), metric]
+			# u = us.loc[(p_cts, algo, ), metric]
+			# l = ls.loc[(p_cts, algo, ), metric]
+			ax.plot(x[i], m.loc[i],
+			        color=COLORS[algo],
+			        label=DICT[algo])
+			ax.fill_between(x[i], m.loc[i]-s.loc[i], m.loc[i]+s.loc[i], color=COLORS[algo], alpha=0.2)
+
+			ax.set_xscale("log")
+			ax.set_yscale("log")
+axs[0][0].set_title("No attributes")
+axs[0][1].set_title("50 continuous attributes")
+axs[0][0].set_ylabel("$D(\widehat Z, Z)$")
+axs[1][0].set_ylabel("$D(\widehat P, P)$")
+axs[1][0].set_xlabel("Network size ($N$)")
+axs[1][1].set_xlabel("Network size ($N$)")
 
 # legend
 lines = [Line2D([0], [0], color=COLORS[algo], linestyle="-")
@@ -69,10 +76,10 @@ labels = [DICT[algo]
 fig.legend(lines, labels, loc=8, ncol=3)
 
 fig.tight_layout()
-fig.subplots_adjust(bottom=0.20)
+fig.subplots_adjust(bottom=0.15)
 # fig.savefig(PATH + "figs/consistency_networksize.pdf")
 # fig.savefig(PATH + "figs/consistency_networksize_cov50.pdf")
-fig.savefig(PATH + "figs/consistency_networksize_cov200.pdf")
+fig.savefig(PATH + "figs/consistency_networksize_both.pdf")
 
 
 
@@ -145,14 +152,18 @@ fig.savefig(PATH + "figs/consistency_nbattributes.pdf")
 
 # =============================================================================
 # vimc_nsamples
-ALGOS = [1, 2, 5, 10, 20, 50]
+ALGOS = [1, 2, 5, 10, 20, 50, "ADVI", "MLE"]
 ex = "r_vimc_nsamples"
 results = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
 ex = "r_vimc_nsamples_large"
+results["algo"] = results["n_sample"]
 results_large = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
-results = pd.concat([results, results_large])
+ex = "r_vimc_nsamples_ADVI_MLE"
+results_large["algo"] = results_large["n_sample"]
+results_vimcadvi = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
+results = pd.concat([results, results_large, results_vimcadvi])
 # means +/- std
-groupings = ["n_sample", "N", ]
+groupings = ["algo", "N", ]
 means = results.groupby(groupings).agg("mean")
 stds = results.groupby(groupings).agg("std")
 us = results.groupby(groupings).agg("min")
@@ -160,6 +171,7 @@ ls = results.groupby(groupings).agg("max")
 METRICS = ["dist_inv", "dist_proj", "train_mse", ]
 COLORS = {1: '#000000', 2: '#222222', 5: '#444444',
           10: '#666666', 20: '#888888', 50: '#aaaaaa'}
+COLORS.update(colormap)
 # plot
 fig, axs = plt.subplots(1, len(METRICS),
                         figsize=(9, 4), sharex="all", sharey="none",
@@ -175,8 +187,7 @@ for col, metric in enumerate(METRICS):
 		u = us.loc[(algo, ), metric]
 		l = ls.loc[(algo, ), metric]
 		ax.plot(x[i], m.loc[i],
-		        color=COLORS[algo],
-		        label=algo)
+		        color=COLORS[algo])
 		# ax.fill_between(x[i], m.loc[i]-s.loc[i], m.loc[i]+s.loc[i], color=COLORS[algo], alpha=0.2)
 		ax.set_xlabel("Network size ($N$)")
 		ax.set_xscale("log")
@@ -189,9 +200,9 @@ axs[2].set_ylabel("Train. MSE")
 # legend
 lines = [Line2D([0], [0], color=COLORS[algo], linestyle="-")
          for algo in ALGOS]
-labels = [algo for algo in ALGOS]
-fig.legend(lines, labels, loc=8, ncol=len(ALGOS), title="MC Samples")
+labels = [to_display[algo] if not isinstance(algo, int) else f"MC({algo})"  for algo in ALGOS]
+fig.legend(lines, labels, loc=8, ncol=len(ALGOS)//2, title="Algorithm")
 
 fig.tight_layout()
-fig.subplots_adjust(bottom=0.30)
+fig.subplots_adjust(bottom=0.35)
 fig.savefig(PATH + "figs/vimc_nsamples.pdf")

@@ -9,14 +9,14 @@ PATH = "/home/simon/Documents/NAIVI/sims_mnar_size/"
 COLORS = colormap
 DICT = to_display
 ALGOS = [
-    # "ADVI", "ADVI",
+    "ADVI", "ADVI",
      "VIMC", "VIMC",
      "MLE", "MLE",
      # "NetworkSmoothing", "MICE", "MissForest",
     # "Mean"
 ]
 MNARS = [
-    # True, False,
+    True, False,
      True, False,
      True, False,
      # False, False, False,
@@ -51,7 +51,7 @@ ONLY_MNAR = [False, False, False, True, True]
 
 # plot
 fig, axs = plt.subplots(3, len(SIZES),
-                        figsize=(9, 5), sharex="all", sharey="none",
+                        figsize=(9, 6), sharex="all", sharey="none",
                         gridspec_kw={'height_ratios': [1, 1, 1]}
                         )
 for col, size in enumerate(SIZES):
@@ -77,7 +77,7 @@ for col, size in enumerate(SIZES):
     axs[0][col].set_title("N={}".format(int(size)))
     axs[-1][col].set_xticks([0., 0.25, 0.50, 0.75])
     axs[-1][col].set_xticklabels([0, 25, 50, 75])
-axs[-1][2].set_xlabel("Missing rate (%)")
+    axs[-1][col].set_xlabel("Missing rate (%)")
 axs[0][0].set_ylabel("AUC")
 axs[0][0].set_ylabel("MSE")
 axs[1][0].set_ylabel("$D(\widehat Z, Z)$")
@@ -91,8 +91,8 @@ lines = [Line2D([0], [0], color=COLORS[algo], linestyle="--" if mnar else "-")
 labels = [DICT[algo] + ((", " + ("MNAR" if mnar else "MCAR"))
                 if algo in ["ADVI", "VIMC", "MLE"] else "")
                 for algo, mnar in zip(ALGOS, MNARS)]
-fig.legend(lines, labels, loc=8, ncol=3)
+fig.legend(lines, labels, loc=8, ncol=3, )
 
 fig.tight_layout()
-fig.subplots_adjust(bottom=0.20)
-fig.savefig(PATH + "figs/results.pdf")
+fig.subplots_adjust(bottom=0.18)
+fig.savefig(PATH + "figs/results_mnar_size.pdf")

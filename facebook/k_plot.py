@@ -71,9 +71,9 @@ fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 fig.tight_layout(h_pad=0.5, w_pad=0.2)
 # fig.subplots_adjust(bottom=0.35)
 fig.subplots_adjust(bottom=0.25)
-axs.patch.set_facecolor('#EEEEEE')
+# axs.patch.set_facecolor('#EEEEEE')
 # for ax in axs:
 #     ax.patch.set_facecolor('#EEEEEE')
 
 # fig.savefig(PATH + "figs/Kfb_results.pdf")
-fig.savefig(PATH + "figs/Kfb_results_slides.pdf")
+fig.savefig(PATH + "figs/Kfb_results_proposal.pdf")

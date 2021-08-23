@@ -36,9 +36,13 @@ colors = colormap
 DICT = to_display
 
 cov_type = "cts"
-# cov_type = "bin"
+cov_type = "bin"
 
-fig, axs = plt.subplots(2, 4, sharex="col", figsize=(9, 5), sharey="row")
+
+nrow = 1
+fig, axs = plt.subplots(nrow, 4, sharex="col", figsize=(9, 3), sharey="row")
+if nrow == 1:
+    axs = axs.reshape((1, -1))
 
 for i, (exp, bin, xaxis, curves, which) in enumerate(zip(EXPERIMENTS, BINARY, XAXIS, CURVES, WHICH)):
     print(exp)
@@ -52,6 +56,8 @@ for i, (exp, bin, xaxis, curves, which) in enumerate(zip(EXPERIMENTS, BINARY, XA
             continue
     exp_short = exp.split("_")[0]
     yaxis = "test_auroc" if bin else "test_mse"
+    # METRICS = [yaxis, "dist_inv"]
+    METRICS = [yaxis, ]
     file = PATH + exp + "/results/summary.csv"
     if os.path.isfile(file):
         results = pd.read_csv(file, index_col=0)
@@ -65,18 +71,15 @@ for i, (exp, bin, xaxis, curves, which) in enumerate(zip(EXPERIMENTS, BINARY, XA
         group = xaxis if xaxis != "density" else "alpha_mean"
         mean = df.groupby([group, curves]).agg("mean").reset_index()
         std = df.groupby([group, curves]).agg("std").reset_index()
-        axs[0][j].plot(mean[xaxis], mean[yaxis], color=colors[a], label=DICT[a])
-        # axs[0][j].fill_between(mean[xaxis], mean[yaxis]-std[yaxis],
-        #                        mean[yaxis]+std[yaxis], color=colors[a], alpha=0.2)
-        if a in ["VIMC", "ADVI", "MLE"]:
-            axs[1][j].plot(mean[xaxis], mean["dist_inv"], color=colors[a])
-            # axs[1][j].fill_between(mean[xaxis], mean["dist_inv"]-std["dist_inv"],
-            #                        mean["dist_inv"]+std["dist_inv"], color=colors[a], alpha=0.2)
+        for row, metric in enumerate(METRICS):
+            if not (metric.startswith("dist") and a not in ["MLE", "ADVI", "VIMC"]):
+                axs[row][j].plot(mean[xaxis], mean[metric], color=colors[a], label=DICT[a])
     if xaxis in ["N", "p_cts", "p_bin"]:
         axs[0][j].set_xscale("log")
     axs[0][j].set_title("Setting {}".format("ABCDEFG"[j]))
-    axs[1][j].set_xlabel(DICT[xaxis])
-    axs[1][j].set_ylim(0., 0.8)
+    axs[-1][j].set_xlabel(DICT[xaxis])
+
+# axs[-1][0].set_ylim(0., 0.8)
 
 # legend
 lines = [Line2D([0], [0], color=colors[a]) for a in ALGOS]
@@ -84,11 +87,11 @@ labels = [DICT[a] for a in ALGOS]
 fig.legend(lines, labels, loc=8, ncol=7) #, title="Algorithm")
 # ylabels
 axs[0][0].set_ylabel("MSE" if cov_type == "cts" else "AUC")
-axs[1][0].set_ylabel("$D(\widehat Z, Z)$")
+# axs[-1][0].set_ylabel("$D(\widehat Z, Z)$")
 axs[0][0].get_yaxis().set_label_coords(-0.25, 0.5)
-axs[1][0].get_yaxis().set_label_coords(-0.25, 0.5)
+# axs[-1][0].get_yaxis().set_label_coords(-0.25, 0.5)
 # layout
 fig.tight_layout(h_pad=0.5, w_pad=0.)
-fig.subplots_adjust(bottom=0.20)
+fig.subplots_adjust(bottom=0.30)
 
-fig.savefig(PATH + "figs/{}_results_slides.pdf".format(cov_type))
+fig.savefig(PATH + "figs/{}_results_proposal.pdf".format(cov_type))

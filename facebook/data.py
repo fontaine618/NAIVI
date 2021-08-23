@@ -66,3 +66,13 @@ def get_data(PATH, node, return_dict=False, include_ego=False):
         return i0, i1, A, X_cts, X_bin
 
 
+def get_featnames(PATH, center):
+    featnames = pd.read_csv("{}{}.featnames".format(PATH, center),
+                           header=None, sep=" ", index_col=0).loc[:, 1]
+    featnames = featnames.str.replace(";anonymized", "")
+    featnames = featnames.str.replace(";id", "")
+    featnames = featnames.str.replace(";", "_")
+    return featnames
+
+
+
