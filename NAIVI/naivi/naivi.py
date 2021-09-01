@@ -63,12 +63,13 @@ class NAIVI:
 
     def fit(self, train, test=None, Z_true=None, reg=0.,
             batch_size=100, eps=1.e-6, max_iter=100,
-            lr=0.001, weight_decay=0., verbose=True, alpha_true=None):
+            lr=0.001, weight_decay=0., verbose=True, alpha_true=None,
+            power=0.0):
         Z_true = Z_true.cuda() if Z_true is not None else None
         alpha_true = alpha_true.cuda() if alpha_true is not None else None
         self.reg = reg
         self.compute_denum(train)
-        optimizer, scheduler = self.prepare_optimizer(lr)
+        optimizer, scheduler = self.prepare_optimizer(lr, power)
         n_char = verbose_init() if verbose else 0
         epoch, out = 0, None
         for epoch in range(max_iter):
@@ -103,7 +104,7 @@ class NAIVI:
         for p in self.model.adjacency_model.parameters():
             p.requires_grad = m
 
-    def prepare_optimizer(self, lr):
+    def prepare_optimizer(self, lr, power=0.0):
         params = [
             {'params': p, "lr": lr}
             for p in self.model.parameters()
@@ -111,8 +112,8 @@ class NAIVI:
         # optimizer = torch.optim.Adagrad(params)
         optimizer = torch.optim.Adam(params)
         # optimizer = torch.optim.SGD(params)
-        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** 1.0)
-        scheduler = None
+        scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** power)
+        # scheduler = None
         return optimizer, scheduler
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):

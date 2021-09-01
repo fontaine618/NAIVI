@@ -16,6 +16,8 @@ X_POS = {"VIMC": -0.15, "ADVI": -0.05, "MLE": 0.05, "MICE": 0.15}
 CENTERS = [0, 107, 348, 414, 686, 698, 1684, 1912, 3437, 3980]
 XS = np.arange(len(CENTERS))
 XAXIS_ORDER = "N"
+na = len(ALGOS)
+bar_width = 0.6 / na
 
 # retrieve results
 dir = os.listdir(PATH)
@@ -34,15 +36,22 @@ tmp = results.groupby("center").agg("mean")[XAXIS_ORDER].sort_values()
 centers = tmp.index.values
 
 # plot
-nrow = 1
-ncol = len(MISSING_RATES)
+nrow = len(MISSING_RATES)
+ncol = 1
 # fig, axs = plt.subplots(nrow, ncol, figsize=(2.5*ncol, 2.5), sharex="col", sharey="row")
-fig, axs = plt.subplots(nrow, ncol, figsize=(9, 5), sharex="col", sharey="row")
+fig, axs = plt.subplots(nrow, ncol, figsize=(8, 6), sharex="col", sharey="row")
 for i, rate in enumerate(MISSING_RATES):
-    for algo in ALGOS:
+    for j, algo in enumerate(ALGOS):
         m = means.loc[(rate, algo, ), "test_auroc"].loc[centers]
         s = stds.loc[(rate, algo, ), "test_auroc"].loc[centers]
-        axs[i].plot(XS, m, color=COLORS[algo], label=DICT[algo])
+        # axs[i].plot(XS, m, color=COLORS[algo], label=DICT[algo])
+        axs[i].bar(x=XS + (j-na/2)*bar_width,
+                   height=2.*s,
+                   bottom=m-s,
+                   color=COLORS[algo], label=DICT[algo],
+                   width=bar_width, alpha=0.5)
+        axs[i].plot(XS + (j-na/2)*bar_width, m, 's', ms=4.,
+                   color=COLORS[algo], label=DICT[algo])
         # axs[i].fill_between(XS, m-s, m+s, color=COLORS[algo], alpha=0.2)
         # x = XS + X_POS[algo]
         # lines = [[(xx, mm-ss), (xx, mm+ss)] for xx, mm, ss in zip(x, m, s)]
@@ -52,8 +61,9 @@ for i, rate in enumerate(MISSING_RATES):
     axs[i].set_xticks(XS)
     axs[i].set_xticklabels(tmp.astype(int), rotation="vertical")
     axs[i].set_title("{:.0f} % missing".format(rate*100))
-    axs[i].set_xlabel("Network size")
-axs[0].set_ylabel("AUC")
+    axs[i].set_ylabel("AUC")
+axs[1].set_xlabel("Network size")
+axs[0].set_ylim(0.48, 0.95)
 # legend
 lines = [Line2D([0], [0], color=COLORS[a]) for a in ALGOS]
 labels = [DICT[a] for a in ALGOS]
@@ -62,4 +72,4 @@ fig.legend(lines, labels, loc=8, ncol=len(ALGOS)) #, title="Algorithm")
 fig.tight_layout()
 # fig.subplots_adjust(bottom=0.40)
 fig.subplots_adjust(bottom=0.2)
-fig.savefig(PATH + "figs/fb_results.pdf")
+fig.savefig(PATH + "figs/fb_results_bar.pdf")

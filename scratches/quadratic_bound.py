@@ -5,7 +5,7 @@ import itertools as it
 import pandas as pd
 plt.style.use("seaborn")
 
-PATH = "//facebook/"
+PATH = "/home/simon/Documents/NAIVI/sims_sanity/"
 
 A = 0.
 mu = 10.
@@ -46,20 +46,22 @@ out.set_index(["sigma", "mu"], inplace=True)
 
 
 
+colors = ["#4c72b0", "#55a868", "#c44e52", "#8172b2"]
 
-fig, ax = plt.subplots(1, 1, figsize=(5, 2.5))
-for sigma in sigmas:
-    ax.plot(mus, np.abs(out.loc[(sigma, ), "mc0"] - out.loc[(sigma, ), "qb0"]), label=sigma)
+fig, ax = plt.subplots(1, 1, figsize=(6, 3))
+for i, sigma in enumerate(sigmas):
+    ax.plot(mus, np.abs(out.loc[(sigma, ), "mc0"]), color=colors[i],
+            label=f"{sigma} (true)", linestyle="-", linewidth=1)
+    ax.plot(mus, np.abs(out.loc[(sigma, ), "qb0"]), color=colors[i],
+            label=f"{sigma} (bound)", linestyle="--", linewidth=1)
 # ax.set_yscale("log")
 ax.set_xlabel("$\mu$")
-ax.set_ylabel("Gap")
+ax.set_ylabel("Value")
+ax.set_yscale("log")
 # legend
-colors = ["#4c72b0", "#55a868", "#c44e52", "#8172b2"]
-lines = [Line2D([0], [0], color=c) for c in colors]
-labels = ["$\sigma=${}".format(s) for s in sigmas]
-fig.legend(lines, labels, loc=8, ncol=len(labels)) #, title="Algorithm")
+fig.legend(loc=8, ncol=4)
 
-fig.tight_layout(h_pad=0.5, w_pad=0.)
+fig.tight_layout() #h_pad=0.5, w_pad=0.)
 fig.subplots_adjust(bottom=0.30)
 
 fig.savefig(PATH + "figs/quadratic_bound.pdf")

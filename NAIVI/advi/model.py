@@ -6,8 +6,9 @@ from NAIVI.naivi.naivi import NAIVI
 
 class JointModel(nn.Module):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False):
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.):
         super().__init__()
+        self.network_weight = network_weight
         self.mnar = mnar
         self.p_cts = p_cts
         self.p_bin_og = p_bin
@@ -40,7 +41,7 @@ class JointModel(nn.Module):
         pm0, pv0, hm0, hv0, pm1, pv1, hm1, hv1, pmx, pvx = self.encode(i0, i1, iX)
         elbo = 0.
         elbo += self.covariate_model.elbo(pmx, pvx, X_cts, X_bin)
-        elbo += self.adjacency_model.elbo(pm0, pv0, pm1, pv1, hm0, hv0, hm1, hv1, A)
+        elbo += self.adjacency_model.elbo(pm0, pv0, pm1, pv1, hm0, hv0, hm1, hv1, A) * self.network_weight
         elbo -= self.encoder.kl_divergence()
         return elbo
 
@@ -55,7 +56,7 @@ class JointModel(nn.Module):
 
 class ADVI(NAIVI):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False):
-        self.model = JointModel(K, N, p_cts, p_bin, mnar)
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.):
+        self.model = JointModel(K, N, p_cts, p_bin, mnar, network_weight)
         self.model.cuda()
 

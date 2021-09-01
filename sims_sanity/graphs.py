@@ -91,46 +91,60 @@ ALGOS = [
 	"VIMC",
 	"MLE",
 ]
-ex = "r_consistency_nbattributes"
-results = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
-# patch VIMC5
-results = results.loc[results["algo"] != "VIMC"]
-ex = "r_consistency_nbattributes_VIMC5"
-results_vimc = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
-results = pd.concat([results, results_vimc])
+# ex = "r_consistency_nbattributes"
+# results = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
+# # patch VIMC5
+# results = results.loc[results["algo"] != "VIMC"]
+# ex = "r_consistency_nbattributes_VIMC5"
+# results_vimc = pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
+# results = pd.concat([results, results_vimc])
+
+dir = os.listdir(PATH)
+folders = [x for x in dir if x.find(".") < 0]
+exps = [x for x in folders if x.startswith("r_consistency_nbattributes")]
+results = pd.concat([
+    pd.read_csv("{}{}/results/summary.csv".format(PATH, ex), index_col=0)
+    for ex in exps
+])
 # means +/- std
-groupings = ["algo", "p_cts", ]
+Ns = [200, 1000]
+groupings = ["N", "algo", "p_cts", ]
 means = results.groupby(groupings).agg("mean")
 stds = results.groupby(groupings).agg("std")
 us = results.groupby(groupings).agg("min")
 ls = results.groupby(groupings).agg("max")
 METRICS = ["dist_inv", "dist_proj", ] #"train_mse", ]
 # plot
-fig, axs = plt.subplots(1, len(METRICS),
-                        figsize=(9, 4), sharex="all", sharey="none",
-                        gridspec_kw={'height_ratios': [1, ]}
+fig, axs = plt.subplots(len(METRICS), len(Ns),
+                        figsize=(8, 5), sharex="all", sharey="row",
+                        gridspec_kw={'height_ratios': [1, 1]}
                         )
-for col, metric in enumerate(METRICS):
-	for algo in ALGOS:
-		ax = axs[col]
-		x = means.loc[(algo, ), ].index
-		m = means.loc[(algo, ), metric]
-		i = ~m.isna()
-		s = stds.loc[(algo, ), metric]
-		u = us.loc[(algo, ), metric]
-		l = ls.loc[(algo, ), metric]
-		ax.plot(x[i]+1, m.loc[i],
-		        color=COLORS[algo],
-		        label=DICT[algo])
-		ax.fill_between(x[i]+1, m.loc[i]-s.loc[i], m.loc[i]+s.loc[i], color=COLORS[algo], alpha=0.2)
-		ax.set_xlabel("Nb. attributes ($p$)")
-		ax.set_xscale("log")
-		ax.set_yscale("log")
-		ax.set_xticks([1, 10, 100, 1000])
-		ax.set_xticklabels([0, 10, 100, 1000])
+for col, N in enumerate(Ns):
+	for row, metric in enumerate(METRICS):
+		for algo in ALGOS:
+			ax = axs[row][col]
+			x = means.loc[(N, algo, ), ].index
+			m = means.loc[(N, algo, ), metric]
+			i = ~m.isna()
+			s = stds.loc[(N, algo, ), metric]
+			u = us.loc[(N, algo, ), metric]
+			l = ls.loc[(N, algo, ), metric]
+			ax.plot(x[i]+1, m.loc[i],
+			        color=COLORS[algo],
+			        label=DICT[algo])
+			ax.fill_between(x[i]+1, m.loc[i]-s.loc[i], m.loc[i]+s.loc[i], color=COLORS[algo], alpha=0.2)
 
-axs[0].set_ylabel("$D(\widehat Z, Z)$")
-axs[1].set_ylabel("$D(\widehat P, P)$")
+			ax.set_xscale("log")
+			ax.set_yscale("log")
+			ax.set_xticks([1, 10, 100, 1000])
+			ax.set_xticklabels([0, 10, 100, 1000])
+
+axs[0][0].set_title("$N=200$")
+axs[0][1].set_title("$N=1000$")
+axs[0][0].set_ylabel("$D(\widehat Z, Z)$")
+axs[1][0].set_ylabel("$D(\widehat P, P)$")
+axs[1][0].set_xlabel("Nb. attributes ($p$)")
+axs[1][1].set_xlabel("Nb. attributes ($p$)")
 # axs[2].set_ylabel("Train. MSE")
 # axs[2].set_ylim(0.8, 1.3)
 
@@ -143,7 +157,7 @@ fig.legend(lines, labels, loc=8, ncol=3)
 
 fig.tight_layout()
 fig.subplots_adjust(bottom=0.20)
-fig.savefig(PATH + "figs/consistency_nbattributes.pdf")
+fig.savefig(PATH + "figs/consistency_nbattributes_both.pdf")
 
 
 
@@ -168,7 +182,7 @@ means = results.groupby(groupings).agg("mean")
 stds = results.groupby(groupings).agg("std")
 us = results.groupby(groupings).agg("min")
 ls = results.groupby(groupings).agg("max")
-METRICS = ["dist_inv", "dist_proj", "train_mse", ]
+METRICS = ["dist_inv", "dist_proj", ]#"train_mse", ]
 COLORS = {1: '#000000', 2: '#222222', 5: '#444444',
           10: '#666666', 20: '#888888', 50: '#aaaaaa'}
 COLORS.update(colormap)
@@ -194,7 +208,7 @@ for col, metric in enumerate(METRICS):
 
 axs[0].set_ylabel("$D(\widehat Z, Z)$")
 axs[1].set_ylabel("$D(\widehat P, P)$")
-axs[2].set_ylabel("Train. MSE")
+# axs[2].set_ylabel("Train. MSE")
 # axs[0].set_yscale("log")
 
 # legend
