@@ -13,6 +13,6 @@
 #SBATCH --mem-per-gpu=12g
 #SBATCH --output=/home/%u/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
-source /home/simfont/nnvi/bin/activate
+source /home/simfont/naivi/bin/activate
 python3 job_vi.py
 
