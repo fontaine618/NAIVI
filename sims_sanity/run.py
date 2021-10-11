@@ -92,6 +92,13 @@ def run(traj):
 
         # ---------------------------------------------------------------------
         # fit model
+
+        # NAIVI output is
+        # out = [epoch, max_abs_grad,
+        #        llk_train, mse_train, auroc_train,
+        #        dist_inv, dist_proj,
+        #        llk_test, mse_test, auroc_test,
+        #        aic, bic]
         t0 = time.time()
         if algo in ["MLE", "ADVI", "VIMC"]:
             fit_args["reg"] = 0.
@@ -99,7 +106,7 @@ def run(traj):
             if output is not None:
                 output += [0., 0.] + [density, missing_rate, time.time() - t0]
             else:
-                output = [np.nan for _ in range(14)]
+                output = [np.nan for _ in range(17)]
         else:
             output = model.fit(train, test, Z_true=Z.cuda(), **fit_args)
             output += [0, 0.] # number of non-zero  and accuracy not applicable here

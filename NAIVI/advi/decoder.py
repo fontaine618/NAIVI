@@ -43,6 +43,10 @@ class CovariateModel(nn.Module):
     def weight(self):
         return self.mean_model.weight
 
+    @property
+    def bias(self):
+        return self.mean_model.bias
+
 
 class AdjacencyModel(nn.Module):
 
