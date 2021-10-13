@@ -45,7 +45,7 @@ def run(traj):
             alpha_mean=alpha_mean_gen, seed=seed, mnar_sparsity=mnar_sparsity
         )
         cuda = ~(algo=="MCMC")
-        print("cuda="+cuda)
+        print(f"cuda={cuda}")
         train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar, cuda=cuda)
         test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar,
                             test=True, cuda=cuda)
