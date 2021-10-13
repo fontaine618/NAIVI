@@ -44,8 +44,10 @@ def run(traj):
             N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cov, missing_mean=missing_mean,
             alpha_mean=alpha_mean_gen, seed=seed, mnar_sparsity=mnar_sparsity
         )
-        train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
-        test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar, test=True)
+        cuda = ~(algo=="MCMC")
+        train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar, cuda=cuda)
+        test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar,
+                            test=True, cuda=cuda)
         density = A.mean().item()
         E = i0.shape[0]
         p = p_bin + p_cts
@@ -84,13 +86,13 @@ def run(traj):
             dt = time.time() - t0
             Z_est = model.latent_positions()
             alpha_est = model.latent_heterogeneity()
-            ZZt_est = (Z_est @ Z_est.T).detach().cpu().numpy()
+            ZZt_est = (Z_est @ Z_est.T).detach().numpy()
             A_logit = alpha_est[i0] + alpha_est[i1] + torch.sum(Z_est[i0, :] * Z_est[i1, :], 1, keepdim=True)
-            proba_est = torch.sigmoid(A_logit).detach().cpu().numpy()
+            proba_est = torch.sigmoid(A_logit).detach().numpy()
             B0_est = model.model.covariate_model.bias
             B_est = model.model.covariate_model.weight.T
             if p > 0:
-                Theta_X_est = (B0_est + torch.matmul(Z_est, B_est)).detach().cpu().numpy()
+                Theta_X_est = (B0_est + torch.matmul(Z_est, B_est)).detach().numpy()
         elif algo == "MCMC":
             print("Stan model: " + model.model)
             model.fit(train, max_iter=mcmc_n_sample)

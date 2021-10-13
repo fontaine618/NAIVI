@@ -65,3 +65,6 @@ fig.tight_layout() #h_pad=0.5, w_pad=0.)
 fig.subplots_adjust(bottom=0.30)
 
 fig.savefig(PATH + "figs/quadratic_bound.pdf")
+
+
+pip install numpy==1.19.5 pandas==1.1.4 pystan==3.1.1 scipy==1.5.3 scikit-learn==0.23.2 torch==1.7.0 pypet==0.5.1 missingpy==0.2.0 pytorch_lightning==1.0.6

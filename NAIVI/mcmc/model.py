@@ -35,13 +35,13 @@ class MCMC:
 	def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
 		with torch.no_grad():
 			if positions is not None:
-				self._init[0]["Z"] = positions.detach().cpu().numpy()
+				self._init[0]["Z"] = positions.detach().numpy()
 			if heterogeneity is not None:
-				self._init[0]["alpha"] = heterogeneity.flatten().detach().cpu().numpy()
+				self._init[0]["alpha"] = heterogeneity.flatten().detach().numpy()
 			if bias is not None:
-				self._init[0]["B"] = weight.detach().cpu().numpy()
+				self._init[0]["B"] = weight.detach().numpy()
 			if weight is not None:
-				self._init[0]["B0"] = bias.detach().cpu().numpy()
+				self._init[0]["B0"] = bias.detach().numpy()
 
 	def fit(self, train, test=None, Z_true=None, reg=0.,
 			batch_size=100, eps=1.0e-6, max_iter=1000,
@@ -52,12 +52,12 @@ class MCMC:
 			i0, i1, A, j, X_cts, X_bin = train[:]
 			E = i0.shape[0]
 			if X_cts is not None:
-				X_cts = X_cts.detach().cpu().numpy()
+				X_cts = X_cts.detach().numpy()
 			if X_bin is not None:
-				X_bin = X_bin.detach().cpu().int().numpy()
-			A = A.detach().cpu().int().numpy().flatten()
-			i0 = i0.detach().cpu().int().numpy() + 1
-			i1 = i1.detach().cpu().int().numpy() + 1
+				X_bin = X_bin.detach().int().numpy()
+			A = A.detach().int().numpy().flatten()
+			i0 = i0.detach().int().numpy() + 1
+			i1 = i1.detach().int().numpy() + 1
 			data = {
 				"N": self.N, "E": E, "A": A, "i0": i0, "i1": i1,
 				"K": self.K,
