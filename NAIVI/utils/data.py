@@ -9,9 +9,15 @@ class JointDataset(Dataset):
                  cuda=True, return_missingness=False, test=False):
         super().__init__()
         if A is not None:
-            self.i0 = i0.cuda() if cuda else i0
-            self.i1 = i1.cuda() if cuda else i1
-            self.A = A.cuda() if cuda else A
+            if cuda:
+                self.i0 = i0.cuda()
+                self.i1 = i1.cuda()
+                self.A = A.cuda()
+            else:
+                self.i0 = i0
+                self.i1 = i1
+                self.A = A
+
             self.N = torch.cat([i0, i1]).unique().shape[0]
         else:
             self.i0 = None
