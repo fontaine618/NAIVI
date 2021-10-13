@@ -1,7 +1,7 @@
 #!/bin/bash
 # The interpreter used to execute the script
 #“#SBATCH” directives that convey submission options:
-#SBATCH --job-name=naivi_networksize_mcmc_2000
+#SBATCH --job-name=naivi_networksize_mcmc_2000_50
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
 #SBATCH --time=100:00:00
@@ -15,5 +15,5 @@
 # The application(s) to execute along with its input arguments and options:
 module load python/3.8.7 gcc/9.2.0
 source /home/simfont/naivi/bin/activate
-python3 job_mcmc_2000.py
+python3 job_mcmc_2000_50.py
 

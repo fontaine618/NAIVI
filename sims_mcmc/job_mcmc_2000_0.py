@@ -10,12 +10,12 @@ if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
     main(
         path=PATH + "sims_mcmc/",
-        name="mcmc_2000",
+        name="mcmc_2000_0",
         explore_dict={
             "data.N": np.array([2000]),
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
-            "data.p_cts": np.array([0, 200]),
+            "data.p_cts": np.array([0, ]),
             "data.missing_mean": np.array([-10000.]),
             "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-1.85]),
