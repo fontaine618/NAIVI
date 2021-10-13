@@ -13,7 +13,7 @@
 #SBATCH --mem-per-cpu=100g
 #SBATCH --output=/home/%u/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
-module load python/3.8.7 gcc/4.8.5
+module load python/3.8.7 gcc/8.2.0
 source /home/simfont/naivi/bin/activate
 python3 job_mcmc_2000.py
 
