@@ -7,25 +7,17 @@ import torch
 from sims_mcmc.main import main
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        which = int(sys.argv[1])
-        seed = np.array([which % 10])
-        ps = np.array([[0, 50][which // 10]])
-    else: # no argument = run all
-        seed = np.arange(0, 10, 1)
-        ps = np.array([0, 50])
-    print(seed, ps)
     torch.set_default_dtype(torch.float64)
     main(
         path=PATH + "sims_mcmc/",
-        name=f"mcmc_500_{which}",
+        name="p_mcmc_200_0-100",
         explore_dict={
-            "data.N": np.array([500]),
+            "data.N": np.array([200]),
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
-            "data.p_cts": ps,
+            "data.p_cts": np.array([0, 10, 20, 50, 100]),# np.array([0, 10, 20, 50, 100, 200, 500, 1000]),
             "data.missing_mean": np.array([-10000.]),
-            "data.seed": seed,
+            "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0]),
             "fit.algo": ["MCMC"],
