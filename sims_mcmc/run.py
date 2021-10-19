@@ -7,6 +7,7 @@ from NAIVI.advi import ADVI
 from NAIVI.mle import MLE
 from NAIVI.vimc import VIMC
 from NAIVI.mcmc import MCMC
+import os
 
 
 def run(traj):
@@ -115,6 +116,14 @@ def run(traj):
         else:
             DThetaX = 0.
         output = (DZ, DP, DThetaX, dt)
+        # cleanup to avoid large disk memory
+        if algo == "MCMC":
+            model_name = model._model.model_name.split("/")[1]
+            folder = f"/home/simfont/.cache/httpstan/models/{model_name}/fits/"
+            # delete everything
+            for filename in os.listdir(folder):
+                file_path = os.path.join(folder, filename)
+                os.remove(file_path)
     except RuntimeError as e:
         print(e)
         output = (np.nan for _ in range(4))
