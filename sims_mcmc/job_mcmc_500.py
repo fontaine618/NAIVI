@@ -6,11 +6,6 @@ import numpy as np
 import torch
 from sims_mcmc.main import main
 
-import os
-print(os.environ['JOBLIB_TEMP_FOLDER'])
-os.environ['JOBLIB_TEMP_FOLDER'] = '/tmp'
-print(os.environ['JOBLIB_TEMP_FOLDER'])
-
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

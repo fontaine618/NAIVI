@@ -98,6 +98,7 @@ def run(traj):
             print("Stan model: " + model.model)
             model.fit(train, max_iter=mcmc_n_sample)
             dt = time.time() - t0
+            print(f"dtime = {dt}")
             ZZt_est = model.posterior_mean("ZZt")
             proba_est = model.posterior_mean("proba").reshape((-1, 1))
             if p > 0:
@@ -105,9 +106,12 @@ def run(traj):
         else:  # ["Mean", "NetworkSmoothing", "MICE", "MissForest"]
             raise ValueError("algorithm " + algo + " is not accepted for this experiment")
         DZ = ((ZZt_est - ZZt_true)**2).sum() / (ZZt_true**2).sum()
+        print(f"DZ = {DZ}")
         DP = ((proba_est - proba_true)**2).sum() / (proba_true**2).sum()
+        print(f"DP = {DP}")
         if p > 0:
             DThetaX = ((Theta_X_est - Theta_X_true)**2).sum() / (ZZt_true**2).sum()
+            print(f"DThetaX = {DThetaX}")
         else:
             DThetaX = 0.
         output = (DZ, DP, DThetaX, dt)
