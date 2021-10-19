@@ -6,6 +6,12 @@ import numpy as np
 import torch
 from sims_mcmc.main import main
 
+import os
+print(os.environ['JOBLIB_TEMP_FOLDER'])
+os.environ['JOBLIB_TEMP_FOLDER'] = '/tmp'
+print(os.environ['JOBLIB_TEMP_FOLDER'])
+
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         which = int(sys.argv[1])
@@ -22,7 +28,7 @@ if __name__ == "__main__":
         path=PATH + "sims_mcmc/",
         name=name,
         explore_dict={
-            "data.N": np.array([500]),
+            "data.N": np.array([50]),
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
             "data.p_cts": ps,
