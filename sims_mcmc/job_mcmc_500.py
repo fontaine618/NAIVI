@@ -23,7 +23,7 @@ if __name__ == "__main__":
         path=PATH + "sims_mcmc/",
         name=name,
         explore_dict={
-            "data.N": np.array([50]),
+            "data.N": np.array([500]),
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
             "data.p_cts": ps,
