@@ -89,13 +89,13 @@ def run(traj):
             dt = time.time() - t0
             Z_est = model.latent_positions()
             alpha_est = model.latent_heterogeneity()
-            ZZt_est = (Z_est @ Z_est.T).detach().numpy()
+            ZZt_est = (Z_est @ Z_est.T).detach().cpu().numpy()
             A_logit = alpha_est[i0] + alpha_est[i1] + torch.sum(Z_est[i0, :] * Z_est[i1, :], 1, keepdim=True)
-            proba_est = torch.sigmoid(A_logit).detach().numpy()
+            proba_est = torch.sigmoid(A_logit).detach().cpu().numpy()
             B0_est = model.model.covariate_model.bias
             B_est = model.model.covariate_model.weight.T
             if p > 0:
-                Theta_X_est = (B0_est + torch.matmul(Z_est, B_est)).detach().numpy()
+                Theta_X_est = (B0_est + torch.matmul(Z_est, B_est)).detach().cpu().numpy()
         elif algo == "MCMC":
             print("Stan model: " + model.model)
             model.fit(train, max_iter=mcmc_n_sample)
