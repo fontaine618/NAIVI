@@ -7,7 +7,7 @@ import torch
 from sims_mcmc.main import main
 
 PS = [0, 10, 20, 50, 100, 200, 500, 1000]  # 8
-NS = [200, 1000] # 2
+# NS = [200, 1000] # 2
 
 
 if __name__ == "__main__":
@@ -15,8 +15,8 @@ if __name__ == "__main__":
         which = int(sys.argv[1])
         seed = which % 10
         exp = which // 10
-        n = NS[exp % 8]
-        p = PS[exp // 8]
+        n = 200
+        p = PS[exp]
         name = f"mcmc_p{p}_n{n}_{seed}"
     torch.set_default_dtype(torch.float64)
     main(
