@@ -119,7 +119,7 @@ def run(traj):
         # cleanup to avoid large disk memory
         if algo == "MCMC":
             model_name = model._model.model_name.split("/")[1]
-            folder = f"/home/simfont/.cache/httpstan/models/{model_name}/fits/"
+            folder = f"/home/simfont/.cache/httpstan/4.4.2/models/{model_name}/fits/"
             # delete everything
             for filename in os.listdir(folder):
                 file_path = os.path.join(folder, filename)

@@ -31,6 +31,7 @@ class MCMC:
 			self.stan_model = model_none
 		self._init = [{"sig2_X": 1. * np.ones(self.p_cts)}]
 		self._fit = None
+		self._model = None
 
 	def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
 		with torch.no_grad():
@@ -81,8 +82,8 @@ class MCMC:
 				})
 			else:
 				pass
-		model = stan.build(self.stan_model, data=data, random_seed=0)
-		self._fit = model.sample(
+		self._model = stan.build(self.stan_model, data=data, random_seed=0)
+		self._fit = self._model.sample(
 			num_chains=1, num_warmup=max_iter,
 			num_samples=max_iter, init=self._init
 		)
