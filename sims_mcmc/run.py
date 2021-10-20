@@ -124,6 +124,7 @@ def run(traj):
             for filename in os.listdir(folder):
                 file_path = os.path.join(folder, filename)
                 os.remove(file_path)
+                print(f"deleted {file_path}")
     except RuntimeError as e:
         print(e)
         output = (np.nan for _ in range(4))
