@@ -6,8 +6,13 @@ from NAIVI.naivi.naivi import NAIVI
 
 class JointModel(nn.Module):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False):
+    def __init__(self, K, N, p_cts, p_bin, mnar=False,
+				 position_prior=(0., 1.),
+				 heterogeneity_prior=(-2., 1.)
+                 ):
         super().__init__()
+        self.heterogeneity_prior = heterogeneity_prior
+        self.position_prior = position_prior
         self.mnar = mnar
         self.p_cts = p_cts
         self.p_bin_og = p_bin
@@ -49,8 +54,46 @@ class JointModel(nn.Module):
 
 class MLE(NAIVI):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False):
+    def __init__(self, K, N, p_cts, p_bin, mnar=False,
+				 position_prior=(0., 1.),
+				 heterogeneity_prior=(-2., 1.)
+                 ):
         super().__init__()
-        self.model = JointModel(K, N, p_cts, p_bin, mnar)
+        self.model = JointModel(K, N, p_cts, p_bin, mnar, position_prior, heterogeneity_prior)
+        self.model.cuda()
+
+
+class JointModelMAP(JointModel):
+
+    def project(self):
+        pass  # no need to project if we regularize
+
+    def loss(self,
+             mean_cts=None, X_cts=None,
+             proba_bin=None, X_bin=None,
+             proba_adj=None, A=None
+             ):
+        loss = super(JointModelMAP, self).loss(
+             mean_cts=mean_cts, X_cts=X_cts,
+             proba_bin=proba_bin, X_bin=X_bin,
+             proba_adj=proba_adj, A=A
+        )
+        # add penalty
+        Z = self.encoder.latent_position_encoder.mean
+        loss += (Z**2).sum() / (2. * self.position_prior[1])
+        alpha = self.encoder.latent_heterogeneity_encoder.mean
+        loss += (alpha**2).sum() / (2. * self.heterogeneity_prior[1])
+
+        return loss
+
+
+class MAP(NAIVI):
+
+    def __init__(self, K, N, p_cts, p_bin, mnar=False,
+				 position_prior=(0., 1.),
+				 heterogeneity_prior=(-2., 1.)
+                 ):
+        super().__init__()
+        self.model = JointModelMAP(K, N, p_cts, p_bin, mnar, position_prior, heterogeneity_prior)
         self.model.cuda()
 

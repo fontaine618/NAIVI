@@ -1,2 +1,2 @@
-from .model import MLE
+from .model import MLE, MAP
 from .glm import GLM

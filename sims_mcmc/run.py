@@ -3,10 +3,7 @@ import time
 import torch
 from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.utils.data import JointDataset
-from NAIVI.advi import ADVI
-from NAIVI.mle import MLE
-from NAIVI.vimc import VIMC
-from NAIVI.mcmc import MCMC
+from NAIVI import ADVI, MLE, MAP, VIMC, MCMC
 import os
 
 
@@ -67,12 +64,16 @@ def run(traj):
                         "batch_size": len(train), "reg": reg}
         elif algo == "VIMC":
             if n_sample == 0:  # 0 means default value
-                n_sample = int(np.ceil(200/np.sqrt(N)))
+                n_sample = int(np.ceil(200/np.sqrt(max(N, p))))
             model = VIMC(K_model, N, p_cts, p_bin, mnar=mnar, n_samples=n_sample)
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
                         "batch_size": len(train), "reg": reg}
         elif algo == "MLE":
             model = MLE(K, N, p_cts, p_bin, mnar=mnar)
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
+                        "batch_size": len(train), "reg": reg}
+        elif algo == "MAP":
+            model = MAP(K, N, p_cts, p_bin, mnar=mnar)
             fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
                         "batch_size": len(train), "reg": reg}
         elif algo == "MCMC":
@@ -83,7 +84,7 @@ def run(traj):
         # ---------------------------------------------------------------------
         # fit model
         t0 = time.time()
-        if algo in ["MLE", "ADVI", "VIMC"]:
+        if algo in ["MLE", "MAP", "ADVI", "VIMC"]:
             model.fit(train, test, Z_true=Z, alpha_true=alpha, **fit_args)
             dt = time.time() - t0
             Z_est = model.latent_positions()
