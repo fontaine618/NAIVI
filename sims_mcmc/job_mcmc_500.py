@@ -12,18 +12,18 @@ if __name__ == "__main__":
         which = int(sys.argv[1])
         seed = np.array([which % 10])
         ps = np.array([[0, 50][which // 10]])
-        name = f"mcmc_50_{which}"
+        name = f"mcmc_500_{which}"
     else: # no argument = run all
         seed = np.arange(0, 10, 1)
         ps = np.array([0, 50])
-        name = "mcmc_50_all"
+        name = "mcmc_500_all"
     print(seed, ps)
     torch.set_default_dtype(torch.float64)
     main(
         path=PATH + "sims_mcmc/",
         name=name,
         explore_dict={
-            "data.N": np.array([50]),
+            "data.N": np.array([500]),
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
             "data.p_cts": ps,
