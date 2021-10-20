@@ -6,6 +6,9 @@ import numpy as np
 import torch
 from sims_mcmc.main import main
 
+import os
+os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratches/.cache/"
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
