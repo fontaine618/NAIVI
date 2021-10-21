@@ -5,6 +5,9 @@ from NAIVI import ADVI, VIMC, MLE, GLM
 from NAIVI.initialization.usvt import initialize_latent_variables
 from NAIVI.utils.metrics import projection_distance, invariant_distance
 import torch
+import httpstan
+
+httpstan
 
 # -----------------------------------------------------------------------------
 # Create Data

@@ -11,7 +11,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=10g
-#SBATCH --output=/home/%u/%x-%j.log
+#SBATCH --output=/home/%u/scratch/logs/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
 source /home/simfont/naivi/bin/activate
 python3 job_mcmc_small.py

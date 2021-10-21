@@ -1,6 +1,6 @@
 from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.utils.data import JointDataset
-from NAIVI import ADVI, VIMC, MLE, MICE, MCMC
+from NAIVI import ADVI, VIMC, MLE, MICE, MCMC, MAP
 import torch
 import numpy as np
 import pandas as pd
@@ -19,12 +19,12 @@ plt.style.use("seaborn")
 # Create Data
 # -----------------------------------------------------------------------------
 
-N = 50
-K = 5
-p_cts = 10
+N = 200
+K = 2
+p_cts = 200
 p_bin = 0
 var_cts = 1.
-missing_mean = -1000.
+missing_mean = -10000.
 alpha_mean = -2.
 seed = 0
 mnar_sparsity = 1.0
@@ -63,27 +63,75 @@ B0_advi = advi.model.covariate_model.bias
 B_advi = advi.model.covariate_model.weight.T
 
 Theta_X_advi = (B0_advi + torch.matmul(Z_advi, B_advi))[:, :p_cts].detach().cpu().numpy()
+
+
+
+# -----------------------------------------------------------------------------
+# MAP & MLE
+# -----------------------------------------------------------------------------
+
+mapfit = MAP(K, N, p_cts, p_bin, mnar=mnar)
+mapfit.fit(train, train, Z, batch_size=len(train),
+         eps=5.e-6, max_iter=200, lr=0.1, alpha_true=alpha)
+
+Z_map = mapfit.latent_positions()
+alpha_map = mapfit.latent_heterogeneity()
+ZZt_map = (Z_map @ Z_map.T).detach().cpu().numpy()
+A_logit = alpha_map[i0] + alpha_map[i1] + torch.sum(Z_map[i0, :] * Z_map[i1, :], 1, keepdim=True)
+proba_map = torch.sigmoid(A_logit).detach().cpu().numpy()
+
+B0_map = mapfit.model.covariate_model.bias
+B_map = mapfit.model.covariate_model.weight.T
+
+Theta_X_map = (B0_map + torch.matmul(Z_map, B_map))[:, :p_cts].detach().cpu().numpy()
+
+
+
+
+
+mlefit = MLE(K, N, p_cts, p_bin, mnar=mnar)
+mlefit.fit(train, train, Z, batch_size=len(train),
+         eps=5.e-6, max_iter=200, lr=0.1, alpha_true=alpha)
+
+Z_mle = mlefit.latent_positions()
+alpha_mle = mlefit.latent_heterogeneity()
+ZZt_mle = (Z_mle @ Z_mle.T).detach().cpu().numpy()
+A_logit = alpha_mle[i0] + alpha_mle[i1] + torch.sum(Z_mle[i0, :] * Z_mle[i1, :], 1, keepdim=True)
+proba_mle = torch.sigmoid(A_logit).detach().cpu().numpy()
+
+B0_mle = mlefit.model.covariate_model.bias
+B_mle = mlefit.model.covariate_model.weight.T
+
+Theta_X_mle = (B0_mle + torch.matmul(Z_mle, B_mle))[:, :p_cts].detach().cpu().numpy()
+
+
 # -----------------------------------------------------------------------------
 # MCMC
 # -----------------------------------------------------------------------------
 
 mcmc = MCMC(K, N, p_cts, p_bin, (0., 1.), (-2., 1.))
+train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar, cuda=False)
 mcmc.fit(train, max_iter=1000, Z_true=Z.detach().cpu().numpy())
 
-self = mcmc
-
+# models/wkawajgz
 ZZt_mcmc = mcmc.posterior_mean("ZZt")
 proba_mcmc = mcmc.posterior_mean("proba").reshape((-1, 1))
 Theta_X_mcmc = mcmc.posterior_mean("Theta_X")[:, :p_cts]
 
 ((ZZt_mcmc - ZZt_true)**2).sum() / (ZZt_true**2).sum()
 ((ZZt_advi - ZZt_true)**2).sum() / (ZZt_true**2).sum()
+((ZZt_mle - ZZt_true)**2).sum() / (ZZt_true**2).sum()
+((ZZt_map - ZZt_true)**2).sum() / (ZZt_true**2).sum()
 
 ((proba_mcmc - proba_true)**2).sum() / (proba_true**2).sum()
 ((proba_advi - proba_true)**2).sum() / (proba_true**2).sum()
+((proba_mle - proba_true)**2).sum() / (proba_true**2).sum()
+((proba_map - proba_true)**2).sum() / (proba_true**2).sum()
 
 ((Theta_X_mcmc - Theta_X_true)**2).sum() / (ZZt_true**2).sum()
 ((Theta_X_advi - Theta_X_true)**2).sum() / (ZZt_true**2).sum()
+((Theta_X_mle - Theta_X_true)**2).sum() / (ZZt_true**2).sum()
+((Theta_X_map - Theta_X_true)**2).sum() / (ZZt_true**2).sum()
 
 
 

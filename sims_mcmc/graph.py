@@ -31,7 +31,7 @@ results_p = pd.concat([
     for ex in exps if (ex.find("p") >= 0 and "summary.csv" in os.listdir(PATH + "results/" + ex))
 ])
 
-
+results_p.sort_values(["algo", "N", "p_cts", "seed"])[["algo", "N", "p_cts", "seed"]]
 # means +/- std
 groupings = ["p_cts", "algo", "N", ]
 means = results.groupby(groupings).agg("mean")
