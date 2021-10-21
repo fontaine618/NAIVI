@@ -20,7 +20,7 @@ if __name__ == "__main__":
             "data.seed": np.arange(0, 10, 1),
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0]),
-            "fit.algo": ["VIMC", "ADVI", "MLE", ],
+            "fit.algo": ["VIMC", "ADVI", "MLE", "M̀AP"],
             "fit.n_sample": np.array([0]),
             "fit.mcmc_n_sample": np.array([1000]),
             "model.alpha_mean": np.array([-1.85]),
