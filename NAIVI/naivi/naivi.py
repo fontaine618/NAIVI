@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import pandas as pd
 from pytorch_lightning.metrics.functional import auroc
 from pytorch_lightning.metrics.functional import mean_squared_error
 from NAIVI.utils.metrics import invariant_distance, projection_distance, proba_distance
@@ -64,7 +65,7 @@ class NAIVI:
     def fit(self, train, test=None, Z_true=None, reg=0.,
             batch_size=100, eps=1.e-6, max_iter=100,
             lr=0.001, weight_decay=0., verbose=True, alpha_true=None,
-            power=0.0):
+            power=0.0, return_log=False):
         Z_true = Z_true.cuda() if Z_true is not None else None
         alpha_true = alpha_true.cuda() if alpha_true is not None else None
         self.reg = reg
@@ -72,6 +73,13 @@ class NAIVI:
         optimizer, scheduler = self.prepare_optimizer(lr, power)
         n_char = verbose_init() if verbose else 0
         epoch, out = 0, None
+        if return_log:
+            logs = pd.DataFrame(columns=[
+                "iter", "grad_norm",
+                "llk_train", "mse_train", "auroc_train",
+                 "dist_inv", "dist_proj",
+                "llk_test", "mse_test", "auroc_test",
+                 "aic", "bic",])
         for epoch in range(max_iter):
             # for step in ["E", "M"]:
             #     optimizer.zero_grad(set_to_none=True)
@@ -86,13 +94,18 @@ class NAIVI:
                 scheduler.step()
             converged, max_abs_grad = self.check_convergence(eps)
             llk_train, out, log = self.epoch_metrics(Z_true, epoch, test, train, max_abs_grad, alpha_true)
+            if return_log:
+                logs.loc[len(logs.index)] = out
             if verbose and epoch % 10 == 0:
                 print(log)
             if converged:
                 break
         if verbose:
             print("-" * n_char)
-        return out
+        if return_log:
+            return out, logs
+        else:
+            return out
 
     def select_params_for_step(self, step):
         e = (step == "E")

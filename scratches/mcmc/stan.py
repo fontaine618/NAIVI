@@ -21,12 +21,12 @@ plt.style.use("seaborn")
 
 N = 200
 K = 2
-p_cts = 200
+p_cts = 500
 p_bin = 0
 var_cts = 1.
 missing_mean = -10000.
 alpha_mean = -2.
-seed = 0
+seed = 4
 mnar_sparsity = 1.0
 mnar = False
 
@@ -49,7 +49,7 @@ Theta_X_true = (B0 + torch.matmul(Z, B))[:, :p_cts].detach().cpu().numpy()
 # ADVI
 # -----------------------------------------------------------------------------
 
-advi = VIMC(K, N, p_cts, p_bin, mnar=mnar, n_samples=1)
+advi = MLE(K, N, p_cts, p_bin, mnar=mnar)
 advi.fit(train, train, Z, batch_size=len(train),
          eps=5.e-6, max_iter=200, lr=0.1, alpha_true=alpha)
 
@@ -65,6 +65,15 @@ B_advi = advi.model.covariate_model.weight.T
 Theta_X_advi = (B0_advi + torch.matmul(Z_advi, B_advi))[:, :p_cts].detach().cpu().numpy()
 
 
+print("DZ      ", ((ZZt_advi - ZZt_true)**2).sum() / (ZZt_true**2).sum())
+print("DZ      ", ((ZZt_advi - ZZt_true)**2).mean())
+print("DP      ", ((proba_advi - proba_true)**2).sum() / (proba_true**2).sum())
+print("DThetaX ", ((Theta_X_advi - Theta_X_true)**2).mean())
+
+
+# posterior contraction
+sd = advi.model.encoder.latent_position_encoder.log_var_encoder.values.exp().sqrt()
+print(sd.quantile(torch.linspace(0., 1., 11).cuda()).detach().cpu().numpy())
 
 # -----------------------------------------------------------------------------
 # MAP & MLE
@@ -91,7 +100,7 @@ Theta_X_map = (B0_map + torch.matmul(Z_map, B_map))[:, :p_cts].detach().cpu().nu
 
 mlefit = MLE(K, N, p_cts, p_bin, mnar=mnar)
 mlefit.fit(train, train, Z, batch_size=len(train),
-         eps=5.e-6, max_iter=200, lr=0.1, alpha_true=alpha)
+         eps=5.e-6, max_iter=500, lr=0.1, alpha_true=alpha)
 
 Z_mle = mlefit.latent_positions()
 alpha_mle = mlefit.latent_heterogeneity()
@@ -111,7 +120,9 @@ Theta_X_mle = (B0_mle + torch.matmul(Z_mle, B_mle))[:, :p_cts].detach().cpu().nu
 
 mcmc = MCMC(K, N, p_cts, p_bin, (0., 1.), (-2., 1.))
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar, cuda=False)
-mcmc.fit(train, max_iter=1000, Z_true=Z.detach().cpu().numpy())
+mcmc.fit(train, max_iter=1000, Z_true=Z.detach().cpu().numpy(), num_chains=10)
+
+az.summary(mcmc._fit, "ZZt")["r_hat"].quantile(np.linspace(0., 1., 11))
 
 # models/wkawajgz
 ZZt_mcmc = mcmc.posterior_mean("ZZt")

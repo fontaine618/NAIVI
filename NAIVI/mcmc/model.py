@@ -29,7 +29,7 @@ class MCMC:
 		else:
 			self.model = "none"
 			self.stan_model = model_none
-		self._init = [{"sig2_X": 1. * np.ones(self.p_cts)}]
+		self._init = [{"sig2_X": 1. * np.ones(self.p_cts)}]*10
 		self._fit = None
 		self._model = None
 
@@ -47,7 +47,7 @@ class MCMC:
 	def fit(self, train, test=None, Z_true=None, reg=0.,
 			batch_size=100, eps=1.0e-6, max_iter=1000,
 			lr=0.001, weight_decay=0., verbose=True,
-			alpha_true=None, power=0.):
+			alpha_true=None, power=0., num_chains=1):
 		# get data
 		with torch.no_grad():
 			i0, i1, A, j, X_cts, X_bin = train[:]
@@ -84,8 +84,8 @@ class MCMC:
 				pass
 		self._model = stan.build(self.stan_model, data=data, random_seed=0)
 		self._fit = self._model.sample(
-			num_chains=1, num_warmup=max_iter,
-			num_samples=max_iter, init=self._init
+			num_chains=num_chains, num_warmup=max_iter,
+			num_samples=max_iter, init=[self._init[0] for _ in range(num_chains)]
 		)
 
 	def get(self, x):

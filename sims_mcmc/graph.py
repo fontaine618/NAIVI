@@ -15,6 +15,7 @@ ALGOS = [
 	"ADVI",
 	"VIMC",
 	"MCMC",
+	"MLE",  "MAP"
 ]
 
 
@@ -61,12 +62,14 @@ for col, p_cts in enumerate([0, 50, "p"]):
 			ax = axs[row][col]
 			if p_cts == "p":
 				x = means_p.loc[(200, algo, ), ].index
-				m = means_p.loc[(200, algo, ), metric]
+				# to correct the bad scaling
+				mult = 200 / x if metric == "DThetaX" else 1.
+				m = means_p.loc[(200, algo, ), metric] * mult
 				if m.max() < 1e-10:
 					break
 				i = (~m.isna()) & (m.gt(0.))
-				u = us_p.loc[(200, algo, ), metric]
-				l = ls_p.loc[(200, algo, ), metric]
+				u = us_p.loc[(200, algo, ), metric] * mult
+				l = ls_p.loc[(200, algo, ), metric] * mult
 				ax.plot(x[i]+1, m.loc[i],
 				        color=COLORS[algo],
 				        label=DICT[algo])
@@ -101,7 +104,7 @@ lines = [Line2D([0], [0], color=COLORS[algo], linestyle="-")
          for algo in ALGOS]
 labels = [DICT[algo]
                 for algo in ALGOS]
-fig.legend(lines, labels, loc=8, ncol=3)
+fig.legend(lines, labels, loc=8, ncol=len(ALGOS))
 
 fig.tight_layout()
 fig.subplots_adjust(bottom=0.15)

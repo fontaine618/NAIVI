@@ -112,7 +112,7 @@ def run(traj):
         DP = ((proba_est - proba_true)**2).sum() / (proba_true**2).sum()
         print(f"DP = {DP}")
         if p > 0:
-            DThetaX = ((Theta_X_est - Theta_X_true)**2).sum() / (ZZt_true**2).sum()
+            DThetaX = ((Theta_X_est - Theta_X_true)**2).mean()
             print(f"DThetaX = {DThetaX}")
         else:
             DThetaX = 0.
