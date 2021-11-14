@@ -71,22 +71,18 @@ def run(traj):
         # initialize model
         if algo == "ADVI":
             model = ADVI(K_model, N, p_cts, p_bin, mnar=mnar)
-            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
-                        "batch_size": len(train), "reg": reg}
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "reg": reg}
         elif algo == "VIMC":
             if n_sample == 0:  # 0 means default value
                 n_sample = int(np.ceil(200/np.sqrt(max(N, p))))
             model = VIMC(K_model, N, p_cts, p_bin, mnar=mnar, n_samples=n_sample)
-            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
-                        "batch_size": len(train), "reg": reg}
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "reg": reg}
         elif algo == "MLE":
             model = MLE(K, N, p_cts, p_bin, mnar=mnar)
-            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
-                        "batch_size": len(train), "reg": reg}
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "reg": reg}
         elif algo == "MAP":
             model = MAP(K, N, p_cts, p_bin, mnar=mnar)
-            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr,
-                        "batch_size": len(train), "reg": reg}
+            fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "reg": reg}
         elif algo == "MCMC":
             model = MCMC(K, N, p_cts, p_bin, (0., 1.), (alpha_mean_model, 1.))
         else:
