@@ -122,7 +122,7 @@ class NAIVI:
         for p in self.model.adjacency_model.parameters():
             p.requires_grad = m
 
-    def prepare_optimizer(self, lr, power=0.5):
+    def prepare_optimizer(self, lr, power=1.0):
         params = [
             {'params': p, "lr": lr}
             for p in self.model.parameters()
