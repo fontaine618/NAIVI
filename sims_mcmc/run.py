@@ -54,10 +54,10 @@ def run(traj):
         p = p_bin + p_cts
 
         # prepare true calues for comparison
-        ZZt_true = (Z @ Z.T).detach().cpu().numpy()
-        A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
-        proba_true = torch.sigmoid(A_logit).detach().cpu().numpy()
-        Theta_X_true = (B0 + torch.matmul(Z, B)).detach().cpu().numpy()
+        ZZt_true = Z @ Z.T
+        A_logit = alpha + alpha.t() + ZZt_true
+        proba_true = torch.sigmoid(A_logit)
+        Theta_X_true = (B0 + torch.matmul(Z, B))
 
         true_values = {
             "ZZt": ZZt_true,
