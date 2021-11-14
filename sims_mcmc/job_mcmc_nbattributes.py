@@ -33,7 +33,9 @@ if __name__ == "__main__":
             "data.mnar_sparsity": np.array([0.0]),
             "fit.algo": ["MCMC"],
             "fit.n_sample": np.array([0]),
-            "fit.mcmc_n_sample": np.array([1000]),
+            "fit.mcmc_n_sample": np.array([5000]),
+            "fit.mcmc_n_chains": np.array([10]),
+            "fit.mcmc_n_warmup": np.array([1000]),
             "model.alpha_mean": np.array([-1.85]),
             "model.K": np.array([2]),
             "model.mnar": [False]
