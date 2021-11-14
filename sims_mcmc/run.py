@@ -58,6 +58,15 @@ def run(traj):
         A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
         proba_true = torch.sigmoid(A_logit).detach().cpu().numpy()
         Theta_X_true = (B0 + torch.matmul(Z, B)).detach().cpu().numpy()
+
+        true_values = {
+            "ZZt": ZZt_true,
+            "P": proba_true,
+            "Theta_X": Theta_X_true,
+            "Theta_A": A_logit,
+            "BBt": torch.mm(B.t(), B),
+            "alpha": alpha
+        }
         # ---------------------------------------------------------------------
         # initialize model
         if algo == "ADVI":
@@ -88,7 +97,7 @@ def run(traj):
         diagnostics = None
         t0 = time.time()
         if algo in ["MLE", "MAP", "ADVI", "VIMC"]:
-            model.fit(train, test, Z_true=Z, alpha_true=alpha, **fit_args)
+            model.fit(train, test, true_values=true_values, **fit_args)
             dt = time.time() - t0
             Z_est = model.latent_positions()
             alpha_est = model.latent_heterogeneity()
