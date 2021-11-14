@@ -70,7 +70,7 @@ def main(path, name, explore_dict):
         "fit.algo", "MLE", "Inference algorithm"
     )
     traj.f_add_parameter(
-        "fit.max_iter", np.int64(200), "Number of iterations"
+        "fit.max_iter", np.int64(5000), "Number of iterations"
     )
     traj.f_add_parameter(
         "fit.n_sample", np.int64(0), "Number of samples for VIMC; 0 defaults to 200/N"
@@ -85,7 +85,7 @@ def main(path, name, explore_dict):
         "fit.mcmc_n_warmup", np.int64(1000), "Number of warmup samples for MCMC per chain"
     )
     traj.f_add_parameter(
-        "fit.eps", np.float64(1.0e-6), "convergence threshold"
+        "fit.eps", np.float64(1.0e-8), "convergence threshold"
     )
     traj.f_add_parameter(
         "fit.lr", np.float64(0.1), "GD Step size"
