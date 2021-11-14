@@ -21,7 +21,11 @@ def post_processing(traj, result_list):
     ]
     print(df_out)
 
-    df = pd.concat([df_in, df_out], axis=1)
+    df_diag = pd.concat([res[1][2] for res in result_list])
+    df_diag.index = run_idx
+    print(df_diag)
+
+    df = pd.concat([df_in, df_out, df_diag], axis=1)
 
     print(df)
     traj.f_add_result("data_frame", df, "Summary across replications")

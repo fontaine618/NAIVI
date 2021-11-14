@@ -1,6 +1,8 @@
 import stan
 import numpy as np
 import torch
+import arviz as az
+import pandas as pd
 from .stan_models import model_cts, model_bin, model_both, model_none
 
 
@@ -47,7 +49,7 @@ class MCMC:
 	def fit(self, train, test=None, Z_true=None, reg=0.,
 			batch_size=100, eps=1.0e-6, max_iter=1000,
 			lr=0.001, weight_decay=0., verbose=True,
-			alpha_true=None, power=0., num_chains=1):
+			alpha_true=None, power=0., num_chains=1, num_warmup=1000):
 		# get data
 		with torch.no_grad():
 			i0, i1, A, j, X_cts, X_bin = train[:]
@@ -84,7 +86,7 @@ class MCMC:
 				pass
 		self._model = stan.build(self.stan_model, data=data, random_seed=0)
 		self._fit = self._model.sample(
-			num_chains=num_chains, num_warmup=max_iter,
+			num_chains=num_chains, num_warmup=num_warmup,
 			num_samples=max_iter, init=[self._init[0] for _ in range(num_chains)]
 		)
 
@@ -93,3 +95,8 @@ class MCMC:
 
 	def posterior_mean(self, x):
 		return self.get(x).mean(-1)
+
+	def diagnostics(self, var):
+		return az.summary(self._fit, var, kind="diagnostics", round_to=5)
+
+

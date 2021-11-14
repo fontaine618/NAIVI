@@ -39,6 +39,9 @@ class CovariateModel(nn.Module):
             elbo += self.model_bin.elbo(mean_bin, var_bin, X_bin)
         return elbo
 
+    def set_var(self, var):
+        self.model_cts.log_var.data = torch.log(var)
+
     @property
     def weight(self):
         return self.mean_model.weight

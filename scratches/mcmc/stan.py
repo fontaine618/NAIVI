@@ -19,13 +19,13 @@ plt.style.use("seaborn")
 # Create Data
 # -----------------------------------------------------------------------------
 
-N = 200
+N = 100
 K = 2
-p_cts = 500
+p_cts = 50
 p_bin = 0
 var_cts = 1.
 missing_mean = -10000.
-alpha_mean = -2.
+alpha_mean = -1.85
 seed = 4
 mnar_sparsity = 1.0
 mnar = False
@@ -40,18 +40,27 @@ p = p_bin + p_cts
 
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
 
-ZZt_true = (Z @ Z.T).detach().cpu().numpy()
-A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
-proba_true = torch.sigmoid(A_logit).detach().cpu().numpy()
+ZZt_true = Z @ Z.T
+A_logit = alpha + alpha.t() + ZZt_true
+proba_true = torch.sigmoid(A_logit)
 
-Theta_X_true = (B0 + torch.matmul(Z, B))[:, :p_cts].detach().cpu().numpy()
+Theta_X_true = (B0 + torch.matmul(Z, B))
+
+true_values = {
+    "ZZt": ZZt_true,
+    "P": proba_true,
+    "Theta_X": Theta_X_true,
+    "Theta_A": A_logit,
+    "BBt": torch.mm(B.t(), B),
+    "alpha": alpha
+}
 # -----------------------------------------------------------------------------
 # ADVI
 # -----------------------------------------------------------------------------
 
 advi = MLE(K, N, p_cts, p_bin, mnar=mnar)
-advi.fit(train, train, Z, batch_size=len(train),
-         eps=5.e-6, max_iter=200, lr=0.1, alpha_true=alpha)
+out, logs = advi.fit(train, train, eps=5.e-6, max_iter=200, lr=0.1, return_log=True,
+                     true_values=true_values)
 
 Z_advi = advi.latent_positions()
 alpha_advi = advi.latent_heterogeneity()

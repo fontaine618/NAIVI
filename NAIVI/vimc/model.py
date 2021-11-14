@@ -6,7 +6,10 @@ from NAIVI.naivi.naivi import NAIVI
 
 class JointModel(nn.Module):
 
-    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False):
+    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False,
+                    position_prior=(0., 1.),
+                    heterogeneity_prior=(-2., 1.)
+    ):
         super().__init__()
         self.mnar = mnar
         self.p_cts = p_cts
@@ -15,7 +18,7 @@ class JointModel(nn.Module):
             p_bin += p_bin + p_cts
         self.p_bin = p_bin
         self.n_samples = n_samples
-        self.encoder = Encoder(K, N)
+        self.encoder = Encoder(K, N, position_prior, heterogeneity_prior)
         self.covariate_model = CovariateModel(K, p_cts, p_bin, N)
         self.adjacency_model = AdjacencyModel(N)
 
@@ -54,6 +57,9 @@ class JointModel(nn.Module):
 
 class VIMC(NAIVI):
 
-    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False):
+    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False,
+                    position_prior=(0., 1.),
+                    heterogeneity_prior=(-2., 1.)
+    ):
         self.model = JointModel(K, N, p_cts, p_bin, n_samples, mnar)
         self.model.cuda()

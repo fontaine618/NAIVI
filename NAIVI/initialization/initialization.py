@@ -23,7 +23,7 @@ def initialize(train: JointDataset, K: int, mnar: bool = False,
 		train_no_cov = JointDataset(i0, i1, A)
 		model = ADVI(K, N, 0, 0, mnar=mnar)
 		model.init(positions=Z_mean, heterogeneity=alpha_mean)
-		model.fit(train_no_cov, None, batch_size=len(train), eps=1.e-6, max_iter=100, lr=1.)
+		model.fit(train_no_cov, None, eps=1.e-6, max_iter=200, lr=0.1)
 		Z_mean = model.model.encoder.latent_position_encoder.mean_encoder.values
 		Z_log_var = model.model.encoder.latent_position_encoder.log_var_encoder.values
 		alpha_mean = model.model.encoder.latent_heterogeneity_encoder.mean_encoder.values
@@ -34,7 +34,7 @@ def initialize(train: JointDataset, K: int, mnar: bool = False,
 	if verbose:
 		print("Initializing model parameters")
 	glm = GLM(K, N, p_cts, p_bin, mnar=mnar, latent_positions=Z_mean)
-	glm.fit(train, None, batch_size=len(train), eps=1.e-6, max_iter=100, lr=1.)
+	glm.fit(train, None, eps=1.e-6, max_iter=200, lr=0.1)
 	with torch.no_grad():
 		B0 = glm.model.mean_model.bias.data
 		B = glm.model.mean_model.weight.data

@@ -5,6 +5,8 @@ from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.utils.data import JointDataset
 from NAIVI import ADVI, MLE, MAP, VIMC, MCMC
 import os
+import arviz
+import pandas as pd
 
 
 def run(traj):
@@ -83,6 +85,7 @@ def run(traj):
 
         # ---------------------------------------------------------------------
         # fit model
+        diagnostics = None
         t0 = time.time()
         if algo in ["MLE", "MAP", "ADVI", "VIMC"]:
             model.fit(train, test, Z_true=Z, alpha_true=alpha, **fit_args)
@@ -105,6 +108,19 @@ def run(traj):
             proba_est = model.posterior_mean("proba").reshape((-1, 1))
             if p > 0:
                 Theta_X_est = model.posterior_mean("Theta_X")
+            # diagnostics
+            ZZt_diag = model.diagnostics("ZZt").describe().transpose()
+            ZZt_diag.index = pd.MultiIndex.from_product([["ZZt"], ZZt_diag.index])
+            B0_diag = model.diagnostics("B0").describe().transpose()
+            B0_diag.index = pd.MultiIndex.from_product([["B0"], B0_diag.index])
+            alpha_diag = model.diagnostics("alpha").describe().transpose()
+            alpha_diag.index = pd.MultiIndex.from_product([["alpha"], alpha_diag.index])
+            Theta_X_diag = model.diagnostics("Theta_X").describe().transpose()
+            Theta_X_diag.index = pd.MultiIndex.from_product([["Theta_X"], Theta_X_diag.index])
+            Theta_A_diag = model.diagnostics("Theta_A").describe().transpose()
+            Theta_A_diag.index = pd.MultiIndex.from_product([["Theta_A"], Theta_A_diag.index])
+            diagnostics = pd.concat([ZZt_diag, B0_diag, alpha_diag, Theta_X_diag, Theta_A_diag])
+            diagnostics = diagnostics.melt(ignore_index=False).reset_index().set_index(["level_0", "level_1", "variable"]).transpose()
         else:  # ["Mean", "NetworkSmoothing", "MICE", "MissForest"]
             raise ValueError("algorithm " + algo + " is not accepted for this experiment")
         DZ = ((ZZt_est - ZZt_true)**2).sum() / (ZZt_true**2).sum()
@@ -131,4 +147,4 @@ def run(traj):
         output = (np.nan for _ in range(4))
     finally:
         print(*output)
-        return input, output
+        return input, output, diagnostics

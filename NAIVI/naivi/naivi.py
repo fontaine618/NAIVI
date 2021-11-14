@@ -1,9 +1,8 @@
 import torch
 import numpy as np
 import pandas as pd
-from pytorch_lightning.metrics.functional import auroc
-from pytorch_lightning.metrics.functional import mean_squared_error
-from NAIVI.utils.metrics import invariant_distance, projection_distance, proba_distance
+from pytorch_lightning.metrics.functional import auroc, mean_squared_error
+# from NAIVI.utils.metrics import invariant_distance, projection_distance, proba_distance
 from NAIVI.utils.base import verbose_init
 from torch.optim.lr_scheduler import LambdaLR
 
@@ -16,6 +15,7 @@ class NAIVI:
         self.reg = 0.
 
     def fit_path(self, train, test=None, reg=None, init=None, **kwargs):
+        # TODO: this shouldn't work anymore
         out = {}
         for r in reg:
             self.init(**init)
@@ -62,29 +62,29 @@ class NAIVI:
                 best_out = out[r]
         return results, best_r, best_out
 
-    def fit(self, train, test=None, Z_true=None, reg=0.,
-            batch_size=100, eps=1.e-6, max_iter=100,
-            lr=0.001, weight_decay=0., verbose=True, alpha_true=None,
-            power=0.0, return_log=False):
-        Z_true = Z_true.cuda() if Z_true is not None else None
-        alpha_true = alpha_true.cuda() if alpha_true is not None else None
+    def fit(self, train, test=None, reg=0.,
+            eps=1.e-6, max_iter=100,
+            lr=0.001, verbose=True,
+            power=0.0, return_log=False, true_values=None):
+        if true_values is None:
+            true_values = dict()
+        for k, v in true_values.items():
+            true_values[k] = v.cuda()
         self.reg = reg
         self.compute_denum(train)
         optimizer, scheduler = self.prepare_optimizer(lr, power)
         n_char = verbose_init() if verbose else 0
         epoch, out = 0, None
+        outcols = [("train", "grad_norm"),
+                   ("train", "loss"), ("train", "mse"), ("train", "auc"),
+                   ("ic", "aic"), ("ic", "bic")]
+        if test is not None:
+            outcols += [("test", "loss"), ("test", "mse"), ("test", "auc")]
         if return_log:
-            logs = pd.DataFrame(columns=[
-                "iter", "grad_norm",
-                "llk_train", "mse_train", "auroc_train",
-                 "dist_inv", "dist_proj",
-                "llk_test", "mse_test", "auroc_test",
-                 "aic", "bic",])
+            outcols += [("error", k) for k in true_values.keys()]
+            logs = pd.DataFrame(columns=pd.MultiIndex.from_tuples(outcols))
+            logs.index.name = "iter"
         for epoch in range(max_iter):
-            # for step in ["E", "M"]:
-            #     optimizer.zero_grad(set_to_none=True)
-            #     self.select_params_for_step(step)
-            #     for _ in range(5):
             optimizer.zero_grad()
             # batches = torch.split(torch.randperm(len(train)), batch_size)
             # for batch in batches:
@@ -92,11 +92,16 @@ class NAIVI:
             self.batch_update(None, optimizer, train, epoch)
             if scheduler is not None:
                 scheduler.step()
-            converged, max_abs_grad = self.check_convergence(eps)
-            llk_train, out, log = self.epoch_metrics(Z_true, epoch, test, train, max_abs_grad, alpha_true)
+            converged, grad_norms = self.check_convergence(eps)
+            out = self.epoch_metrics(test, train, grad_norms, true_values)
             if return_log:
-                logs.loc[len(logs.index)] = out
+                df = pd.DataFrame(out, index=[0])
+                logs = logs.append(df, ignore_index=True)
             if verbose and epoch % 10 == 0:
+                form = "{:<4} {:<12.2e} |" + " {:<12.4f}" * 4
+                log = form.format(epoch + 1, out[("train", "grad_L2")],
+                                  out[("train", "loss")], out[("train", "mse")],
+                                  out[("train", "auc")], out[("train", "auc_A")])
                 print(log)
             if converged:
                 break
@@ -129,50 +134,78 @@ class NAIVI:
         # scheduler = None
         return optimizer, scheduler
 
-    def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
+    def init(self, positions=None, heterogeneity=None, bias=None, weight=None, sig2=None):
         with torch.no_grad():
             if positions is not None:
-                self.model.encoder.latent_position_encoder.init(positions.cuda())
+                if "mean" in positions:
+                    self.model.encoder.latent_position_encoder.init(positions["mean"].cuda())
+                if "variance" in positions:
+                    self.model.encoder.latent_position_encoder.init(positions["variance"].cuda())
             if heterogeneity is not None:
-                self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity.cuda())
+                if "mean" in heterogeneity:
+                    self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["mean"].cuda())
+                if "variance" in heterogeneity:
+                    self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["variance"].cuda())
             if bias is not None:
                 self.model.covariate_model.mean_model.bias.data = bias.view(-1).cuda()
             if weight is not None:
                 self.model.covariate_model.mean_model.weight.data = weight.t().cuda()
+            if sig2 is not None:
+                self.model.covariate_model.set_var(sig2.cuda())
 
-    def epoch_metrics(self, Z_true, epoch, test, train, max_abs_grad, alpha_true=None):
+    def epoch_metrics(self, test, train, grad_norms, true_values=None):
+        if true_values is None:
+            true_values = dict()
+        out = dict()
         with torch.no_grad():
-            # add penalty to loss
-            # penalty = self.compute_penalty()
+            out[("train", "grad_Linfty")] = grad_norms["Linfty"]
+            out[("train", "grad_L1")] = grad_norms["L1"]
+            out[("train", "grad_L2")] = grad_norms["L2"]
             # training metrics
-            llk_train, mse_train, auroc_train = self.evaluate(train)
-            # llk_train += self.reg * penalty
+            out[("train", "loss")], out[("train", "mse")], \
+            out[("train", "auc")], out[("train", "auc_A")] = \
+                self.evaluate(train)
             # testing metrics
             if test is not None:
-                llk_test, mse_test, auroc_test = self.evaluate(test)
-                # llk_test += self.reg * penalty
+                out[("test", "loss")], out[("test", "mse")], \
+                out[("test", "auc")], out[("test", "auc_A")] = self.evaluate(test)
             else:
-                llk_test, mse_test, auroc_test = 0., 0., 0.
-            # distance
-            if Z_true is not None:
-                dist_inv, dist_proj = self.latent_distance(Z_true, alpha_true)
-            else:
-                dist_inv, dist_proj = 0., 0.
-            # model size
-            nb_non_zero = self.model.covariate_model.weight.abs().gt(0.).sum().item()
-            # ICs
-            aic = llk_train * 2. + nb_non_zero
-            bic = llk_train * 2. + nb_non_zero * np.log(train.N)
-        out = [epoch, max_abs_grad,
-               llk_train, mse_train, auroc_train,
-               dist_inv, dist_proj,
-               llk_test, mse_test, auroc_test,
-               aic, bic]
-        form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + \
-               " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3 + "|" + \
-               " {:<11.4f}" * 2
-        log = form.format(*out[:12])
-        return llk_train, out, log
+                out[("test", "loss")], out[("test", "mse")], \
+                out[("test", "auc")], out[("test", "auc_A")] = 0., 0., 0., 0.
+            # estimation error
+            with torch.no_grad():
+                for k, v in true_values.items():
+                    Z = self.latent_positions()
+                    ZZt = torch.mm(Z, Z.t())
+                    alpha = self.latent_heterogeneity()
+                    Theta_A = alpha + alpha.t() + ZZt
+                    B = self.model.covariate_model.weight
+                    B0 = self.model.covariate_model.bias
+                    if k == "ZZt":
+                        value = ((ZZt - v)**2).sum() / (v**2).sum()
+                    if k == "Theta_X":
+                        Theta_X = B0.reshape((1, -1)) + torch.mm(Z, B.t())
+                        value = ((Theta_X - v)**2).mean()
+                    if k == "Theta_A":
+                        value = ((Theta_A - v)**2).mean()
+                    if k == "P":
+                        P = torch.sigmoid(Theta_A)
+                        value = ((P - v)**2).mean()
+                    if k == "BBt":
+                        BBt = torch.mm(B, B.t())
+                        value = ((BBt - v)**2).sum() / (v**2).sum()
+                    if k == "alpha":
+                        value = ((alpha - v)**2).mean()
+                    out[("error", k)] = value.item()
+        #     # model size
+        #     nb_non_zero = self.model.covariate_model.weight.abs().gt(0.).sum().item()
+        #     # ICs
+        #     out[("ic", "aic")] = out[("train", "loss")] * 2. + nb_non_zero
+        #     out[("ic", "bic")] = out[("train", "loss")] * 2. + nb_non_zero * np.log(train.N)
+        # # form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + \
+        # #        " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3 + "|" + \
+        # #        " {:<11.4f}" * 2
+        return out
 
     def compute_penalty(self):
         with torch.no_grad():
@@ -200,11 +233,11 @@ class NAIVI:
         with torch.no_grad():
             return self.model.encoder.latent_heterogeneity_encoder.mean
 
-    def latent_distance(self, Z, alpha):
-        with torch.no_grad():
-            ZZ = self.latent_positions()
-            aa = self.latent_heterogeneity()
-            return invariant_distance(Z, ZZ), proba_distance(Z, alpha, ZZ, aa) # projection_distance(Z, ZZ)
+    # def latent_distance(self, Z, alpha):
+    #     with torch.no_grad():
+    #         ZZ = self.latent_positions()
+    #         aa = self.latent_heterogeneity()
+    #         return invariant_distance(Z, ZZ), proba_distance(Z, alpha, ZZ, aa) # projection_distance(Z, ZZ)
 
     @staticmethod
     def get_batch(data, batch=None):
@@ -224,9 +257,12 @@ class NAIVI:
         return A, X_bin, X_cts, i0, i1, j
 
     @staticmethod
-    def prediction_metrics(X_bin, X_cts, mean_cts, proba_bin):
+    def prediction_metrics(X_bin=None, X_cts=None, A=None, mean_cts=None, proba_bin=None, proba_adj=None):
         mse = 0.
         auc = 0.
+        auc_A = 0.
+        if A is not None:
+            auc_A = auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().flatten()).item()
         if X_cts is not None:
             which_cts = ~X_cts.isnan()
             mse = mean_squared_error(mean_cts[which_cts], X_cts[which_cts]).item()
@@ -234,7 +270,7 @@ class NAIVI:
             which_bin = ~X_bin.isnan()
             if which_bin.sum() > 0.:
                 auc = auroc(proba_bin[which_bin].clamp_(0., 1.), X_bin.int()[which_bin]).item()
-        return auc, mse
+        return auc, mse, auc_A
 
     def batch_update(self, batch, optimizer, train, epoch):
         A, X_bin, X_cts, i0, i1, j = self.get_batch(train, batch)
@@ -286,16 +322,24 @@ class NAIVI:
             # get fitted values
             llk, mean_cts, proba_bin, proba_adj = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
             # llk /= self.denum
-            auc, mse = self.prediction_metrics(X_bin, X_cts, mean_cts, proba_bin)
-        return llk.item(), mse, auc
+            auc, mse, auc_A = self.prediction_metrics(X_bin, X_cts, A, mean_cts, proba_bin, proba_adj)
+        return llk.item(), mse, auc, auc_A
 
     def check_convergence(self, tol):
         with torch.no_grad():
-            max_abs_grad = torch.tensor([
+            grad_Linfty = torch.tensor([
                 parm.grad.abs().max()
                 for parm in self.model.parameters() if parm.grad is not None
             ]).max().item()
-            if max_abs_grad < tol:
-                return True, max_abs_grad
-            else:
-                return False, max_abs_grad
+            grad_L1 = torch.tensor([
+                parm.grad.abs().sum()
+                for parm in self.model.parameters() if parm.grad is not None
+            ]).sum().item()
+            grad_L2 = torch.tensor([
+                (parm.grad**2).sum()
+                for parm in self.model.parameters() if parm.grad is not None
+            ]).sum().sqrt().item()
+            converged = False
+            if grad_L2 < tol:
+                converged = True
+            return converged, {"Linfty": grad_Linfty, "L1": grad_L1, "L2": grad_L2}

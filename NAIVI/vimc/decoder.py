@@ -40,6 +40,9 @@ class CovariateModel(nn.Module):
             nll += - torch.nansum(llk) / llk.size(-1)
         return - nll
 
+    def set_var(self, var):
+        self.cts_logvar.data = torch.log(var)
+
     @property
     def weight(self):
         return self.mean_model.weight

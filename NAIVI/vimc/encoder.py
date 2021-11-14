@@ -62,7 +62,7 @@ class PriorEncoder(nn.Module):
 
 class Encoder(nn.Module):
 
-    def __init__(self, K, N, position_prior=(0., 1.), heterogeneity_prior=(0., 1.)):
+    def __init__(self, K, N, position_prior=(0., 1.), heterogeneity_prior=(-2., 1.)):
         super().__init__()
         self.K = K
         self.N = N

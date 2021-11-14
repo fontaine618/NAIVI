@@ -79,9 +79,11 @@ class JointModelMAP(JointModel):
              proba_adj=proba_adj, A=A
         )
         # add penalty
-        Z = self.encoder.latent_position_encoder.mean
+        Z = self.encoder.latent_position_encoder.mean - \
+            self.position_prior[0]
         loss += (Z**2).sum() / (2. * self.position_prior[1])
-        alpha = self.encoder.latent_heterogeneity_encoder.mean
+        alpha = self.encoder.latent_heterogeneity_encoder.mean - \
+            self.heterogeneity_prior[0]
         loss += (alpha**2).sum() / (2. * self.heterogeneity_prior[1])
 
         return loss

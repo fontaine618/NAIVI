@@ -1,17 +1,10 @@
 def verbose_init():
-	form = "{:<4} {:<10} |" + " {:<11}" * 3 + "|" + " {:<8}" * 2 + "|" \
-	       + " {:<11}" * 3 + "|" + " {:<11}" * 2
+	form = "{:<4} {:<12} |" + " {:<12}" * 4
 	names = ["iter", "grad norm",
-	         "loss", "mse", "auroc",
-	         "inv.", "proj.",
-	         "loss", "mse", "auroc",
-	         "aic", "bic"]
-	groups = ["", "", "Train", "", "", "Distance", "", "Test", "", "", "ICs", ""]
-	l1 = form.format(*groups)
+	         "loss", "mse", "auc", "auc_A"]
 	l2 = form.format(*names)
-	n_char = len(l1)
+	n_char = len(l2)
 	print("-" * n_char)
-	print(l1)
 	print(l2)
 	print("-" * n_char)
 	return n_char

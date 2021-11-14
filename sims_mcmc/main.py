@@ -76,7 +76,13 @@ def main(path, name, explore_dict):
         "fit.n_sample", np.int64(0), "Number of samples for VIMC; 0 defaults to 200/N"
     )
     traj.f_add_parameter(
-        "fit.mcmc_n_sample", np.int64(10000), "Number of samples for MCMC"
+        "fit.mcmc_n_sample", np.int64(5000), "Number of samples for MCMC per chain"
+    )
+    traj.f_add_parameter(
+        "fit.mcmc_n_chains", np.int64(10), "Number of samples for MCMC"
+    )
+    traj.f_add_parameter(
+        "fit.mcmc_n_warmup", np.int64(1000), "Number of warmup samples for MCMC per chain"
     )
     traj.f_add_parameter(
         "fit.eps", np.float64(1.0e-6), "convergence threshold"

@@ -6,7 +6,10 @@ from NAIVI.naivi.naivi import NAIVI
 
 class JointModel(nn.Module):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.):
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.,
+                    position_prior=(0., 1.),
+                    heterogeneity_prior=(-2., 1.)
+    ):
         super().__init__()
         self.network_weight = network_weight
         self.mnar = mnar
@@ -15,7 +18,7 @@ class JointModel(nn.Module):
         if mnar:
             p_bin += p_bin + p_cts
         self.p_bin = p_bin
-        self.encoder = Encoder(K, N)
+        self.encoder = Encoder(K, N, position_prior, heterogeneity_prior)
         self.covariate_model = CovariateModel(K, p_cts, p_bin, N)
         self.adjacency_model = AdjacencyModel(N)
 
@@ -56,7 +59,15 @@ class JointModel(nn.Module):
 
 class ADVI(NAIVI):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.):
-        self.model = JointModel(K, N, p_cts, p_bin, mnar, network_weight)
+    def __init__(self,
+                 K, N, p_cts, p_bin, mnar=False, network_weight=1.,
+                    position_prior=(0., 1.),
+                    heterogeneity_prior=(-2., 1.)
+    ):
+        self.model = JointModel(
+            K, N, p_cts, p_bin, mnar, network_weight,
+            position_prior=(0., 1.),
+            heterogeneity_prior=(-2., 1.)
+        )
         self.model.cuda()
 
