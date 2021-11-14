@@ -97,8 +97,9 @@ def run(traj):
             dt = time.time() - t0
             Z_est = model.latent_positions()
             alpha_est = model.latent_heterogeneity()
-            ZZt_est = (Z_est @ Z_est.T).detach().cpu().numpy()
-            A_logit = alpha_est[i0] + alpha_est[i1] + torch.sum(Z_est[i0, :] * Z_est[i1, :], 1, keepdim=True)
+            ZZt_est = (Z_est @ Z_est.T)
+            A_logit = alpha_est + alpha_est.t() + ZZt_est
+            ZZt_est = ZZt_est.detach().cpu().numpy()
             proba_est = torch.sigmoid(A_logit).detach().cpu().numpy()
             B0_est = model.model.covariate_model.bias
             B_est = model.model.covariate_model.weight.T
