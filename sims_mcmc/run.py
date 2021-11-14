@@ -128,6 +128,9 @@ def run(traj):
             diagnostics = diagnostics.melt(ignore_index=False).reset_index().set_index(["level_0", "level_1", "variable"]).transpose()
         else:  # ["Mean", "NetworkSmoothing", "MICE", "MissForest"]
             raise ValueError("algorithm " + algo + " is not accepted for this experiment")
+        ZZt_true = ZZt_true.detach().cpu().numpy()
+        proba_true = proba_true.detach().cpu().numpy()
+        Theta_X_true = Theta_X_true.detach().cpu().numpy()
         DZ = ((ZZt_est - ZZt_true)**2).sum() / (ZZt_true**2).sum()
         print(f"DZ = {DZ}")
         DP = ((proba_est - proba_true)**2).sum() / (proba_true**2).sum()
