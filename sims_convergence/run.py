@@ -87,10 +87,11 @@ def run(traj):
         dt = time.time() - t0
         out[("train", "time")] = dt
         out[("train", "density")] = density
+        for k, v in out.items():
+            traj.f_add_result("{}.{}".format(*k), v)
     except RuntimeError as e:
         out, logs = None, None
     finally:
-        traj.f_add_result("$", out=out, logs=logs, comment="Results from each run")
         return out, logs
 
 
