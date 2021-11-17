@@ -8,6 +8,9 @@ import copy
 
 def initialize(train: JointDataset, K: int, mnar: bool = False,
                estimate_variance: bool = False, verbose: bool = True):
+	out = dict()
+	out["positions"] = dict()
+	out["heterogeneity"] = dict()
 	p_bin = train.p_bin_no_missingness
 	p_cts = train.p_cts
 	N = train.N
@@ -16,27 +19,14 @@ def initialize(train: JointDataset, K: int, mnar: bool = False,
 	if verbose:
 		print("Initializing latent variables")
 	alpha_mean, Z_mean = initialize_latent_variables(i0, i1, A, K)
-	# improve variance
-	if estimate_variance:
-		if verbose:
-			print("Updating initial variances")
-		train_no_cov = JointDataset(i0, i1, A)
-		model = ADVI(K, N, 0, 0, mnar=mnar)
-		model.init(positions=Z_mean, heterogeneity=alpha_mean)
-		model.fit(train_no_cov, None, eps=1.e-6, max_iter=200, lr=0.1)
-		Z_mean = model.model.encoder.latent_position_encoder.mean_encoder.values
-		Z_log_var = model.model.encoder.latent_position_encoder.log_var_encoder.values
-		alpha_mean = model.model.encoder.latent_heterogeneity_encoder.mean_encoder.values
-		alpha_log_var = model.model.encoder.latent_heterogeneity_encoder.log_var_encoder.values
-	else:
-		Z_log_var = None
-		alpha_log_var = None
+	out["positions"]["mean"] = Z_mean
+	out["heterogeneity"]["mean"] = alpha_mean
 	if verbose:
 		print("Initializing model parameters")
 	glm = GLM(K, N, p_cts, p_bin, mnar=mnar, latent_positions=Z_mean)
 	glm.fit(train, None, eps=1.e-6, max_iter=200, lr=0.1)
 	with torch.no_grad():
-		B0 = glm.model.mean_model.bias.data
-		B = glm.model.mean_model.weight.data
-		log_var = glm.model.cts_logvar.data
-	return (alpha_mean, alpha_log_var), (Z_mean, Z_log_var), B0, B, log_var
+		out["bias"] = glm.model.mean_model.bias.data
+		out["weight"] = glm.model.mean_model.weight.data.t()
+		out["sig2"] = glm.model.cts_logvar.data.exp()
+	return out

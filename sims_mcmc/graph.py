@@ -13,8 +13,8 @@ DICT = to_display
 # consistency networksize
 ALGOS = [
 	"ADVI",
-	"VIMC",
-	"MCMC",
+	# "VIMC",
+	# "MCMC",
 	"MLE",  "MAP"
 ]
 
@@ -108,4 +108,4 @@ fig.legend(lines, labels, loc=8, ncol=len(ALGOS))
 
 fig.tight_layout()
 fig.subplots_adjust(bottom=0.15)
-fig.savefig(PATH + "figs/consistency_networksize.pdf")
+fig.savefig(PATH + "figs/consistency_networksize_new.pdf")

@@ -97,11 +97,11 @@ BZalpha = {
 
 inits = {
     "B random, Z random": random,
-    "B true, Z true": BZ,
+    # "B true, Z true": BZ,
     "B true, Z true, alpha true": BZalpha,
-    "B true, Z random": Bt,
-    "B random, Z true": Zt,
-    "B glm, Z true": Zglm,
+    # "B true, Z random": Bt,
+    # "B random, Z true": Zt,
+    # "B glm, Z true": Zglm,
     "B glm, Z usvt": usvt_glm
 }
 # -----------------------------------------------------------------------------

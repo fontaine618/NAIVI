@@ -65,14 +65,15 @@ class NAIVI:
     def fit(self, train, test=None, reg=0.,
             eps=1.e-6, max_iter=100,
             lr=0.001, verbose=True,
-            power=0.0, return_log=False, true_values=None):
+            power=0.0, return_log=False, true_values=None,
+            optimizer="Adam"):
         if true_values is None:
             true_values = dict()
         for k, v in true_values.items():
             true_values[k] = v.cuda()
         self.reg = reg
         self.compute_denum(train)
-        optimizer, scheduler = self.prepare_optimizer(lr, power)
+        optimizer, scheduler = self.prepare_optimizer(lr=lr, power=power, optimizer=optimizer)
         n_char = verbose_init() if verbose else 0
         epoch, out = 0, None
         outcols = [("train", "grad_norm"),
@@ -122,14 +123,12 @@ class NAIVI:
         for p in self.model.adjacency_model.parameters():
             p.requires_grad = m
 
-    def prepare_optimizer(self, lr, power=1.0):
+    def prepare_optimizer(self, lr, power=1.0, optimizer="Adam"):
         params = [
             {'params': p, "lr": lr}
             for p in self.model.parameters()
         ]
-        # optimizer = torch.optim.Adagrad(params)
-        optimizer = torch.optim.Adam(params)
-        # optimizer = torch.optim.SGD(params)
+        optimizer = getattr(torch.optim, optimizer)(params)
         scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** power)
         # scheduler = None
         return optimizer, scheduler
