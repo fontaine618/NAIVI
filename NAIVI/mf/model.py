@@ -1,5 +1,5 @@
 from missingpy import MissForest as MF
-from ..mice.model import MICE
+from NAIVI import MICE
 
 
 class MissForest(MICE):

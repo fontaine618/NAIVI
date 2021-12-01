@@ -24,8 +24,8 @@ if __name__ == "__main__":
             "fit.n_sample": np.array([0]),
             "fit.max_iter": np.array([5000]),
             "fit.lr": np.array([0.01]),
-            "fit.power": np.array([0., 0.5, 1.]),
-            "fit.optimizer": ["Adam", "SGD", "Adagrad", "Adadelta", "AdamW", "Adamax", "ASGD", "RMSProp", "Rprop"],
+            "fit.power": np.array([0., ]),
+            "fit.optimizer": ["Adam", "SGD", "Adagrad", "Adadelta", "AdamW", "Adamax", "ASGD", "RMSprop", "Rprop"],
             "model.alpha_mean": np.array([-1.85]),
             "model.K": np.array([5]),
             "model.mnar": [False]

@@ -62,6 +62,7 @@ transformed parameters {
     Theta_A = alpha[i0] + alpha[i1] + rows_dot_product(Z[i0], Z[i1]);
     vector[E] proba = inv_logit(Theta_A);
     matrix[N, N] ZZt = tcrossprod(Z);
+    matrix[p, p] BBt = crossprod(B);
 }
 model {
     // priors
@@ -111,6 +112,7 @@ transformed parameters {
     Theta_A = alpha[i0] + alpha[i1] + rows_dot_product(Z[i0], Z[i1]);
     vector[E] proba = inv_logit(Theta_A);
     matrix[N, N] ZZt = tcrossprod(Z);
+    matrix[p, p] BBt = crossprod(B);
 }
 model {
     // priors
@@ -157,6 +159,7 @@ transformed parameters {
     Theta_A = alpha[i0] + alpha[i1] + rows_dot_product(Z[i0], Z[i1]);
     vector[E] proba = inv_logit(Theta_A);
     matrix[N, N] ZZt = tcrossprod(Z);
+    matrix[p, p] BBt = crossprod(B);
 }
 model {
     // priors

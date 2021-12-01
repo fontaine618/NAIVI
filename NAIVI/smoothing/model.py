@@ -1,29 +1,16 @@
 import torch
 import numpy as np
-from pytorch_lightning.metrics.functional import auroc
-from pytorch_lightning.metrics.functional import mean_squared_error
-from NAIVI.utils.base import verbose_init
+from NAIVI import MICE
 
 
-class NetworkSmoothing:
+class NetworkSmoothing(MICE):
+
     def __init__(self, K, N, p_cts, p_bin):
         self.p_cts = p_cts
         self.p_bin = p_bin
         self.N = N
 
-    def fit(
-        self,
-        train,
-        test=None,
-        Z_true=None,
-        batch_size=100,
-        eps=1.0e-6,
-        max_iter=20,
-        lr=0.001,
-        weight_decay=0.0,
-        n_sample=1,
-    ):
-        l = verbose_init()
+    def fit(self, train, test=None, max_iter=20, **kwargs):
         # get train data
         i0, i1, A, _, X_cts, X_bin = train[:]
         if X_cts is None:
@@ -41,7 +28,7 @@ class NetworkSmoothing:
 
         # predict
         for epoch in range(max_iter):
-            if X_pred is None: # initialize to mean
+            if X_pred is None:  # initialize to mean
                 X_mean = X.nansum(0) / (~missing).sum(0)
                 X_mean = torch.vstack([X_mean for _ in range(self.N)])
                 X_pred = torch.where(missing, X_mean, X)
@@ -64,39 +51,4 @@ class NetworkSmoothing:
                 X_bin_pred = X_bin_pred.clone().detach()
 
             out = self.metrics(X_test_bin, X_test_cts, X_cts_pred, X_bin_pred, epoch)
-        print("-" * l)
         return out
-
-    def metrics(self, X_bin, X_cts, mean_cts, proba_bin, epoch):
-        auroc_test, mse_test = self.prediction_metrics(
-            X_bin, X_cts, mean_cts, proba_bin
-        )
-        out = [epoch, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mse_test, auroc_test, 0., 0.]
-        form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + \
-               " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3 + "|" + \
-               " {:<11.4f}" * 2
-        print(form.format(*out[:12]))
-        return out
-
-    def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
-        return None
-
-    def prediction_metrics(self, X_bin, X_cts, mean_cts, proba_bin):
-        mse = 0.0
-        auc = 0.0
-        if X_cts is not None:
-            which_cts = ~X_cts.isnan()
-            mse = mean_squared_error(mean_cts[which_cts], X_cts[which_cts]).item()
-        if X_bin is not None:
-            which_bin = ~X_bin.isnan()
-            auc = auroc(proba_bin[which_bin], X_bin[which_bin].int()).item()
-        return auc, mse
-
-    def latent_positions(self):
-        return None
-
-    def latent_heterogeneity(self):
-        return None
-
-    def latent_distance(self, Z):
-        return None

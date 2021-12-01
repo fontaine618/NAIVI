@@ -1,5 +1,5 @@
 from sklearn.impute import SimpleImputer
-from ..mice.model import MICE
+from NAIVI import MICE
 
 
 class Mean(MICE):

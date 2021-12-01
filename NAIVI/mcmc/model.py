@@ -3,7 +3,8 @@ import numpy as np
 import torch
 import arviz as az
 import pandas as pd
-from .stan_models import model_cts, model_bin, model_both, model_none
+from NAIVI.mcmc.stan_models import model_cts, model_bin, model_both, model_none
+from NAIVI import NAIVI
 
 
 class MCMC:
@@ -46,10 +47,8 @@ class MCMC:
 			if weight is not None:
 				self._init[0]["B0"] = bias.detach().numpy()
 
-	def fit(self, train, test=None, Z_true=None, reg=0.,
-			batch_size=100, eps=1.0e-6, max_iter=1000,
-			lr=0.001, weight_decay=0., verbose=True,
-			alpha_true=None, power=0., num_chains=1, num_warmup=1000):
+	def fit(self, train, n_sample=1000, num_chains=1, num_warmup=1000,
+	        verbose=True, true_values=None, **kwargs):
 		# get data
 		with torch.no_grad():
 			i0, i1, A, j, X_cts, X_bin = train[:]
@@ -87,8 +86,9 @@ class MCMC:
 		self._model = stan.build(self.stan_model, data=data, random_seed=0)
 		self._fit = self._model.sample(
 			num_chains=num_chains, num_warmup=num_warmup,
-			num_samples=max_iter, init=[self._init[0] for _ in range(num_chains)]
+			num_samples=n_sample, init=[self._init[0] for _ in range(num_chains)]
 		)
+		return self.metrics(train, true_values)
 
 	def get(self, x):
 		return self._fit.get(x)
@@ -98,5 +98,70 @@ class MCMC:
 
 	def diagnostics(self, var):
 		return az.summary(self._fit, var, kind="diagnostics", round_to=5)
+
+	def diagnostic_summary(self):
+		ZZt_diag = self.diagnostics("ZZt").describe().transpose()
+		ZZt_diag.index = pd.MultiIndex.from_product([["ZZt"], ZZt_diag.index])
+		B0_diag = self.diagnostics("B0").describe().transpose()
+		B0_diag.index = pd.MultiIndex.from_product([["B0"], B0_diag.index])
+		alpha_diag = self.diagnostics("alpha").describe().transpose()
+		alpha_diag.index = pd.MultiIndex.from_product([["alpha"], alpha_diag.index])
+		Theta_X_diag = self.diagnostics("Theta_X").describe().transpose()
+		Theta_X_diag.index = pd.MultiIndex.from_product([["Theta_X"], Theta_X_diag.index])
+		Theta_A_diag = self.diagnostics("Theta_A").describe().transpose()
+		Theta_A_diag.index = pd.MultiIndex.from_product([["Theta_A"], Theta_A_diag.index])
+		diagnostics = pd.concat([ZZt_diag, B0_diag, alpha_diag, Theta_X_diag, Theta_A_diag])
+		diagnostics = diagnostics.melt(ignore_index=False).reset_index().set_index(
+			["level_0", "level_1", "variable"]).transpose()
+		return diagnostics
+
+	def metrics(self, train, true_values):
+		out = dict()
+		out[("train", "mse")], \
+		out[("train", "auc")], \
+		out[("train", "auc_A")] = self.evaluate(train)
+		# estimation error
+		for k, v in true_values.items():
+			try:
+				v = v.detach().cpu().numpy()
+				if k == "ZZt":
+					ZZt = self.posterior_mean("ZZt")
+					value = ((ZZt - v) ** 2).sum() / (v ** 2).sum()
+				if k == "Theta_X":
+					Theta_X = self.posterior_mean("Theta_X")
+					value = ((Theta_X - v) ** 2).mean()
+				if k == "Theta_A":
+					Theta_A = self.posterior_mean("Theta_A")
+					value = ((Theta_A - v) ** 2).mean()
+				if k == "P":
+					P = self.posterior_mean("proba")
+					value = ((P - v) ** 2).mean()
+				if k == "BBt":
+					BBt = self.posterior_mean("BBt")
+					value = ((BBt - v) ** 2).sum() / (v ** 2).sum()
+				if k == "alpha":
+					alpha = self.posterior_mean("alpha")
+					value = ((alpha - v) ** 2).mean()
+			except Exception:
+				value = np.nan
+			out[("error", k)] = value
+		return out
+
+	def evaluate(self, train):
+		with torch.no_grad():
+			_, _, A, _, X_cts, X_bin = train[:]
+			# train mse, auc, auc_A
+			Theta_X = self.posterior_mean("Theta_X")
+			Theta_X_split = np.hsplit(Theta_X, [self.p_cts, self.p_cts + self.p_bin])
+			mean_cts = Theta_X_split[0]
+			proba_bin = 1. / (1. + np.exp(-Theta_X_split[1]))
+			proba_adj = self.posterior_mean("proba")
+			auc, mse, auc_A = NAIVI.prediction_metrics(
+				X_bin=X_bin, X_cts=X_cts, A=A,
+				mean_cts=torch.Tensor(mean_cts),
+				proba_bin=torch.Tensor(proba_bin),
+				proba_adj=torch.Tensor(proba_adj)
+			)
+		return auc, mse, auc_A
 
 

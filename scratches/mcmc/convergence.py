@@ -46,7 +46,7 @@ p = p_bin + p_cts
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
 
 ZZt_true = Z @ Z.T
-A_logit = alpha + alpha.t() + ZZt_true
+A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
 proba_true = torch.sigmoid(A_logit)
 
 Theta_X_true = (B0 + torch.matmul(Z, B))
@@ -69,7 +69,7 @@ init = {
 # -----------------------------------------------------------------------------
 
 # random initialization
-advi = MAP(K, N, p_cts, p_bin, mnar=mnar)
+advi = ADVI(K, N, p_cts, p_bin, mnar=mnar)
 
 # advi.init(**init)
 
@@ -152,7 +152,7 @@ fig.savefig("/home/simon/Documents/NAIVI/sims_mcmc/figs/convergence_naivi_smallp
 
 mcmc = MCMC(K, N, p_cts, p_bin, (0., 1.), (-2., 1.))
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar, cuda=False)
-mcmc.fit(train, max_iter=1000, Z_true=Z.detach().cpu().numpy(), num_chains=10)
+mcmc.fit(train, max_iter=500, Z_true=Z.detach().cpu().numpy(), num_chains=5)
 
 self = mcmc
 

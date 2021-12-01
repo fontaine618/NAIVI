@@ -63,10 +63,9 @@ class NAIVI:
         return results, best_r, best_out
 
     def fit(self, train, test=None, reg=0.,
-            eps=1.e-6, max_iter=100,
-            lr=0.001, verbose=True,
-            power=0.0, return_log=False, true_values=None,
-            optimizer="Adam"):
+            eps=1.e-6, max_iter=100, optimizer="Rprop", lr=0.01, power=0.0,
+            verbose=True, return_log=False, true_values=None,
+            ):
         if true_values is None:
             true_values = dict()
         for k, v in true_values.items():
@@ -113,16 +112,6 @@ class NAIVI:
         else:
             return out
 
-    def select_params_for_step(self, step):
-        e = (step == "E")
-        m = (step == "M")
-        for p in self.model.encoder.parameters():
-            p.requires_grad = e
-        for p in self.model.covariate_model.parameters():
-            p.requires_grad = m
-        for p in self.model.adjacency_model.parameters():
-            p.requires_grad = m
-
     def prepare_optimizer(self, lr, power=1.0, optimizer="Adam"):
         params = [
             {'params': p, "lr": lr}
@@ -157,6 +146,7 @@ class NAIVI:
             true_values = dict()
         out = dict()
         with torch.no_grad():
+            i0, i1, A, j, X_cts, X_bin = train[:]
             out[("train", "grad_Linfty")] = grad_norms["Linfty"]
             out[("train", "grad_L1")] = grad_norms["L1"]
             out[("train", "grad_L2")] = grad_norms["L2"]
@@ -177,7 +167,7 @@ class NAIVI:
                     Z = self.latent_positions()
                     ZZt = torch.mm(Z, Z.t())
                     alpha = self.latent_heterogeneity()
-                    Theta_A = alpha + alpha.t() + ZZt
+                    Theta_A = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
                     B = self.model.covariate_model.weight
                     B0 = self.model.covariate_model.bias
                     if k == "ZZt":
@@ -231,12 +221,6 @@ class NAIVI:
     def latent_heterogeneity(self):
         with torch.no_grad():
             return self.model.encoder.latent_heterogeneity_encoder.mean
-
-    # def latent_distance(self, Z, alpha):
-    #     with torch.no_grad():
-    #         ZZ = self.latent_positions()
-    #         aa = self.latent_heterogeneity()
-    #         return invariant_distance(Z, ZZ), proba_distance(Z, alpha, ZZ, aa) # projection_distance(Z, ZZ)
 
     @staticmethod
     def get_batch(data, batch=None):

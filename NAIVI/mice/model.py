@@ -5,33 +5,21 @@ from pytorch_lightning.metrics.functional import mean_squared_error
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.linear_model import BayesianRidge
-from NAIVI.utils.base import verbose_init
 
 
 class MICE:
+
     def __init__(self, K, N, p_cts, p_bin):
         estimator = BayesianRidge()
         self.model = IterativeImputer(
             random_state=0, estimator=estimator, imputation_order="random", max_iter=100,
-            verbose=2, skip_complete=True, tol=0.01
+            verbose=2, skip_complete=True, tol=0.001
         )
         self.p_cts = p_cts
         self.p_bin = p_bin
         self.N = N
 
-    def fit(
-        self,
-        train,
-        test=None,
-        Z_true=None,
-        batch_size=100,
-        eps=1.0e-6,
-        max_iter=100,
-        lr=0.001,
-        weight_decay=0.0,
-        n_sample=1,
-    ):
-        l = verbose_init()
+    def fit(self, train, test=None, **kwargs):
         # get train data
         _, _, _, _, X_cts, X_bin = train[:]
         if X_cts is None:
@@ -58,29 +46,14 @@ class MICE:
             X_bin_pred = torch.tensor(X_bin_pred)
 
         out = self.metrics(X_test_bin, X_test_cts, X_cts_pred, X_bin_pred)
-        print("-" * l)
         return out
 
-    def metrics(self, X_bin, X_cts, mean_cts, proba_bin):
+    def metrics(self, X_bin, X_cts, mean_cts, proba_bin, epoch=None):
         auroc_test, mse_test = self.prediction_metrics(
             X_bin, X_cts, mean_cts, proba_bin
         )
-        out = [0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, mse_test, auroc_test, 0.0, 0.0]
-        form = (
-            "{:<4} |"
-            + " {:<10.4f}" * 3
-            + "|"
-            + " {:<10.4f}" * 2
-            + "|"
-            + " {:<10.4f}" * 3
-            + "|"
-            + " {:<11.4f}" * 2
-        )
-        print(form.format(*out))
+        out = {("test", "mse"): mse_test, ("test", "auc"): auroc_test}
         return out
-
-    def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
-        return None
 
     def prediction_metrics(self, X_bin, X_cts, mean_cts, proba_bin):
         mse = 0.0
@@ -92,12 +65,3 @@ class MICE:
             which_bin = ~X_bin.isnan()
             auc = auroc(proba_bin[which_bin], X_bin[which_bin].int()).item()
         return auc, mse
-
-    def latent_positions(self):
-        return None
-
-    def latent_heterogeneity(self):
-        return None
-
-    def latent_distance(self, Z):
-        return None
