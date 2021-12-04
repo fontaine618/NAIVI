@@ -1,4 +1,5 @@
 import torch
+import math
 import numpy as np
 
 torch.set_default_dtype(torch.float64)
@@ -32,7 +33,7 @@ def generate_dataset(
 
     # inner product model
     A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
-    A_logit += torch.randn_like(A_logit) * torch.sqrt(adjacency_noise)
+    A_logit += torch.randn_like(A_logit) * math.sqrt(adjacency_noise)
     A_proba = torch.sigmoid(A_logit)
     A = (torch.rand_like(A_proba) < A_proba).double()
 

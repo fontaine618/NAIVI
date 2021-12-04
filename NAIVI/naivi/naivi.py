@@ -11,7 +11,6 @@ class NAIVI:
 
     def __init__(self, model=None):
         self.model = model
-        self.weight = None
         self.denum = 1.
         self.reg = 0.
 
@@ -65,9 +64,8 @@ class NAIVI:
 
     def fit(self, train, test=None, reg=0.,
             eps=1.e-6, max_iter=100, optimizer="Rprop", lr=0.01, power=0.0,
-            verbose=True, return_log=False, true_values=None, network_weight=1.0
+            verbose=True, return_log=False, true_values=None
             ):
-        self.model.network_weight = network_weight
         if true_values is None:
             true_values = dict()
         for k, v in true_values.items():

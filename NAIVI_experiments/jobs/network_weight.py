@@ -33,7 +33,7 @@ if __name__ == "__main__":
             "model.network_weight": np.array([0., 0.1, 0.3, 1.0, 3., 10.]),
             "fit.algo": ["ADVI", ],
             "fit.n_sample": np.array([0]),
-            "fit.max_iter": np.array([10]),
+            "fit.max_iter": np.array([1000]),
             "fit.mcmc_n_sample": np.array([100]),
             "fit.mcmc_n_warmup": np.array([100]),
             "fit.mcmc_n_chains": np.array([10]),
