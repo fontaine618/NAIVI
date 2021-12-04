@@ -11,6 +11,7 @@ class NAIVI:
 
     def __init__(self, model=None):
         self.model = model
+        self.weight = None
         self.denum = 1.
         self.reg = 0.
 
@@ -64,8 +65,9 @@ class NAIVI:
 
     def fit(self, train, test=None, reg=0.,
             eps=1.e-6, max_iter=100, optimizer="Rprop", lr=0.01, power=0.0,
-            verbose=True, return_log=False, true_values=None,
+            verbose=True, return_log=False, true_values=None, network_weight=1.0
             ):
+        self.model.network_weight = network_weight
         if true_values is None:
             true_values = dict()
         for k, v in true_values.items():
@@ -205,6 +207,8 @@ class NAIVI:
 
     def compute_denum(self, data):
         i0, i1, A, j, X_cts, X_bin = data[:]
+        N = data.N
+        K = self.model.K
         self.model.adjacency_model.n_links = 1 if i0 is None else len(i0)
         if X_cts is not None:
             self.model.covariate_model.n_cts = (~X_cts.isnan()).sum()
@@ -212,7 +216,8 @@ class NAIVI:
             self.model.covariate_model.n_bin = (~X_bin.isnan()).sum()
         self.denum = self.model.covariate_model.n_cts + \
                      self.model.covariate_model.n_bin + \
-                     self.model.adjacency_model.n_links
+                     self.model.adjacency_model.n_links * self.model.network_weight + \
+                     (N+1) * K
 
     def latent_positions(self):
         with torch.no_grad():

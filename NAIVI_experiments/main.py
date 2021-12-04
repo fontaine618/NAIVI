@@ -53,6 +53,9 @@ def main(path, name, explore_dict):
     traj.f_add_parameter(
         "data.mnar_sparsity", np.float64(1.0), "Proportion of attributes with MCAR"
     )
+    traj.f_add_parameter(
+        "data.adjacency_noise", np.float64(0.0), "variance of gaussian error added to logit probability"
+    )
 
     # parameters (model)
     traj.f_add_parameter(
@@ -66,6 +69,9 @@ def main(path, name, explore_dict):
     )
     traj.f_add_parameter(
         "model.reg", np.float64(0.), "regularization parameter for mnar"
+    )
+    traj.f_add_parameter(
+        "model.network_weight", np.float64(1.0), "weight of the network in the objective"
     )
 
     # parameters (fit)

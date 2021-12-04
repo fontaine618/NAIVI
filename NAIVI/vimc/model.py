@@ -6,11 +6,13 @@ from NAIVI.naivi.naivi import NAIVI
 
 class JointModel(nn.Module):
 
-    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False,
+    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
                     heterogeneity_prior=(-2., 1.)
     ):
         super().__init__()
+        self.K = K
+        self.network_weight = network_weight
         self.mnar = mnar
         self.p_cts = p_cts
         self.p_bin_og = p_bin
@@ -40,7 +42,7 @@ class JointModel(nn.Module):
              proba_bin=None, X_bin=None,
              proba_adj=None, A=None
              ):
-        loss = - self.adjacency_model.log_likelihood(proba_adj, A)
+        loss = - self.adjacency_model.log_likelihood(proba_adj, A) * self.network_weight
         loss += - self.covariate_model.log_likelihood(mean_cts, X_cts, proba_bin, X_bin)
         loss += self.encoder.kl_divergence()
         return loss
@@ -57,9 +59,9 @@ class JointModel(nn.Module):
 
 class VIMC(NAIVI):
 
-    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False,
+    def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
                     heterogeneity_prior=(-2., 1.)
     ):
-        self.model = JointModel(K, N, p_cts, p_bin, n_samples, mnar)
+        self.model = JointModel(K, N, p_cts, p_bin, n_samples, mnar, network_weight)
         self.model.cuda()

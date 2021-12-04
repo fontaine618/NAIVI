@@ -6,11 +6,13 @@ from NAIVI.naivi.naivi import NAIVI
 
 class JointModel(nn.Module):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False,
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),
 				 heterogeneity_prior=(-2., 1.)
                  ):
         super().__init__()
+        self.K = K
+        self.network_weight = network_weight
         self.heterogeneity_prior = heterogeneity_prior
         self.position_prior = position_prior
         self.mnar = mnar
@@ -39,7 +41,7 @@ class JointModel(nn.Module):
              proba_bin=None, X_bin=None,
              proba_adj=None, A=None
              ):
-        loss = - self.adjacency_model.log_likelihood(proba_adj, A)
+        loss = - self.adjacency_model.log_likelihood(proba_adj, A) * self.network_weight
         loss += - self.covariate_model.log_likelihood(mean_cts, X_cts, proba_bin, X_bin)
         return loss
 
@@ -54,12 +56,13 @@ class JointModel(nn.Module):
 
 class MLE(NAIVI):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False,
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),
 				 heterogeneity_prior=(-2., 1.)
                  ):
         super().__init__()
-        self.model = JointModel(K, N, p_cts, p_bin, mnar, position_prior, heterogeneity_prior)
+        self.model = JointModel(K, N, p_cts, p_bin, mnar, network_weight,
+                                position_prior, heterogeneity_prior)
         self.model.cuda()
 
 
@@ -91,11 +94,12 @@ class JointModelMAP(JointModel):
 
 class MAP(NAIVI):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False,
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),
 				 heterogeneity_prior=(-2., 1.)
                  ):
         super().__init__()
-        self.model = JointModelMAP(K, N, p_cts, p_bin, mnar, position_prior, heterogeneity_prior)
+        self.model = JointModelMAP(K, N, p_cts, p_bin, mnar, network_weight,
+                                   position_prior, heterogeneity_prior)
         self.model.cuda()
 

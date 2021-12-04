@@ -1,6 +1,6 @@
 import sys
 import os
-PATH = "//"
+PATH = "/home/simon/Documents/NAIVI/"
 if not os.path.isdir(PATH):
     # patch for great lakes
     PATH = "/home/simfont/NAIVI/"

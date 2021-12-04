@@ -6,11 +6,12 @@ from NAIVI.naivi.naivi import NAIVI
 
 class JointModel(nn.Module):
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.,
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
                     heterogeneity_prior=(-2., 1.)
     ):
         super().__init__()
+        self.K = K
         self.network_weight = network_weight
         self.mnar = mnar
         self.p_cts = p_cts
@@ -60,14 +61,14 @@ class JointModel(nn.Module):
 class ADVI(NAIVI):
 
     def __init__(self,
-                 K, N, p_cts, p_bin, mnar=False, network_weight=1.,
+                 K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
                     heterogeneity_prior=(-2., 1.)
     ):
         self.model = JointModel(
             K, N, p_cts, p_bin, mnar, network_weight,
-            position_prior=(0., 1.),
-            heterogeneity_prior=(-2., 1.)
+            position_prior=position_prior,
+            heterogeneity_prior=heterogeneity_prior
         )
         self.model.cuda()
 
