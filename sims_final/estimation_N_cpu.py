@@ -13,7 +13,7 @@ os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
-    GPU = True
+    GPU = False
     NAME = "estimation_N"
     GPU_ALGOS = ["VIMC", "ADVI", "MAP"]
     CPU_ALGOS = ["MCMC"]
