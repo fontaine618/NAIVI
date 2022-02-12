@@ -9,7 +9,7 @@
 #SBATCH --partition=standard
 #SBATCH --nodes=1
 #SBATCH --cpus-per-task=1
-#SBATCH --gpus-per-node=1
+#SBATCH --gpus-per-node=0
 #SBATCH --mem-per-gpu=12g
 #SBATCH --output=/home/%u/scratch/logs/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
