@@ -16,8 +16,9 @@ if __name__ == "__main__":
     GPU = False
     NAME = "estimation_N"
     GPU_ALGOS = ["VIMC", "ADVI", "MAP"]
+    # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"]
     CPU_ALGOS = ["MCMC"]
-    CPU_ALGOS = ["MICE", "MissForest", "Mean", "NetworkSmoothing"]
+    # CPU_ALGOS = ["MICE", "MissForest", "Mean", "NetworkSmoothing"]
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
     NAME = NAME + ("_gpu" if GPU else "_cpu")
     main(
@@ -28,7 +29,7 @@ if __name__ == "__main__":
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
             "data.p_cts": np.array([5]), # np.array([0, 50]),  # 2 sub-experiments
-            "data.missing_mean": np.array([-1.]),
+            "data.missing_mean": np.array([-1000000.]),
             "data.seed": np.arange(0, 1, 1), # np.arange(0, 10, 1),  # 10 replications
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0]),
