@@ -11,7 +11,8 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
 #SBATCH --mem-per-gpu=12g
-#SBATCH --output=/home/%u/scratch/logs/%x-%j.log
+#SBATCH --output=/home/%u/scratch/logs/estimation_N_gpu-%x-%j.log
 # The application(s) to execute along with its input arguments and options:
+module load python/3.8.7
 source /home/simfont/naivi/bin/activate
 python3 estimation_N_gpu.py
