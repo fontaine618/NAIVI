@@ -8,7 +8,7 @@ torch.set_default_dtype(torch.float64)
 def generate_dataset(
         N, K, p_cts, p_bin, var_cov=1., alpha_mean=-1.,
         mnar_sparsity=0.5, missing_mean=-1.0, seed=1,
-        adjacency_noise=0.
+        adjacency_noise=0., constant_components=True
 ):
     torch.manual_seed(seed)
     # parameters
@@ -21,6 +21,10 @@ def generate_dataset(
     C *= which.reshape((1, -1))
     C0 = torch.ones((1, p)) * missing_mean
 
+    # ZWZ'
+    W = torch.ones(K) if constant_components else (torch.randn(K)).exp().sort(descending=True)[0]
+    W = torch.unsqueeze(W, 0)
+
     # produce all link indices
     i = torch.tril_indices(N, N, -1)
     i0 = i[0, :]
@@ -32,7 +36,7 @@ def generate_dataset(
     alpha = torch.randn((N, 1)) * 0.5 + alpha_mean
 
     # inner product model
-    A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
+    A_logit = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * W * Z[i1, :], 1, keepdim=True)
     A_logit += torch.randn_like(A_logit) * math.sqrt(adjacency_noise)
     A_proba = torch.sigmoid(A_logit)
     A = (torch.rand_like(A_proba) < A_proba).double()
@@ -62,4 +66,4 @@ def generate_dataset(
     if p_bin == 0:
         X_bin = None
         X_bin_missing = None
-    return Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0
+    return Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0, W

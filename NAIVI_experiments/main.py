@@ -22,7 +22,7 @@ def main(path, name, explore_dict):
     )
     traj = env.trajectory
     traj.f_add_parameter(
-        "path", path + "/results/", "Path"
+        "path", path, "Path"
     )
 
     # parameters (data generation)
@@ -56,6 +56,9 @@ def main(path, name, explore_dict):
     traj.f_add_parameter(
         "data.adjacency_noise", np.float64(0.0), "variance of gaussian error added to logit probability"
     )
+    traj.f_add_parameter(
+        "data.constant_components", np.bool(True), "W=1 in ZWZ', otherwise exp(N(0,4)) sorted"
+    )
 
     # parameters (model)
     traj.f_add_parameter(
@@ -72,6 +75,9 @@ def main(path, name, explore_dict):
     )
     traj.f_add_parameter(
         "model.network_weight", np.float64(1.0), "weight of the network in the objective"
+    )
+    traj.f_add_parameter(
+        "model.estimate_components", np.bool(False), "whether to estimate W in ZWZ'"
     )
 
     # parameters (fit)

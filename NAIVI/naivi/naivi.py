@@ -84,7 +84,7 @@ class NAIVI:
             outcols += [("error", k) for k in true_values.keys()]
             logs = pd.DataFrame(columns=pd.MultiIndex.from_tuples(outcols))
             logs.index.name = "iter"
-        for epoch in range(max_iter):
+        for epoch in range(max_iter+1):
             optimizer.zero_grad()
             # batches = torch.split(torch.randperm(len(train)), batch_size)
             # for batch in batches:
@@ -99,7 +99,7 @@ class NAIVI:
                 logs = logs.append(df, ignore_index=True)
             if verbose and epoch % 10 == 0:
                 form = "{:<4} {:<12.2e} |" + " {:<12.4f}" * 4
-                log = form.format(epoch + 1, out[("train", "grad_L2")],
+                log = form.format(epoch, out[("train", "grad_L2")],
                                   out[("train", "loss")], out[("train", "mse")],
                                   out[("train", "auc")], out[("train", "auc_A")])
                 print(log)
@@ -122,7 +122,7 @@ class NAIVI:
         # scheduler = None
         return optimizer, scheduler
 
-    def init(self, positions=None, heterogeneity=None, bias=None, weight=None, sig2=None):
+    def init(self, positions=None, heterogeneity=None, bias=None, weight=None, sig2=None, components=None):
         with torch.no_grad():
             if positions is not None:
                 if "mean" in positions:
@@ -140,6 +140,8 @@ class NAIVI:
                 self.model.covariate_model.mean_model.weight.data = weight.t().cuda()
             if sig2 is not None:
                 self.model.covariate_model.set_var(sig2.cuda())
+            if components is not None:
+                self.model.adjacency_model.set_components(components.cuda())
 
     def epoch_metrics(self, test, train, grad_norms, true_values=None):
         if true_values is None:
@@ -167,7 +169,8 @@ class NAIVI:
                     Z = self.latent_positions()
                     ZZt = torch.mm(Z, Z.t())
                     alpha = self.latent_heterogeneity()
-                    Theta_A = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * Z[i1, :], 1, keepdim=True)
+                    W = self.model.adjacency_model.components
+                    Theta_A = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * W * Z[i1, :], 1, keepdim=True)
                     B = self.model.covariate_model.weight
                     B0 = self.model.covariate_model.bias
                     if k == "ZZt":

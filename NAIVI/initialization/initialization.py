@@ -7,7 +7,8 @@ import copy
 
 
 def initialize(train: JointDataset, K: int, mnar: bool = False,
-               estimate_variance: bool = False, verbose: bool = True):
+               estimate_variance: bool = False, verbose: bool = True,
+               estimate_components: bool = False):
 	out = dict()
 	out["positions"] = dict()
 	out["heterogeneity"] = dict()
@@ -18,9 +19,10 @@ def initialize(train: JointDataset, K: int, mnar: bool = False,
 	# latent mean
 	if verbose:
 		print("Initializing latent variables")
-	alpha_mean, Z_mean = initialize_latent_variables(i0, i1, A, K)
+	alpha_mean, Z_mean, components = initialize_latent_variables(i0, i1, A, K, estimate_components=estimate_components)
 	out["positions"]["mean"] = Z_mean
 	out["heterogeneity"]["mean"] = alpha_mean
+	out["components"] = components
 	if verbose:
 		print("Initializing model parameters")
 	glm = GLM(K, N, p_cts, p_bin, mnar=mnar, latent_positions=Z_mean)

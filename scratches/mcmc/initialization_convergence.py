@@ -28,24 +28,26 @@ plt.style.use("seaborn")
 # 50/100, 50/20, 200/500, 200/50
 N = 200
 K = 5
-p_cts = 1000
+p_cts = 20
 p_bin = 0
 var_cts = 1.
-missing_mean = -10000.
+missing_mean = -2.
 alpha_mean = -2.
 seed = 4
 mnar_sparsity = 1.0
 mnar = False
+constant_components = False
 
-Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0 = generate_dataset(
+Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0, W = generate_dataset(
     N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cts, missing_mean=missing_mean,
-    alpha_mean=alpha_mean, seed=seed, mnar_sparsity=mnar_sparsity
+    alpha_mean=alpha_mean, seed=seed, mnar_sparsity=mnar_sparsity, constant_components=constant_components
 )
 
 E = i0.shape[0]
 p = p_bin + p_cts
 
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
+test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar, test=True)
 
 ZZt_true = Z @ Z.T
 A_logit = alpha + alpha.t() + ZZt_true
@@ -55,54 +57,50 @@ Theta_X_true = (B0 + torch.matmul(Z, B))
 
 true_values = {
     "ZZt": ZZt_true,
-    "P": proba_true,
+    "P": proba_true[i0, i1].unsqueeze(1),
     "Theta_X": Theta_X_true,
-    "Theta_A": A_logit,
+    "Theta_A": A_logit[i0, i1].unsqueeze(1),
     "BBt": torch.mm(B.t(), B),
     "alpha": alpha
 }
 # -----------------------------------------------------------------------------
 # Various initializations
 # -----------------------------------------------------------------------------
-glm = GLM(K, N, p_cts, p_bin, mnar=False, latent_positions=Z)
-glm.fit(train, None, eps=1.e-6, max_iter=200, lr=1.)
-outt = initialize(train, K)
-
-random = {
-}
+# glm = GLM(K, N, p_cts, p_bin, mnar=False, latent_positions=Z)
+# glm.fit(train, None, eps=1.e-6, max_iter=200, lr=1.)
+# outt = initialize(train, K)
+#
+# random = {
+# }
 BZ = {
     "weight": B,
     "positions": {"mean": Z}
 }
-Bt = {
-    "weight": B
-}
-Zt = {
-    "positions": {"mean": Z}
-}
-Zglm = {
-    "positions": {"mean": Z},
-    "weight": glm.model.mean_model.weight.data.t()
-}
-usvt_glm = {
-    "positions": {"mean": outt[1][0]},
-    "weight": outt[3].t(),
-    "heterogeneity": {"mean": alpha},
-}
-BZalpha = {
-    "weight": B,
-    "positions": {"mean": Z},
-    "heterogeneity": {"mean": alpha}
-}
+# Bt = {
+#     "weight": B
+# }
+# Zt = {
+#     "positions": {"mean": Z}
+# }
+# Zglm = {
+#     "positions": {"mean": Z},
+#     "weight": glm.model.mean_model.weight.data.t()
+# }
+# usvt_glm = outt
+# BZalpha = {
+#     "weight": B,
+#     "positions": {"mean": Z},
+#     "heterogeneity": {"mean": alpha}
+# }
 
 inits = {
-    "B random, Z random": random,
-    # "B true, Z true": BZ,
-    "B true, Z true, alpha true": BZalpha,
+    # "B random, Z random": random,
+    "B true, Z true": BZ,
+    # "B true, Z true, alpha true": BZalpha,
     # "B true, Z random": Bt,
     # "B random, Z true": Zt,
     # "B glm, Z true": Zglm,
-    "B glm, Z usvt": usvt_glm
+    # "B glm, Z usvt": usvt_glm
 }
 # -----------------------------------------------------------------------------
 # ADVI
@@ -111,16 +109,20 @@ results = dict()
 
 for name, init in inits.items():
     results[name] = dict()
-    fit = ADVI(K, N, p_cts, p_bin, mnar=mnar)
-    if init is not None:
-        fit.init(**init)
 
-    out, logs = fit.fit(train, train, eps=1.e-8, max_iter=5000, lr=0.01, return_log=True,
+    fit = ADVI(K, N, p_cts, p_bin, mnar=mnar, estimate_components=True, n_samples=10)
+    fit.init(**init)
+    out, logs = fit.fit(train, test, eps=1.e-8, max_iter=200, lr=0.001, return_log=True,
                      true_values=true_values)
+
     results[name]["out"] = out
     results[name]["logs"] = logs
 
 
+
+
+fit.model.adjacency_model.components
+W
 
 
 # -----------------------------------------------------------------------------

@@ -25,12 +25,14 @@ def run(traj):
     alpha_mean_gen = traj.par.data.alpha_mean
     mnar_sparsity = traj.par.data.mnar_sparsity
     adjacency_noise = traj.par.data.adjacency_noise
+    constant_components = traj.par.data.constant_components
     # extract model parameters
     K_model = int(traj.par.model.K)
     mnar = traj.par.model.mnar
     alpha_mean_model = traj.par.model.alpha_mean
     reg = traj.par.model.reg
     network_weight = traj.par.model.network_weight
+    estimate_components = traj.par.model.estimate_components
     # extract fit parameters
     algo = traj.par.fit.algo
     max_iter = int(traj.par.fit.max_iter)
@@ -48,10 +50,11 @@ def run(traj):
     try:
         # ---------------------------------------------------------------------
         # generate data
-        Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0 = generate_dataset(
+        Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0, W = \
+        generate_dataset(
             N=N, K=K, p_cts=p_cts, p_bin=p_bin, var_cov=var_cov, missing_mean=missing_mean,
             alpha_mean=alpha_mean_gen, seed=seed, mnar_sparsity=mnar_sparsity,
-            adjacency_noise=adjacency_noise
+            adjacency_noise=adjacency_noise, constant_components=constant_components
         )
         cuda = (algo in ["ADVI", "MLE", "MAP", "VIMC", "NetworkSmoothing"])
         train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar, cuda=cuda)
@@ -77,7 +80,8 @@ def run(traj):
                         "optimizer": optimizer}
             model_args = {"K": K_model, "N": N, "p_cts": p_cts, "p_bin": p_bin, "mnar": mnar,
                           "network_weight": network_weight,
-                          "position_prior": p_prior, "heterogeneity_prior": h_prior}
+                          "position_prior": p_prior, "heterogeneity_prior": h_prior,
+                          "estimate_components": estimate_components}
             if algo == "ADVI":
                 model = ADVI(**model_args)
             elif algo == "VIMC":

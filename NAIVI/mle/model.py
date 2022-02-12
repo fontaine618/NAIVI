@@ -8,7 +8,8 @@ class JointModel(nn.Module):
 
     def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),
-				 heterogeneity_prior=(-2., 1.)
+				 heterogeneity_prior=(-2., 1.),
+                estimate_components=False
                  ):
         super().__init__()
         self.K = K
@@ -23,7 +24,7 @@ class JointModel(nn.Module):
         self.p_bin = p_bin
         self.encoder = Encoder(K, N)
         self.covariate_model = CovariateModel(K, p_cts, p_bin, N)
-        self.adjacency_model = AdjacencyModel(N)
+        self.adjacency_model = AdjacencyModel(K, estimate_components)
 
     def forward(self, indices0, indices1, indicesX):
         latent_position0, latent_heterogeneity0 = self.encoder(indices0)
@@ -58,11 +59,13 @@ class MLE(NAIVI):
 
     def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),
-				 heterogeneity_prior=(-2., 1.)
+				 heterogeneity_prior=(-2., 1.),
+                estimate_components=False
                  ):
         super().__init__()
         self.model = JointModel(K, N, p_cts, p_bin, mnar, network_weight,
-                                position_prior, heterogeneity_prior)
+                                position_prior, heterogeneity_prior,
+            estimate_components=estimate_components)
         self.model.cuda()
 
 
@@ -96,10 +99,12 @@ class MAP(NAIVI):
 
     def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),
-				 heterogeneity_prior=(-2., 1.)
+				 heterogeneity_prior=(-2., 1.),
+                    estimate_components=False, **kwargs
                  ):
         super().__init__()
         self.model = JointModelMAP(K, N, p_cts, p_bin, mnar, network_weight,
-                                   position_prior, heterogeneity_prior)
+                                   position_prior, heterogeneity_prior,
+            estimate_components=estimate_components)
         self.model.cuda()
 

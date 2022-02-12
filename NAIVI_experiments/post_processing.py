@@ -26,11 +26,9 @@ def parameter_df(runs, traj):
     return df
 
 # from pypet import Trajectory
-# traj = Trajectory('example', add_time=False)
-# traj.f_load(filename="/home/simon/Documents/NAIVI/results/"
-#                      "results/example.hdf5",
+# traj = Trajectory('estimation_N_gpu', add_time=False)
+# traj.f_load(filename="/home/simon/Documents/NAIVI/sims_final/estimation_N_gpu.hdf5",
 #             load_results=0)
 # traj.v_auto_load = True
 # traj.res.summary.results.df
 # traj.res.summary.parameters.df
-# traj.r

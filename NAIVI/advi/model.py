@@ -8,7 +8,8 @@ class JointModel(nn.Module):
 
     def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
-                    heterogeneity_prior=(-2., 1.)
+                    heterogeneity_prior=(-2., 1.),
+                    estimate_components=False
     ):
         super().__init__()
         self.K = K
@@ -21,7 +22,7 @@ class JointModel(nn.Module):
         self.p_bin = p_bin
         self.encoder = Encoder(K, N, position_prior, heterogeneity_prior)
         self.covariate_model = CovariateModel(K, p_cts, p_bin, N)
-        self.adjacency_model = AdjacencyModel(N)
+        self.adjacency_model = AdjacencyModel(K, estimate_components)
 
     def forward(self, i0, i1, iX):
         pm0, pv0, hm0, hv0, pm1, pv1, hm1, hv1, pmx, pvx = self.encode(i0, i1, iX)
@@ -63,12 +64,14 @@ class ADVI(NAIVI):
     def __init__(self,
                  K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
-                    heterogeneity_prior=(-2., 1.)
+                    heterogeneity_prior=(-2., 1.),
+                    estimate_components=False, **kwargs
     ):
         self.model = JointModel(
             K, N, p_cts, p_bin, mnar, network_weight,
             position_prior=position_prior,
-            heterogeneity_prior=heterogeneity_prior
+            heterogeneity_prior=heterogeneity_prior,
+            estimate_components=estimate_components
         )
         self.model.cuda()
 

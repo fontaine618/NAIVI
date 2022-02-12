@@ -102,14 +102,18 @@ class MCMC:
 	def diagnostic_summary(self):
 		ZZt_diag = self.diagnostics("ZZt").describe().transpose()
 		ZZt_diag.index = pd.MultiIndex.from_product([["ZZt"], ZZt_diag.index])
-		B0_diag = self.diagnostics("B0").describe().transpose()
-		B0_diag.index = pd.MultiIndex.from_product([["B0"], B0_diag.index])
 		alpha_diag = self.diagnostics("alpha").describe().transpose()
 		alpha_diag.index = pd.MultiIndex.from_product([["alpha"], alpha_diag.index])
-		Theta_X_diag = self.diagnostics("Theta_X").describe().transpose()
-		Theta_X_diag.index = pd.MultiIndex.from_product([["Theta_X"], Theta_X_diag.index])
 		Theta_A_diag = self.diagnostics("Theta_A").describe().transpose()
 		Theta_A_diag.index = pd.MultiIndex.from_product([["Theta_A"], Theta_A_diag.index])
+		if self.p > 0:
+			B0_diag = self.diagnostics("B0").describe().transpose()
+			B0_diag.index = pd.MultiIndex.from_product([["B0"], B0_diag.index])
+			Theta_X_diag = self.diagnostics("Theta_X").describe().transpose()
+			Theta_X_diag.index = pd.MultiIndex.from_product([["Theta_X"], Theta_X_diag.index])
+		else:
+			B0_diag = None
+			Theta_X_diag = None
 		diagnostics = pd.concat([ZZt_diag, B0_diag, alpha_diag, Theta_X_diag, Theta_A_diag])
 		diagnostics = diagnostics.melt(ignore_index=False).reset_index().set_index(
 			["level_0", "level_1", "variable"]).transpose()
@@ -127,21 +131,23 @@ class MCMC:
 				if k == "ZZt":
 					ZZt = self.posterior_mean("ZZt")
 					value = ((ZZt - v) ** 2).sum() / (v ** 2).sum()
-				if k == "Theta_X":
+				elif k == "Theta_X" and self.p > 0:
 					Theta_X = self.posterior_mean("Theta_X")
 					value = ((Theta_X - v) ** 2).mean()
-				if k == "Theta_A":
+				elif k == "Theta_A":
 					Theta_A = self.posterior_mean("Theta_A")
 					value = ((Theta_A - v) ** 2).mean()
-				if k == "P":
+				elif k == "P":
 					P = self.posterior_mean("proba")
 					value = ((P - v) ** 2).mean()
-				if k == "BBt":
+				elif k == "BBt" and self.p > 0:
 					BBt = self.posterior_mean("BBt")
 					value = ((BBt - v) ** 2).sum() / (v ** 2).sum()
-				if k == "alpha":
+				elif k == "alpha":
 					alpha = self.posterior_mean("alpha")
 					value = ((alpha - v) ** 2).mean()
+				else:
+					value = np.nan
 			except Exception:
 				value = np.nan
 			out[("error", k)] = value
@@ -151,16 +157,20 @@ class MCMC:
 		with torch.no_grad():
 			_, _, A, _, X_cts, X_bin = train[:]
 			# train mse, auc, auc_A
-			Theta_X = self.posterior_mean("Theta_X")
-			Theta_X_split = np.hsplit(Theta_X, [self.p_cts, self.p_cts + self.p_bin])
-			mean_cts = Theta_X_split[0]
-			proba_bin = 1. / (1. + np.exp(-Theta_X_split[1]))
-			proba_adj = self.posterior_mean("proba")
+			if self.p > 0:
+				Theta_X = self.posterior_mean("Theta_X")
+				Theta_X_split = np.hsplit(Theta_X, [self.p_cts, self.p_cts + self.p_bin])
+				mean_cts = torch.Tensor(Theta_X_split[0])
+				proba_bin = torch.Tensor(1. / (1. + np.exp(-Theta_X_split[1])))
+			else:
+				mean_cts = None
+				proba_bin = None
+			proba_adj = torch.Tensor(self.posterior_mean("proba"))
 			auc, mse, auc_A = NAIVI.prediction_metrics(
 				X_bin=X_bin, X_cts=X_cts, A=A,
-				mean_cts=torch.Tensor(mean_cts),
-				proba_bin=torch.Tensor(proba_bin),
-				proba_adj=torch.Tensor(proba_adj)
+				mean_cts=mean_cts,
+				proba_bin=proba_bin,
+				proba_adj=proba_adj
 			)
 		return auc, mse, auc_A
 

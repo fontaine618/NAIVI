@@ -65,16 +65,29 @@ class CovariateModel(nn.Module):
 
 class AdjacencyModel(nn.Module):
 
-    def __init__(self, N):
+    def __init__(self, dim, estimate_components=False):
         super().__init__()
-        self.N = N
         self.n_links = 0.
+        self.dim = dim
+        self.estimate_components = estimate_components
+        if estimate_components:
+            self.log_components = nn.Parameter(torch.randn(1, dim).sort(descending=True)[0])
+        else:
+            self.log_components = nn.Parameter(torch.zeros(1, dim), requires_grad=False)
+
+    @property
+    def components(self):
+        return self.log_components.data.exp()
+
+    def set_components(self, components):
+        self.log_components.data = components.log()
 
     def forward(self,
                 latent_position0, latent_position1,
                 latent_heterogeneity0, latent_heterogeneity1
     ):
-        inner_products = torch.sum(latent_position0 * latent_position1, 1, keepdim=True)
+        w = self.log_components.exp()
+        inner_products = torch.sum(latent_position0 * w * latent_position1, 1, keepdim=True)
         logit = inner_products + latent_heterogeneity0 + latent_heterogeneity1
         proba = torch.sigmoid(logit)
         return proba

@@ -8,7 +8,8 @@ class JointModel(nn.Module):
 
     def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
-                    heterogeneity_prior=(-2., 1.)
+                    heterogeneity_prior=(-2., 1.),
+                    estimate_components=False
     ):
         super().__init__()
         self.K = K
@@ -22,7 +23,7 @@ class JointModel(nn.Module):
         self.n_samples = n_samples
         self.encoder = Encoder(K, N, position_prior, heterogeneity_prior)
         self.covariate_model = CovariateModel(K, p_cts, p_bin, N)
-        self.adjacency_model = AdjacencyModel(N)
+        self.adjacency_model = AdjacencyModel(K, estimate_components)
 
     def forward(self, i0, i1, iX, n_samples=None):
         if n_samples is None:
@@ -61,7 +62,11 @@ class VIMC(NAIVI):
 
     def __init__(self, K, N, p_cts, p_bin, n_samples=1, mnar=False, network_weight=1.0,
                     position_prior=(0., 1.),
-                    heterogeneity_prior=(-2., 1.)
+                    heterogeneity_prior=(-2., 1.),
+                    estimate_components=False, **kwargs
     ):
-        self.model = JointModel(K, N, p_cts, p_bin, n_samples, mnar, network_weight)
+        self.model = JointModel(K, N, p_cts, p_bin, n_samples, mnar, network_weight,
+            position_prior=position_prior,
+            heterogeneity_prior=heterogeneity_prior,
+            estimate_components=estimate_components)
         self.model.cuda()

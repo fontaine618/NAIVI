@@ -10,7 +10,7 @@ class NetworkSmoothing(MICE):
         self.p_bin = p_bin
         self.N = N
 
-    def fit(self, train, test=None, max_iter=20, **kwargs):
+    def fit(self, train, test=None, max_iter=100, **kwargs):
         # get train data
         i0, i1, A, _, X_cts, X_bin = train[:]
         if X_cts is None:
@@ -25,6 +25,7 @@ class NetworkSmoothing(MICE):
         A_mat.index_put_((i0, i1), A.flatten())
         A_mat.index_put_((i1, i0), A.flatten())
         n_neighbors = A_mat.sum(0).reshape((-1, 1))
+        n_neighbors = torch.where(n_neighbors==0., 1., n_neighbors)
 
         # predict
         for epoch in range(max_iter):
@@ -51,4 +52,7 @@ class NetworkSmoothing(MICE):
                 X_bin_pred = X_bin_pred.clone().detach()
 
             out = self.metrics(X_test_bin, X_test_cts, X_cts_pred, X_bin_pred, epoch)
+            print(f"Iteration {epoch:<3} "
+                  f"Test MSE {out[('test', 'mse')]:<6.4f} "
+                  f"Test AUC {out[('test', 'auc')]:<6.4f}")
         return out

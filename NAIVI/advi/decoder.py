@@ -53,12 +53,19 @@ class CovariateModel(nn.Module):
 
 class AdjacencyModel(nn.Module):
 
-    def __init__(self, N=1.):
+    def __init__(self, dim, estimate_components=False):
         super().__init__()
-        self.inner_product = InnerProduct()
+        self.inner_product = InnerProduct(dim, estimate_components)
         self.sum = Sum()
         self.logistic = Logistic()
         self.n_links = 0.
+
+    @property
+    def components(self):
+        return self.inner_product.log_components.data.exp()
+
+    def set_components(self, components):
+        self.inner_product.log_components.data = components.log()
 
     def forward(self,
                 pm0, pv0,

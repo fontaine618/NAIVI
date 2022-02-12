@@ -59,12 +59,15 @@ def project_symmetric_pd(residuals):
 	return evecs @ torch.diag(evals) @ evecs.t()
 
 
-def initialize_latent_variables(i0, i1, A, K, tau=None):
+def initialize_latent_variables(i0, i1, A, K, tau=None, estimate_components=False):
 	A_mat = to_adj_matrix(i0, i1, A)
 	Theta = usvt_logit(A_mat, tau)
 	alpha_hat, residuals = project_rank_one_with_residuals(Theta)
 	residuals = doubly_center(residuals)
 	proj = project_symmetric_pd(residuals)
 	u, s, _ = torch.svd(proj)
-	Z_hat = u[:, :K] @ torch.diag(torch.sqrt(s[:K]))
-	return alpha_hat, Z_hat
+	if estimate_components:
+		return alpha_hat, u[:, :K], s[:K].unsqueeze(0)
+	else:
+		Z_hat = u[:, :K] @ torch.diag(torch.sqrt(s[:K]))
+		return alpha_hat, Z_hat, torch.ones((1, K))

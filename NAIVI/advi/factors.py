@@ -71,12 +71,6 @@ class Logistic(nn.Module):
             0.238212616409306
         ]]]).cuda()
 
-    # def cuda(self, device=None):
-    #     print("this is reached?")
-    #     self._p = self._p.cuda(device)
-    #     self._s = self._s.cuda(device)
-    #     super().cuda(device)
-
     def forward(self, mean, var):
         mean = mean.unsqueeze(-1)
         var = var.unsqueeze(-1)
@@ -98,12 +92,18 @@ class Logistic(nn.Module):
 
 class InnerProduct(nn.Module):
 
-    def __init__(self):
+    def __init__(self, dim, estimate_components=False):
         super().__init__()
+        self.estimate_components = estimate_components
+        if estimate_components:
+            self.log_components = nn.Parameter(torch.randn(1, dim).sort(descending=True)[0])
+        else:
+            self.log_components = nn.Parameter(torch.zeros(1, dim), requires_grad=False)
 
     def forward(self, m0, v0, m1, v1):
-        mean = m0 * m1
-        var = m0**2 * v1 + m1**2 * v0 + v0 * v1
+        w = self.log_components.exp()
+        mean = m0 * w * m1
+        var = (m0**2 * v1 + m1**2 * v0 + v0 * v1) * (w ** 2)
         return torch.sum(mean, dim=-1, keepdim=True), torch.sum(var, dim=-1, keepdim=True)
 
 

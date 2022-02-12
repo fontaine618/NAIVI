@@ -8,15 +8,17 @@ from NAIVI.mle.model import MLE
 from NAIVI.vimc.model import VIMC
 from NAIVI.mice.model import MICE
 from NAIVI.smoothing import NetworkSmoothing
+from NAIVI.initialization import initialize
+torch.set_default_dtype(torch.float64)
 
 DATA_PATH = "./facebook/data/raw/"
 
-center = 0
+center = 686
 missing_rate = [0.4, 0.8]
 seed = 0
-K = 10
+K = 4
 alpha_mean = -1.85
-sparsity = 0.50
+sparsity = 0.10
 K_model = 10
 algo = "MLE"
 max_iter = 100
@@ -45,26 +47,42 @@ mask = torch.rand_like(X_bin) < prob
 X_bin_missing = torch.where(mask, np.nan, X_bin)
 X_bin = torch.where(~mask, np.nan, X_bin)
 X_cts_missing = None
-# print
-print("=" * 80)
-print(center, seed, N, p_cts, p_bin, K, missing_rate, alpha_mean, K_model, algo)
-input = (
-    center,
-    seed,
-    N,
-    p_cts,
-    p_bin,
-    K,
-    *missing_rate,
-    alpha_mean,
-    sparsity,
-    K_model,
-    algo,
-)
+
+
 # dataset format
 mnar = False # if algo == "MICE" else True
 train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar)
 test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar, test=True)
+
+
+
+# new stuff
+usvt_glm = initialize(train, K)
+
+fit = ADVI(K, N, p_cts, p_bin, mnar=mnar, estimate_components=False, network_weight=1.0)
+fit.init(**usvt_glm)
+out, logs = fit.fit(train, test, eps=1.e-8, max_iter=100, lr=0.01, return_log=True)
+print(out[("test", "auc")])
+
+fit.model.adjacency_model.components.exp()
+
+torch.hstack([fit.model.covariate_model.weight, X_bin.nansum(0).unsqueeze(1).cuda()])
+
+Z = fit.latent_positions()
+torch.sigmoid(fit.model.covariate_model.forward(Z, torch.ones_like(Z))[2])
+
+
+
+
+
+
+
+
+
+
+
+
+
 # initialization
 B0 = torch.zeros((1, p))
 B = torch.randn((K_model, p))
