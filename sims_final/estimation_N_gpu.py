@@ -2,11 +2,12 @@ import sys
 import os
 import numpy as np
 import torch
+
+# PATH = "/home/simon/Documents/NAIVI/"
+PATH = "/home/simfont/NAIVI/"
+sys.path.append(PATH)
 from NAIVI_experiments.main import main
 
-# PATH = "/home/simon/Documents/NAIVI/sims_final/"
-PATH = "/home/simfont/NAIVI/sims_final/"
-sys.path.append(PATH)
 # MCMC patch on greatlakes
 os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
