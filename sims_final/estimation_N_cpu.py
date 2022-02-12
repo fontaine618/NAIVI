@@ -17,7 +17,7 @@ if __name__ == "__main__":
     NAME = "estimation_N"
     GPU_ALGOS = ["VIMC", "ADVI", "MAP"]
     CPU_ALGOS = ["MCMC"]
-    # CPU_ALGOS = ["MICE", "MissForest", "Mean", "NetworkSmoothing"]
+    CPU_ALGOS = ["MICE", "MissForest", "Mean", "NetworkSmoothing"]
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
     NAME = NAME + ("_gpu" if GPU else "_cpu")
     main(
