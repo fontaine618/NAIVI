@@ -26,12 +26,12 @@ if __name__ == "__main__":
         path=PATH + "/sims_final/results/",
         name=NAME,
         explore_dict={
-            "data.N": np.array([30]), # np.array([25, 50, 100, 200, 500, 1000]),  # Vary N
+            "data.N": np.array([25, 50, 100, 200, 500, 1000]),  # Vary N
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
-            "data.p_cts": np.array([5]), # np.array([0, 50]),  # 2 sub-experiments
+            "data.p_cts": np.array([0, 50]),  # 2 sub-experiments
             "data.missing_mean": np.array([-1000000.]),
-            "data.seed": np.array([SEED]), # np.arange(0, 10, 1),  # 10 replications
+            "data.seed": np.array([SEED]),
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0]),
             "data.adjacency_noise": np.array([0.0]),
