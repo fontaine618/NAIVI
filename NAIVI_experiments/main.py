@@ -1,11 +1,14 @@
 import numpy as np
+import os
 from pypet import Environment
 from pypet.utils.explore import cartesian_product
 from NAIVI_experiments.post_processing import post_processing
 from NAIVI_experiments.run import run
 
 
-def main(path, name, explore_dict):
+def main(path, name, which, explore_dict):
+    path = path + "/" + name + "/"
+    os.makedirs(path, exist_ok=True)
     comment = "\n".join([
         "{:<20} {}".format(k, v) for k, v in explore_dict.items()
     ])
@@ -17,7 +20,7 @@ def main(path, name, explore_dict):
         log_config=None,
         multiproc=False,
         ncores=0,
-        filename=path,
+        filename=path + which,
         overwrite_file=True
     )
     traj = env.trajectory

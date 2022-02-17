@@ -12,21 +12,27 @@ from NAIVI_experiments.main import main
 os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
-    SEED = int(os.getenv('SLURM_ARRAY_TASK_ID'))
+    # from Slurm scheduler
     torch.set_default_dtype(torch.float64)
-    GPU = True
+    SEED = int(os.getenv('SLURM_ARRAY_TASK_ID'))
+    # GPU/CPU
+    try:
+        GPU = sys.argv[1] == 0
+    except IndexError:
+        GPU = True
     NAME = "estimation_N"
     GPU_ALGOS = ["VIMC", "ADVI", "MAP"] # estimation, no missing values
     CPU_ALGOS = ["MCMC"] # estimation, no missing values
     # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"] # with missing values
     # CPU_ALGOS = ["MICE", "MissForest", "Mean"] # with missing values
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
-    NAME = NAME + ("_gpu" if GPU else "_cpu") + "_seed" + str(SEED)
+    WHICH = ("gpu" if GPU else "_cpu") + "_seed" + str(SEED)
     main(
         path=PATH + "/sims_final/results/",
         name=NAME,
+        which=WHICH,
         explore_dict={
-            "data.N": np.array([25, 50, 100, 200, 500, 1000]),  # Vary N
+            "data.N": np.array([50, 100, 200, 500, 1000, 2000]),  # Vary N
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
             "data.p_cts": np.array([0, 50]),  # 2 sub-experiments

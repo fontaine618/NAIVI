@@ -9,4 +9,4 @@ python -m venv naivi
 source /home/simfont/naivi/bin/activate
 
 # run
-sbatch
+sbatch --array=0-9 file.py
