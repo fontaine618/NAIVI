@@ -32,7 +32,7 @@ if __name__ == "__main__":
         name=NAME,
         which=WHICH,
         explore_dict={
-            "data.N": np.array([50, 100, 200, 500, 1000, 2000]),  # Vary N
+            "data.N": np.array([50, 100, 200, 500, 1000, 2000] if GPU else [50, 100, 200, 500, 1000]),  # Vary N
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
             "data.p_cts": np.array([0, 50]),  # 2 sub-experiments
