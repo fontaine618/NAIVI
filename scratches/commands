@@ -9,4 +9,6 @@ python -m venv naivi
 source /home/simfont/naivi/bin/activate
 
 # run
-sbatch --array=0-9 file.py
+sbatch --array=0-9 file.sh
+chmod +x estimation_N.sh
+./file.sh
