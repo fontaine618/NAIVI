@@ -172,6 +172,6 @@ class MCMC:
 				proba_bin=proba_bin,
 				proba_adj=proba_adj
 			)
-		return auc, mse, auc_A
+		return mse, auc, auc_A
 
 

@@ -12,24 +12,26 @@ from NAIVI_experiments.main import main
 os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
+    SEED = int(sys.argv[1]) if len(sys.argv) > 1 else [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     torch.set_default_dtype(torch.float64)
     GPU = True
     NAME = "estimation_N"
     GPU_ALGOS = ["VIMC", "ADVI", "MAP"]
+    # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"]
     CPU_ALGOS = ["MCMC"]
-    # CPU_ALGOS = ["MICE", "MissForest", "Mean", "NetworkSmoothing"]
+    # CPU_ALGOS = ["MICE", "MissForest", "Mean"]
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
-    NAME = NAME + ("_gpu" if GPU else "_cpu")
+    NAME = NAME + ("_gpu" if GPU else "_cpu") + "_seed" + str(SEED)
     main(
-        path=PATH + "/results/",
+        path=PATH + "/sims_final/results/",
         name=NAME,
         explore_dict={
             "data.N": np.array([30]), # np.array([25, 50, 100, 200, 500, 1000]),  # Vary N
             "data.K": np.array([2]),
             "data.p_bin": np.array([0]),
             "data.p_cts": np.array([5]), # np.array([0, 50]),  # 2 sub-experiments
-            "data.missing_mean": np.array([-1.]),
-            "data.seed": np.arange(0, 1, 1), # np.arange(0, 10, 1),  # 10 replications
+            "data.missing_mean": np.array([-1000000.]),
+            "data.seed": np.array([SEED]), # np.arange(0, 10, 1),  # 10 replications
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0]),
             "data.adjacency_noise": np.array([0.0]),
