@@ -12,20 +12,16 @@ from NAIVI_experiments.main import main
 os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
+    SEED = [int(os.getenv('SLURM_ARRAY_TASK_ID'))]
     torch.set_default_dtype(torch.float64)
     GPU = False
     NAME = "estimation_N"
     GPU_ALGOS = ["VIMC", "ADVI", "MAP"] # estimation, no missing values
-    # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"] # with missing values
     CPU_ALGOS = ["MCMC"] # estimation, no missing values
+    # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"] # with missing values
     # CPU_ALGOS = ["MICE", "MissForest", "Mean"] # with missing values
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
-    NAME = NAME + ("_gpu" if GPU else "_cpu")
-    SEED = [int(os.getenv('SLURM_ARRAY_TASK_ID'))]
-    if SEED is None:
-        SEED = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
-    else:
-        NAME += "_seed" + str(SEED)
+    NAME = NAME + ("_gpu" if GPU else "_cpu") + "_seed" + str(SEED)
     main(
         path=PATH + "/sims_final/results/",
         name=NAME,
