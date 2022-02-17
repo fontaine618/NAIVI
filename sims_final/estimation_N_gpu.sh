@@ -11,7 +11,7 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
 #SBATCH --mem-per-gpu=12g
-#SBATCH --output=/home/%u/scratch/logs/%x-%j-%A-%a.log
+#SBATCH --output=/home/%u/scratch/logs/%x-%A-%a.log
 # The application(s) to execute along with its input arguments and options:
 module load python/3.8.7 gcc/9.2.0
 source /home/simfont/naivi/bin/activate
