@@ -15,13 +15,13 @@ if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
     GPU = True
     NAME = "estimation_N"
-    GPU_ALGOS = ["VIMC", "ADVI", "MAP"]
-    # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"]
-    CPU_ALGOS = ["MCMC"]
-    # CPU_ALGOS = ["MICE", "MissForest", "Mean"]
+    GPU_ALGOS = ["VIMC", "ADVI", "MAP"] # estimation, no missing values
+    # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"] # with missing values
+    CPU_ALGOS = ["MCMC"] # estimation, no missing values
+    # CPU_ALGOS = ["MICE", "MissForest", "Mean"] # with missing values
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
     NAME = NAME + ("_gpu" if GPU else "_cpu")
-    SEED = [os.getenv('SLURM_ARRAY_TASK_ID')]
+    SEED = [int(os.getenv('SLURM_ARRAY_TASK_ID'))]
     if SEED is None:
         SEED = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     else:
