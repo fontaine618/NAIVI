@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # CPU_ALGOS = ["MICE", "MissForest", "Mean"]
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
     NAME = NAME + ("_gpu" if GPU else "_cpu")
-    SEED = os.getenv('SLURM_ARRAY_TASK_ID')
+    SEED = [os.getenv('SLURM_ARRAY_TASK_ID')]
     if SEED is None:
         SEED = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     else:
