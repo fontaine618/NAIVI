@@ -13,7 +13,7 @@ os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
     print(sys.argv)
-    print(sys.getenv('SLURM_ARRAY_TASK_ID'))
+    print(os.getenv('SLURM_ARRAY_TASK_ID'))
     torch.set_default_dtype(torch.float64)
     GPU = True
     NAME = "estimation_N"
