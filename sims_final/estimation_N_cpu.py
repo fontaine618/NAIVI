@@ -12,7 +12,10 @@ from NAIVI_experiments.main import main
 os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
-    SEED = [int(sys.argv[1])] if len(sys.argv) > 1 else [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    if len(sys.argv) > 1:
+        SEED = [int(sys.argv[1])]
+    else:
+        SEED = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     torch.set_default_dtype(torch.float64)
     GPU = False
     NAME = "estimation_N"
