@@ -17,7 +17,7 @@ if __name__ == "__main__":
     SEED = int(os.getenv('SLURM_ARRAY_TASK_ID'))
     # GPU/CPU
     try:
-        GPU = sys.argv[1] == 0
+        GPU = (int(sys.argv[1]) == 0)
     except IndexError:
         GPU = True
     NAME = "estimation_N"
