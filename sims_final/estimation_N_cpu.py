@@ -13,10 +13,7 @@ os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
     print(sys.argv)
-    if len(sys.argv) > 1:
-        SEED = [int(sys.argv[1])]
-    else:
-        SEED = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    print(sys.getenv('SLURM_ARRAY_TASK_ID'))
     torch.set_default_dtype(torch.float64)
     GPU = False
     NAME = "estimation_N"
@@ -25,7 +22,12 @@ if __name__ == "__main__":
     CPU_ALGOS = ["MCMC"]
     # CPU_ALGOS = ["MICE", "MissForest", "Mean"]
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
-    NAME = NAME + ("_gpu" if GPU else "_cpu") + "_seed" + str(SEED)
+    NAME = NAME + ("_gpu" if GPU else "_cpu")
+    if len(sys.argv) > 1:
+        SEED = [int(sys.argv[1])]
+        NAME += "_seed" + str(SEED)
+    else:
+        SEED = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
     main(
         path=PATH + "/sims_final/results/",
         name=NAME,
