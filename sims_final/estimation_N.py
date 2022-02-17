@@ -28,7 +28,7 @@ if __name__ == "__main__":
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
     WHICH = ("gpu" if GPU else "_cpu") + "_seed" + str(SEED)
     main(
-        path=PATH + "/sims_final/results/",
+        path=PATH + "sims_final/results/",
         name=NAME,
         which=WHICH,
         explore_dict={

@@ -7,7 +7,7 @@ from NAIVI_experiments.run import run
 
 
 def main(path, name, which, explore_dict):
-    path = path + "/" + name + "/"
+    path = path + name + "/"
     os.makedirs(path, exist_ok=True)
     comment = "\n".join([
         "{:<20} {}".format(k, v) for k, v in explore_dict.items()
