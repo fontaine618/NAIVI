@@ -15,4 +15,4 @@
 # The application(s) to execute along with its input arguments and options:
 module load python/3.8.7 gcc/9.2.0
 source /home/simfont/naivi/bin/activate
-python estimation_N_gpu.py
+python estimation_N_gpu.py $SLURM_ARRAY_TASK_ID
