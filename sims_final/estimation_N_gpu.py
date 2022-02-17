@@ -12,7 +12,7 @@ from NAIVI_experiments.main import main
 os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
-    SEED = [int(os.getenv('SLURM_ARRAY_TASK_ID'))]
+    SEED = int(os.getenv('SLURM_ARRAY_TASK_ID'))
     torch.set_default_dtype(torch.float64)
     GPU = True
     NAME = "estimation_N"
@@ -31,7 +31,7 @@ if __name__ == "__main__":
             "data.p_bin": np.array([0]),
             "data.p_cts": np.array([5]), # np.array([0, 50]),  # 2 sub-experiments
             "data.missing_mean": np.array([-1000000.]),
-            "data.seed": np.array(SEED), # np.arange(0, 10, 1),  # 10 replications
+            "data.seed": np.array([SEED]), # np.arange(0, 10, 1),  # 10 replications
             "data.alpha_mean": np.array([-1.85]),
             "data.mnar_sparsity": np.array([0.0]),
             "data.adjacency_noise": np.array([0.0]),
