@@ -12,6 +12,7 @@ from NAIVI_experiments.main import main
 os.environ["XDG_CACHE_HOME"] = "/home/simfont/scratch/.cache/"
 
 if __name__ == "__main__":
+    print(sys.argv)
     if len(sys.argv) > 1:
         SEED = [int(sys.argv[1])]
     else:
