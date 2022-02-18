@@ -1,4 +1,5 @@
 import stan
+import os, shutil
 import numpy as np
 import torch
 import arviz as az
@@ -89,6 +90,16 @@ class MCMC:
 			num_samples=n_sample, init=[self._init[0] for _ in range(num_chains)]
 		)
 		return self.metrics(train, true_values)
+
+	def delete_fits(self, path=None):
+		if path is None:
+			path = os.environ["XDG_CACHE_HOME"] + \
+			       f"httpstan/4.4.2/models/{self._model.model_name}/fits/"
+		try:
+			shutil.rmtree(path)
+			print(f"Successfully deleted {path}")
+		except:
+			pass
 
 	def get(self, x):
 		return self._fit.get(x)

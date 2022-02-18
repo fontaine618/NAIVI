@@ -108,6 +108,7 @@ def run(traj):
                 true_values=true_values
             )
             diagnostics = model.diagnostic_summary()
+            model.delete_fits()
             traj.f_add_result("diagnostics.$", df=diagnostics)
         elif algo in ["MICE", "Mean", "MissForest", "NetworkSmoothing"]:
             fit_args = {"train": train, "test": test}
