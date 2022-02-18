@@ -99,7 +99,7 @@ class MCMC:
 			shutil.rmtree(path)
 			print(f"Successfully deleted {path}")
 		except:
-			pass
+			print(f"Unsuccessfully deleted {path}")
 
 	def get(self, x):
 		return self._fit.get(x)
