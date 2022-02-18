@@ -26,7 +26,7 @@ if __name__ == "__main__":
     # GPU_ALGOS = ["VIMC", "ADVI", "MAP", "NetworkSmoothing"] # with missing values
     # CPU_ALGOS = ["MICE", "MissForest", "Mean"] # with missing values
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
-    WHICH = ("gpu" if GPU else "_cpu") + "_seed" + str(SEED)
+    WHICH = ("gpu" if GPU else "cpu") + "_seed" + str(SEED)
     main(
         path=PATH + "sims_final/results/",
         name=NAME,
