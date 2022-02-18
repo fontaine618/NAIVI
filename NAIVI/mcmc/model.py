@@ -94,12 +94,13 @@ class MCMC:
 	def delete_fits(self, path=None):
 		if path is None:
 			path = os.environ["XDG_CACHE_HOME"] + \
-			       f"httpstan/4.4.2/models/{self._model.model_name}/fits/"
+			       f"httpstan/4.4.2/{self._model.model_name}/fits/"
 		try:
 			shutil.rmtree(path)
 			print(f"Successfully deleted {path}")
-		except:
+		except Exception as e:
 			print(f"Unsuccessfully deleted {path}")
+			print(e)
 
 	def get(self, x):
 		return self._fit.get(x)
