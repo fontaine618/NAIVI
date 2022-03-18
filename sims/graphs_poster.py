@@ -95,9 +95,7 @@ fig.subplots_adjust(top=0.90)
 
 plt.rcParams['savefig.facecolor'] = (1, 1, 1, 0)
 for ax in axs:
-    # for ax in axr:
-    # ax.patch.set_facecolor('#C9C9C9')
-    ax.patch.set_facecolor('#EEEEEE')
+    ax.patch.set_facecolor('#ffffff')
     for line in ax.get_xgridlines():
         # line.set_color("#CCCCCC")
         line.set_color("#FFFFFF")
@@ -112,4 +110,4 @@ for ax in axs:
 
 # fig.savefig(PATH + "figs/{}_results_poster.pdf".format(cov_type))
 
-fig.savefig(PATH + "figs/{}_results_slides.pdf".format(cov_type))
+fig.savefig(PATH + "figs/{}_results_slides.pdf".format(cov_type), transparent=True)
