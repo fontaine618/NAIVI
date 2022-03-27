@@ -30,7 +30,7 @@ CURVES = [
     "p_bin", "p_cts",
 ]
 WHICH = [1000, 1000, 100, 100, 100, 100, 100, 100]
-ALGOS = ["ADVI", "VIMC", "MLE", "NetworkSmoothing", "MICE", "MissForest", "Mean"]
+ALGOS = ["ADVI", "MLE", "NetworkSmoothing", "MICE", "MissForest", "Mean"]
 
 colors = colormap
 DICT = to_display
@@ -40,7 +40,7 @@ cov_type = "bin"
 
 
 nrow = 1
-fig, axs = plt.subplots(nrow, 4, sharex="col", figsize=(9, 3), sharey="row")
+fig, axs = plt.subplots(nrow, 4, sharex="col", figsize=(7, 2.5), sharey="row")
 if nrow == 1:
     axs = axs.reshape((1, -1))
 
@@ -76,8 +76,23 @@ for i, (exp, bin, xaxis, curves, which) in enumerate(zip(EXPERIMENTS, BINARY, XA
                 axs[row][j].plot(mean[xaxis], mean[metric], color=colors[a], label=DICT[a])
     if xaxis in ["N", "p_cts", "p_bin"]:
         axs[0][j].set_xscale("log")
-    axs[0][j].set_title("Setting {}".format("ABCDEFG"[j]))
+    # axs[0][j].set_title("Setting {}".format("ABCDEFG"[j]))
     axs[-1][j].set_xlabel(DICT[xaxis])
+
+for col in range(4):
+    ax = axs[0][col]
+    ax.patch.set_facecolor('#ffffff')
+    for line in ax.get_xgridlines():
+        # line.set_color("#CCCCCC")
+        line.set_color("#FFFFFF")
+        line.set_linewidth(0.5)
+    for line in ax.get_ygridlines():
+        # line.set_color("#CCCCCC")
+        line.set_color("#FFFFFF")
+        line.set_linewidth(0.5)
+    for axis in ax.spines.values():
+        axis.set_color("white")
+        axis.set_linewidth(2)
 
 # axs[-1][0].set_ylim(0., 0.8)
 
@@ -92,6 +107,7 @@ axs[0][0].get_yaxis().set_label_coords(-0.25, 0.5)
 # axs[-1][0].get_yaxis().set_label_coords(-0.25, 0.5)
 # layout
 fig.tight_layout(h_pad=0.5, w_pad=0.)
-fig.subplots_adjust(bottom=0.30)
+fig.subplots_adjust(bottom=0.35)
+plt.rcParams['savefig.facecolor'] = (1, 1, 1, 0)
 
-fig.savefig(PATH + "figs/{}_results_proposal.pdf".format(cov_type))
+fig.savefig(PATH + "figs/{}_results_poster.png".format(cov_type), transparent=True)

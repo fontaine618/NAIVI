@@ -15,7 +15,7 @@ def generate_dataset(
     p = p_cts + p_bin
     B = torch.randn((K, p))
     B = B / torch.abs(B)
-    B0 = torch.zeros((1, p))
+    B0 = torch.randn((1, p))
     C = B.detach().clone()
     which = torch.rand(p) > mnar_sparsity
     C *= which.reshape((1, -1))

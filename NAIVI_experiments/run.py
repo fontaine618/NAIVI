@@ -40,6 +40,7 @@ def run(traj):
     mcmc_n_sample = int(traj.par.fit.mcmc_n_sample)
     mcmc_n_chains = int(traj.par.fit.mcmc_n_chains)
     mcmc_n_warmup = int(traj.par.fit.mcmc_n_warmup)
+    mcmc_n_thin = int(traj.par.fit.mcmc_n_thin)
     optimizer = traj.par.fit.optimizer
     eps = traj.par.fit.eps
     lr = traj.par.fit.lr
@@ -85,10 +86,14 @@ def run(traj):
             if algo == "ADVI":
                 model = ADVI(**model_args)
             elif algo == "VIMC":
+                fit_args["optimizer"] = "Adam"
+                fit_args["lr"] *= 10.
                 if n_sample == 0:  # 0 means default value
                     n_sample = int(np.ceil(200/np.sqrt(max(N, p))))
                 model = VIMC(n_samples=n_sample, **model_args)
             elif algo == "MLE":
+                fit_args["optimizer"] = "Adam"
+                fit_args["lr"] *= 10.
                 model = MLE(**model_args)
             elif algo == "MAP":
                 model = MAP(**model_args)
@@ -105,6 +110,7 @@ def run(traj):
                 n_sample=mcmc_n_sample,
                 num_chains=mcmc_n_chains,
                 num_warmup=mcmc_n_warmup,
+                num_thin=mcmc_n_thin,
                 true_values=true_values
             )
             diagnostics = model.diagnostic_summary()

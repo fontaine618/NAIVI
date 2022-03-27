@@ -11,10 +11,16 @@ from matplotlib.lines import Line2D
 
 RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_final/results/"
 FIGS_PATH = "/home/simon/Documents/NAIVI/sims_final/figs/"
-EXP_NAME = "estimation_N"
+FIGSIZE = (5, 5)
 
-traj = Trajectory(EXP_NAME, add_time=False)
-traj.f_load(filename=RESULTS_PATH + EXP_NAME + "/gpu_seed0.hdf5", force=True)
-traj.v_auto_load = True
+# curves
+CURVE_COLUMN = ("fit", "algo")
+CURVE_TITLE = "Algorithm"
+CURVES = {
+	"ADVI": {"color": "#ff0000", "display": "NAIVI-QB"},
+	"MAP": {"color": "#00ff00", "display": "MAP"},
+	"NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"},
+}
 
-traj.par
+
+

@@ -177,9 +177,9 @@ class NAIVI:
                         value = ((ZZt - v)**2).sum() / (v**2).sum()
                     if k == "Theta_X":
                         Theta_X = B0.reshape((1, -1)) + torch.mm(Z, B.t())
-                        value = ((Theta_X - v)**2).mean()
+                        value = ((Theta_X - v)**2).sum() / (v**2).sum()
                     if k == "Theta_A":
-                        value = ((Theta_A - v)**2).mean()
+                        value = ((Theta_A - v)**2).sum() / (v**2).sum()
                     if k == "P":
                         P = torch.sigmoid(Theta_A)
                         value = ((P - v)**2).mean()
@@ -321,13 +321,13 @@ class NAIVI:
                 for parm in self.model.parameters() if parm.grad is not None
             ]).max().item()
             grad_L1 = torch.tensor([
-                parm.grad.abs().sum()
+                parm.grad.abs().nansum()
                 for parm in self.model.parameters() if parm.grad is not None
-            ]).sum().item()
+            ]).nansum().item()
             grad_L2 = torch.tensor([
-                (parm.grad**2).sum()
+                (parm.grad**2).nansum()
                 for parm in self.model.parameters() if parm.grad is not None
-            ]).sum().sqrt().item()
+            ]).nansum().sqrt().item()
             converged = False
             if grad_L2 < tol:
                 converged = True
