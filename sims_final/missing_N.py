@@ -21,7 +21,7 @@ if __name__ == "__main__":
     except IndexError:
         GPU = True
     NAME = "missing_N"
-    GPU_ALGOS = ["ADVI", "MAP", "NetworkSmoothing"] # with missing values
+    GPU_ALGOS = ["ADVI", "MAP", "MLE", "VIMC", "NetworkSmoothing"] # with missing values
     CPU_ALGOS = ["MICE", "MissForest", "Mean"] # with missing values
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
     WHICH = ("gpu" if GPU else "cpu") + "_seed" + str(SEED)
