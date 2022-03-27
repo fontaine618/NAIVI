@@ -47,7 +47,7 @@ if __name__ == "__main__":
             "model.network_weight": np.array([1.0]),
             "model.estimate_components": [False],
             "fit.algo": ALGOS,
-            "fit.max_iter": np.array([500]),
+            "fit.max_iter": np.array([200]),
             "fit.n_sample": np.array([0]),
             "fit.mcmc_n_sample": np.array([2000]),
             "fit.mcmc_n_chains": np.array([5]),
