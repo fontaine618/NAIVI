@@ -92,8 +92,6 @@ def run(traj):
                     n_sample = int(np.ceil(200/np.sqrt(max(N, p))))
                 model = VIMC(n_samples=n_sample, **model_args)
             elif algo == "MLE":
-                fit_args["optimizer"] = "Adam"
-                fit_args["lr"] *= 10.
                 model = MLE(**model_args)
             elif algo == "MAP":
                 model = MAP(**model_args)

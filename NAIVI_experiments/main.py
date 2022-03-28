@@ -20,7 +20,7 @@ def main(path, name, which, explore_dict):
         log_config=None,
         multiproc=False,
         ncores=0,
-        filename=path + which,
+        filename=path + which + ".hdf5",
         overwrite_file=True
     )
     traj = env.trajectory

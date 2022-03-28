@@ -65,15 +65,15 @@ def choose_init(init_method, K, Z, alpha, B, train):
 # Parameters
 # -----------------------------------------------------------------------------
 
-N = 200
+N = 100
 K = 5
-p_cts = 50
-p_bin = 0
+p_cts = 0
+p_bin = 100
 p = p_bin + p_cts
 var_cov = 1.
 missing_mean = -1.
-seed = 0
-alpha_mean_gen = -2.
+seed = 1
+alpha_mean_gen = -1.85
 mnar_sparsity = 1.0
 mnar_gen = False
 adjacency_noise = 0.
@@ -81,12 +81,12 @@ constant_components = False
 
 K_model = K
 mnar_model = False
-alpha_mean_model = -2.
+alpha_mean_model = -1.85
 reg = 0.
 network_weight = 1.
 estimate_components = False
 
-algo = "MAP"
+algo = "MLE"
 max_iter = 200
 n_sample = 0
 mcmc_n_sample = 2000
@@ -150,6 +150,8 @@ if algo in ["ADVI", "MLE", "MAP", "VIMC"]:
             n_sample = int(np.ceil(200/np.sqrt(max(N, p))))
         model = VIMC(n_samples=n_sample, **model_args)
     elif algo == "MLE":
+        fit_args["optimizer"] = "Adam"
+        fit_args["lr"] *= 10.
         model = MLE(**model_args)
     elif algo == "MAP":
         model = MAP(**model_args)
@@ -209,3 +211,5 @@ out[("data", "missing_prop")] = missing_prop
 # 	])
 
 
+for k, v in out.items():
+    print(k, v)

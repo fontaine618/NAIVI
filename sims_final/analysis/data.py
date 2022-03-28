@@ -13,14 +13,105 @@ RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_final/results/"
 FIGS_PATH = "/home/simon/Documents/NAIVI/sims_final/figs/"
 FIGSIZE = (5, 5)
 
+FILE_NAME = "data.pdf"
+
 # curves
 CURVE_COLUMN = ("fit", "algo")
 CURVE_TITLE = "Algorithm"
 CURVES = {
 	"ADVI": {"color": "#ff0000", "display": "NAIVI-QB"},
 	"MAP": {"color": "#00ff00", "display": "MAP"},
-	"NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"},
+	"MLE": {"color": "#00ffff", "display": "MLE"},
+	"VIMC": {"color": "#ff00ff", "display": "VIMC"},
+	"NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"}
+}
+
+# rows
+METRICS = {
+	"Test AUC": {
+		"column": ("test", "auc"),
+		"ytrans": None
+	},
+	"Train AUC (X)": {
+		"column": ("train", "auc"),
+		"ytrans": None
+	},
+	"Train AUC (A)": {
+		"column": ("train", "auc_A"),
+		"ytrans": None
+	}
+}
+
+# columns
+EXPERIMENTS = {
+	"missing_N": {
+		"groupby": ("data", "N"),
+		"display": ("data", "N"), # may be different than above, e.g., for density
+		"xlab": "Network size",
+		"xtrans": "log"
+	}
 }
 
 
+# initiate plot
+nrow = len(METRICS)
+ncol = len(EXPERIMENTS)
+fig, axs = plt.subplots(nrow, ncol, figsize=FIGSIZE, sharex="col", sharey="row")
+if nrow == 1:
+	axs = [axs]
+if ncol == 1:
+	axs = [[ax] for ax in axs]
+
+# cycle through columns
+for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
+	# gather results
+	df_list = []
+	for _, _, files in os.walk(RESULTS_PATH + name + "/"):
+		for file in files:
+			traj = Trajectory(name, add_time=False)
+			traj.f_load(filename=RESULTS_PATH + name + "/" + file, force=True)
+			traj.v_auto_load = True
+			df_list.append(pd.concat(
+				[traj.res.summary.results.data, traj.res.summary.parameters.data],
+				axis=1
+			))
+	results = pd.concat(df_list)
+	# group and aggregate
+	groupings = [CURVE_COLUMN, exparms["groupby"]]
+	means = results.groupby(groupings).agg("mean")
+	stds = results.groupby(groupings).agg("std")
+	us = results.groupby(groupings).agg("max")
+	ls = results.groupby(groupings).agg("min")
+	# plot
+	for row, (metric, mparms) in enumerate(METRICS.items()):
+		ax = axs[row][col]
+		for cname, curve in CURVES.items():
+			m = means.loc[(cname, slice(None)), mparms["column"]]
+			x = m.reset_index().loc[:, exparms["display"]]
+			s = stds.loc[(cname, slice(None)), mparms["column"]]
+			i = ~m.isna()
+			ax.plot(x[i.values], m.loc[i], color=curve["color"])
+
+	axs[0][col].set_title("Experiment " + "ABCDEFGH"[col])
+	axs[-1][col].set_xlabel(exparms["xlab"])
+	axs[0][col].set_xscale(exparms["xtrans"])
+
+# row things
+for row, (metric, mparms) in enumerate(METRICS.items()):
+	axs[row][0].set_ylabel(metric)
+	if mparms["ytrans"] is not None:
+		axs[row][0].set_yscale(mparms["ytrans"])
+
+
+# legend
+lines = [Line2D([0], [0], color=curve["color"], linestyle="-")
+         for curve in CURVES.values()]
+labels = [curve["display"] for curve in CURVES.values()]
+
+# some parameters here ...
+fig.legend(lines, labels, loc=8, ncol=3)
+fig.tight_layout()
+fig.subplots_adjust(bottom=0.20)
+
+fig.savefig(FIGS_PATH + FILE_NAME)
 

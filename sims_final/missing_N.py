@@ -37,7 +37,7 @@ if __name__ == "__main__":
             "data.missing_mean": np.array([-1.]),
             "data.seed": np.array([SEED]),
             "data.alpha_mean": np.array([-1.85]),
-            "data.mnar_sparsity": np.array([0.0]),
+            "data.mnar_sparsity": np.array([1.0]),
             "data.adjacency_noise": np.array([0.0]),
             "data.constant_components": [True],
             "model.K": np.array([5]),

@@ -4,7 +4,7 @@
 #SBATCH --job-name=missing_N_cpu
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=24:00:00
+#SBATCH --time=12:00:00
 #SBATCH --account=stats_dept1
 #SBATCH --partition=standard
 #SBATCH --nodes=1
