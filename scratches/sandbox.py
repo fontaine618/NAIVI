@@ -65,7 +65,7 @@ def choose_init(init_method, K, Z, alpha, B, train):
 # Parameters
 # -----------------------------------------------------------------------------
 
-N = 100
+N = 50
 K = 5
 p_cts = 0
 p_bin = 100
@@ -86,7 +86,7 @@ reg = 0.
 network_weight = 1.
 estimate_components = False
 
-algo = "MLE"
+algo = "ADVI"
 max_iter = 200
 n_sample = 0
 mcmc_n_sample = 2000

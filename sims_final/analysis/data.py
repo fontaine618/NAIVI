@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 
 RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_final/results/"
 FIGS_PATH = "/home/simon/Documents/NAIVI/sims_final/figs/"
-FIGSIZE = (5, 5)
+FIGSIZE = (6, 10)
 
 FILE_NAME = "data.pdf"
 
@@ -23,7 +23,10 @@ CURVES = {
 	"MAP": {"color": "#00ff00", "display": "MAP"},
 	"MLE": {"color": "#00ffff", "display": "MLE"},
 	"VIMC": {"color": "#ff00ff", "display": "VIMC"},
-	"NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"}
+	"NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"},
+	"MICE": {"color": "#0000cc", "display": "MICE"},
+	"MissForest": {"color": "#000099", "display": "MissForest"},
+	"Mean": {"color": "#000066", "display": "Mean"}
 }
 
 # rows
@@ -111,7 +114,7 @@ labels = [curve["display"] for curve in CURVES.values()]
 # some parameters here ...
 fig.legend(lines, labels, loc=8, ncol=3)
 fig.tight_layout()
-fig.subplots_adjust(bottom=0.20)
+fig.subplots_adjust(bottom=0.15)
 
 fig.savefig(FIGS_PATH + FILE_NAME)
 

@@ -29,7 +29,7 @@ def run(traj):
     # extract model parameters
     K_model = int(traj.par.model.K)
     mnar = traj.par.model.mnar
-    alpha_mean_model = traj.par.model.alpha_mean
+    alpha_mean_model = alpha_mean_gen # traj.par.model.alpha_mean
     reg = traj.par.model.reg
     network_weight = traj.par.model.network_weight
     estimate_components = traj.par.model.estimate_components
