@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 
 RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_final/results/"
 FIGS_PATH = "/home/simon/Documents/NAIVI/sims_final/figs/"
-FIGSIZE = (6, 10)
+FIGSIZE = (10, 10)
 
 FILE_NAME = "data.pdf"
 
@@ -35,13 +35,13 @@ METRICS = {
 		"column": ("test", "auc"),
 		"ytrans": None
 	},
-	"Train AUC (X)": {
-		"column": ("train", "auc"),
-		"ytrans": None
+	"MSE(Z)": {
+		"column": ("error", "ZZt"),
+		"ytrans": "log"
 	},
-	"Train AUC (A)": {
-		"column": ("train", "auc_A"),
-		"ytrans": None
+	"MSE(P)": {
+		"column": ("error", "P"),
+		"ytrans": "log"
 	}
 }
 
@@ -49,10 +49,28 @@ METRICS = {
 EXPERIMENTS = {
 	"missing_N": {
 		"groupby": ("data", "N"),
-		"display": ("data", "N"), # may be different than above, e.g., for density
+		"display": ("data", "N"),
 		"xlab": "Network size",
 		"xtrans": "log"
-	}
+	},
+	"missing_density": {
+		"groupby": ("data", "alpha_mean"),
+		"display": ("data", "density"),
+		"xlab": "Density",
+		"xtrans": None
+	},
+	"missing_rate": {
+		"groupby": ("data", "missing_mean"),
+		"display": ("data", "missing_prop"),
+		"xlab": "Missing proportion",
+		"xtrans": None
+	},
+	"missing_p": {
+		"groupby": ("data", "p_bin"),
+		"display": ("data", "p_bin"),
+		"xlab": "Nb. attributes",
+		"xtrans": "log"
+	},
 }
 
 
@@ -71,13 +89,16 @@ for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
 	df_list = []
 	for _, _, files in os.walk(RESULTS_PATH + name + "/"):
 		for file in files:
-			traj = Trajectory(name, add_time=False)
-			traj.f_load(filename=RESULTS_PATH + name + "/" + file, force=True)
-			traj.v_auto_load = True
-			df_list.append(pd.concat(
-				[traj.res.summary.results.data, traj.res.summary.parameters.data],
-				axis=1
-			))
+			try:
+				traj = Trajectory(name, add_time=False)
+				traj.f_load(filename=RESULTS_PATH + name + "/" + file, force=True)
+				traj.v_auto_load = True
+				df_list.append(pd.concat(
+					[traj.res.summary.results.data, traj.res.summary.parameters.data],
+					axis=1
+				))
+			except:
+				pass
 	results = pd.concat(df_list)
 	# group and aggregate
 	groupings = [CURVE_COLUMN, exparms["groupby"]]
@@ -89,15 +110,19 @@ for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
 	for row, (metric, mparms) in enumerate(METRICS.items()):
 		ax = axs[row][col]
 		for cname, curve in CURVES.items():
-			m = means.loc[(cname, slice(None)), mparms["column"]]
-			x = m.reset_index().loc[:, exparms["display"]]
-			s = stds.loc[(cname, slice(None)), mparms["column"]]
-			i = ~m.isna()
-			ax.plot(x[i.values], m.loc[i], color=curve["color"])
+			try:
+				m = means.loc[(cname, slice(None)), mparms["column"]]
+				x = means.loc[(cname, slice(None)),:].reset_index().loc[:, exparms["display"]]
+				s = stds.loc[(cname, slice(None)), mparms["column"]]
+				i = ~m.isna()
+				ax.plot(x[i.values], m.loc[i], color=curve["color"])
+			except:
+				pass
 
 	axs[0][col].set_title("Experiment " + "ABCDEFGH"[col])
 	axs[-1][col].set_xlabel(exparms["xlab"])
-	axs[0][col].set_xscale(exparms["xtrans"])
+	if exparms["xtrans"] is not None:
+		axs[0][col].set_xscale(exparms["xtrans"])
 
 # row things
 for row, (metric, mparms) in enumerate(METRICS.items()):
