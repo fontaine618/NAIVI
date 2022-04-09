@@ -79,7 +79,7 @@ mnar_gen = False
 adjacency_noise = 0.
 constant_components = False
 
-K_model = 5
+K_model = 3
 mnar_model = False
 alpha_mean_model = -1.85
 reg = 0.
@@ -213,3 +213,25 @@ out[("data", "missing_prop")] = missing_prop
 
 for k, v in out.items():
     print(k, v)
+
+
+# ('train', 'grad_Linfty') 6.683295835333191e-05
+# ('train', 'grad_L1') 0.01892856903689504
+# ('train', 'grad_L2') 0.0004671992441046174
+# ('train', 'loss') 54903.48126404741
+# ('train', 'mse') 0.0
+# ('train', 'auc') 0.8701682307420207
+# ('train', 'auc_A') 0.9780174855871455
+# ('test', 'loss') 56318.430491823434
+# ('test', 'mse') 0.0
+# ('test', 'auc') 0.8501678467220569
+# ('test', 'auc_A') 0.9780174855871455
+# ('error', 'ZZt') 4.560536555238297
+# ('error', 'P') 0.12380643559652105
+# ('error', 'Theta_X') 0.3304322150532429
+# ('error', 'Theta_A') 0.8723259494684283
+# ('error', 'BBt') 0.5909185989243552
+# ('error', 'alpha') 0.2689994398594727
+# ('train', 'time') 112.6128876209259
+# ('data', 'density') 0.26072945891783567
+# ('data', 'missing_prop') 0.27268
