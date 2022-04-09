@@ -66,9 +66,9 @@ def choose_init(init_method, K, Z, alpha, B, train):
 # -----------------------------------------------------------------------------
 
 N = 500
-K = 5
+K = 3
 p_cts = 0
-p_bin = 1000
+p_bin = 100
 p = p_bin + p_cts
 var_cov = 1.
 missing_mean = -1.
@@ -79,14 +79,14 @@ mnar_gen = False
 adjacency_noise = 0.
 constant_components = False
 
-K_model = K
+K_model = 5
 mnar_model = False
 alpha_mean_model = -1.85
 reg = 0.
 network_weight = 1.
 estimate_components = False
 
-algo = "MICE"
+algo = "ADVI"
 max_iter = 200
 n_sample = 0
 mcmc_n_sample = 2000
