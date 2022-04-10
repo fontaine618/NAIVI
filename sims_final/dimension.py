@@ -20,7 +20,7 @@ if __name__ == "__main__":
         GPU = (int(sys.argv[1]) == 0)
     except IndexError:
         GPU = True
-    NAME = "missing_rate"
+    NAME = "missing_rate" # should be dimension: remember this when doing graphs
     GPU_ALGOS = ["ADVI", "MAP", ] # with missing values
     CPU_ALGOS = ["MICE", "MissForest", "Mean"] # with missing values
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
