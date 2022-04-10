@@ -10,8 +10,8 @@ import arviz
 import pandas as pd
 from facebook.data import get_data
 
-# PATH = "./facebook/data/raw/"
-PATH = "/home/simon/Documents/NAIVI/facebook/data/raw/"
+PATH = "./facebook/data/raw/"
+# PATH = "/home/simon/Documents/NAIVI/facebook/data/raw/"
 
 def run(traj):
     # ---------------------------------------------------------------------
