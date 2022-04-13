@@ -17,7 +17,7 @@ def run(traj):
     # ---------------------------------------------------------------------
     # extract generating parameters
     center = int(traj.par.data.center)
-    missing_prop = traj.par.data.missing_prop
+    missing_rate = traj.par.data.missing_rate
     seed = int(traj.par.data.seed)
     # extract model parameters
     K_model = int(traj.par.model.K)
@@ -54,7 +54,7 @@ def run(traj):
         alpha_mean_model = np.log(density)
         # insert missing values
         torch.manual_seed(seed)
-        mask = torch.rand_like(X_bin) < missing_prop
+        mask = torch.rand_like(X_bin) < missing_rate
         X_bin_missing = torch.where(~mask, np.nan, X_bin)
         X_bin = torch.where(mask, np.nan, X_bin)
         X_cts_missing = None

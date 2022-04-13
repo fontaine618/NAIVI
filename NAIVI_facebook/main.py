@@ -33,7 +33,7 @@ def main(path, name, which, explore_dict):
         "data.center", np.int64(0), "Center ID of egonetwork"
     )
     traj.f_add_parameter(
-        "data.missing_prop", np.float64(0.5), "Missing proportion"
+        "data.missing_rate", np.float64(0.5), "Missing proportion"
     )
     traj.f_add_parameter(
         "data.seed", np.int64(0), "Random seed for missing values"
