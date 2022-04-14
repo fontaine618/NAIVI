@@ -9,7 +9,7 @@ from NAIVI.utils.data import JointDataset
 from NAIVI.advi.model import ADVI
 
 # setup
-plt.style.use("seaborn")
+plt.style.use("seaborn-whitegrid")
 PATH = "/home/simon/Documents/NAIVI/facebook/data/raw/"
 OUT_PATH = "/home/simon/Documents/NAIVI/facebook/"
 COLORS = colormap
@@ -18,9 +18,9 @@ torch.manual_seed(0)
 
 # parametesr
 center = 698
-eps = 1.e-6
+eps = 0.0005
 max_iter = 2000
-lr = 0.001
+lr = 0.01
 K_model = 2
 
 #create dataset
@@ -34,13 +34,6 @@ train = JointDataset(i0, i1, A, X_cts, X_bin)
 # fit model
 model = ADVI(K_model, N, p_cts, p_bin)
 fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr}
-initial = {
-    "bias": torch.zeros((1, p)).cuda(),
-    "weight": torch.randn((K_model, p)).cuda(),
-    "positions": {"mean": torch.randn((N, K_model)).cuda()},
-    "heterogeneity": {"mean": torch.randn((N, 1)).cuda()*0.5 - 1.85}
-}
-model.init(**initial)
 output = model.fit(train, test=None, **fit_args)
 
 # extract w&b
@@ -53,7 +46,6 @@ stdev_cov = model.model.encoder.latent_position_encoder.log_var_encoder.values.e
 
 # fit model without network
 model_nonet = ADVI(K_model, N, p_cts, p_bin, network_weight=0.)
-model_nonet.init(**initial)
 output_nonet = model_nonet.fit(train, test=None, **fit_args)
 # extract w&b
 weights_nonet = model_nonet.model.covariate_model.mean_model.weight.detach().cpu().numpy()
@@ -65,11 +57,6 @@ stdev_nonet = model_nonet.model.encoder.latent_position_encoder.log_var_encoder.
 # fit model without covaraites
 train = JointDataset(i0, i1, A, None, None)
 model_nocov = ADVI(K_model, N, 0, 0)
-initial = {
-    "positions": {"mean": torch.randn((N, K_model)).cuda()},
-    "heterogeneity": {"mean": torch.randn((N, 1)).cuda()*0.5 - 1.85}
-}
-model_nocov.init(**initial)
 output_nocov = model_nocov.fit(train, test=None, **fit_args)
 # get latent positions
 mean_nocov = model_nocov.model.encoder.latent_position_encoder.mean_encoder.values.detach().cpu().numpy()
@@ -82,8 +69,10 @@ nrow = 3
 ncol = 4
 mult = np.sqrt(5.991)
 X = X_bin.detach().cpu().numpy()
+plt.cla()
 fig, axs = plt.subplots(nrow, ncol, figsize=(8, 6))
 top = np.argsort(weights_norm)[-(nrow*ncol):][::-1]
+top = [3, 28, 38, 39] #2, 3, 6, 7, 9, 15, 28, 38, 39 # 7,
 featnames = get_featnames(PATH, center)
 for col, which in zip(range(ncol), top):
     for row in range(nrow):

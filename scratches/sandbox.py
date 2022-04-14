@@ -65,28 +65,24 @@ def choose_init(init_method, K, Z, alpha, B, train):
 # Parameters
 # -----------------------------------------------------------------------------
 
-N = 500
+N = 50
 K = 3
 p_cts = 0
-p_bin = 100
+p_bin = 10
 p = p_bin + p_cts
 var_cov = 1.
-missing_mean = -1.
+missing_mean = -1000000.
 seed = 1
 alpha_mean_gen = -1.85
-mnar_sparsity = 1.0
-mnar_gen = False
 adjacency_noise = 0.
 constant_components = False
 
 K_model = 3
-mnar_model = False
 alpha_mean_model = -1.85
-reg = 0.
 network_weight = 1.
 estimate_components = False
 
-algo = "ADVI"
+algo = "MCMC"
 max_iter = 200
 n_sample = 0
 mcmc_n_sample = 2000
@@ -94,12 +90,18 @@ mcmc_n_chains = 5
 mcmc_n_warmup = 1000
 mcmc_n_thin = 10
 optimizer = "Rprop"
-eps = 0.0005
-
-lr = 0.01
-keep_logs = True
+eps = 0.000005
+lr = 0.1 # 0.01 Rprop
 power = 0.
 init_method = "random"
+reg_B = 1. / (2. * 10.**2)
+keep_logs = True
+
+# MNAR
+mnar_sparsity = 1.0
+mnar_model = False
+reg = 0. #1000.
+
 
 # MAP: 0.87119, 1.18445
 # MLE: 0.87149, 1.19033
@@ -116,8 +118,8 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, i0, i1, A, B, B0, C, C0, W
         adjacency_noise=adjacency_noise, constant_components=constant_components
     )
 cuda = (algo in ["ADVI", "MLE", "MAP", "VIMC", "NetworkSmoothing"])
-train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar_gen, cuda=cuda)
-test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar_gen, test=True, cuda=cuda)
+train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar_model, cuda=cuda)
+test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar_model, test=True, cuda=cuda)
 density = A.mean().item()
 missing_prop = 0.
 if X_cts is not None:
@@ -133,7 +135,7 @@ p_prior = (0., 1.)
 out = dict()
 t0 = time.time()
 if algo in ["ADVI", "MLE", "MAP", "VIMC"]:
-    fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "reg": reg,
+    fit_args = {"eps": eps, "max_iter": max_iter, "lr": lr, "reg": reg, "reg_B": reg_B,
                 "power": power, "train": train, "test": test,
                 "true_values": true_values, "return_log": True,
                 "optimizer": optimizer}
@@ -193,45 +195,26 @@ out[("data", "density")] = density
 out[("data", "missing_prop")] = missing_prop
 
 
-# for n, p in model.model.named_parameters():
-# 	print(n, p.grad)
+fit_args["reg_B"] =  1. / (2. * 1.**2)
+out = model.fit(**fit_args)
+print(out[0][("test", "auc")])
+# # mnar stuff
+# out = model.fit_path(**fit_args)
+#
+# for r, (o, log) in out.items():
+#     print(r, o[("test", "mse")])
 #
 #
+# C.abs().sum(0) > 0
+# model.covariate_weight[:p, :]
+# B.T
+# model.covariate_weight[p:, :]
+# C.T
 #
-# Amat = torch.ones((N,N)) * np.nan
-# Amat[i0.reshape((-1,1)), i1.reshape((-1,1))] = A
-# Amat[i1.reshape((-1,1)), i0.reshape((-1,1))] = A
 #
-# torch.hstack([
-# 	(model.model.covariate_model.mean_model.weight.data**2).sum(1, keepdims=True).sqrt(),
-# 	Amat.nansum(1, keepdims=True).cuda()/N,
-# 	(X_bin.nansum(0)).cuda().reshape((-1,1))/N,
-# 	((50-X_bin.isnan().sum(0))).cuda().reshape((-1,1))/N,
-# 	(X_bin.nansum(0) / (50-X_bin.isnan().sum(0))).cuda().reshape((-1,1))
-# 	])
-
-
-for k, v in out.items():
-    print(k, v)
-
-
-# ('train', 'grad_Linfty') 6.683295835333191e-05
-# ('train', 'grad_L1') 0.01892856903689504
-# ('train', 'grad_L2') 0.0004671992441046174
-# ('train', 'loss') 54903.48126404741
-# ('train', 'mse') 0.0
-# ('train', 'auc') 0.8701682307420207
-# ('train', 'auc_A') 0.9780174855871455
-# ('test', 'loss') 56318.430491823434
-# ('test', 'mse') 0.0
-# ('test', 'auc') 0.8501678467220569
-# ('test', 'auc_A') 0.9780174855871455
-# ('error', 'ZZt') 4.560536555238297
-# ('error', 'P') 0.12380643559652105
-# ('error', 'Theta_X') 0.3304322150532429
-# ('error', 'Theta_A') 0.8723259494684283
-# ('error', 'BBt') 0.5909185989243552
-# ('error', 'alpha') 0.2689994398594727
-# ('train', 'time') 112.6128876209259
-# ('data', 'density') 0.26072945891783567
-# ('data', 'missing_prop') 0.27268
+# BC = torch.hstack([B, C])
+# W = model.covariate_weight.T
+#
+# torch.round(BC.T @ BC)
+# torch.round(W.T @ W)
+#

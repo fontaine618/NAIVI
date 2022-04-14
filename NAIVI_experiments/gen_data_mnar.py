@@ -14,9 +14,9 @@ def generate_dataset(
     # parameters
     p = p_cts + p_bin
     B = torch.randn((K, p))
-    B = B / torch.abs(B)
+    # B = B / torch.abs(B)
     B0 = torch.randn((1, p))
-    C = B.detach().clone()
+    C = torch.randn_like(B)
     which = torch.rand(p) > mnar_sparsity
     C *= which.reshape((1, -1))
     C0 = torch.ones((1, p)) * missing_mean

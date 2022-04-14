@@ -6,7 +6,7 @@ from NAIVI_experiments.display import colormap, to_display
 import matplotlib.ticker as ticker
 import torch
 
-plt.style.use("seaborn")
+plt.style.use("seaborn-whitegrid")
 PATH = "/home/simon/Documents/NAIVI/sims_sanity/"
 COLORS = colormap
 DICT = to_display

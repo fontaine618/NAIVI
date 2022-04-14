@@ -16,7 +16,6 @@ PATH = "/home/simon/Documents/NAIVI/facebook/data/raw/"
 RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_facebook/results/"
 FIGS_PATH = "/home/simon/Documents/NAIVI/sims_facebook/figs/"
 FIGSIZE = (10, 10)
-
 FILE_NAME = "dimension.pdf"
 
 FOLDER_NAME = "fb_dimension"

@@ -9,40 +9,40 @@ from pypet import Trajectory
 import itertools as it
 from matplotlib.lines import Line2D
 
-RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_final/results/"
-FIGS_PATH = "/home/simon/Documents/NAIVI/sims_final/figs/"
-FIGSIZE = (10, 4)
+RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_sanity/results/"
+FIGS_PATH = "/home/simon/Documents/NAIVI/sims_sanity/figs/"
+FIGSIZE = (10, 6)
 
-FILE_NAME = "data.pdf"
+FILE_NAME = "estimation.pdf"
 
 # curves
 CURVE_COLUMN = ("fit", "algo")
 CURVE_TITLE = "Algorithm"
 CURVES = {
 	"ADVI": {"color": "#ff0000", "display": "NAIVI-QB"},
-	# "MAP": {"color": "#00ff00", "display": "MAP"},
-	# "MLE": {"color": "#00ffff", "display": "MLE"},
+	"MAP": {"color": "#00ff00", "display": "MAP"},
+	"MLE": {"color": "#00ffff", "display": "MLE"},
 	"VIMC": {"color": "#ff00ff", "display": "NAIVI-MC"},
 	"MICE": {"color": "#00ff00", "display": "MICE"},
-	"MissForest": {"color": "#009900", "display": "MissForest"},
-	"NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"},
-	"Mean": {"color": "#000099", "display": "Mean"}
+	# "MissForest": {"color": "#009900", "display": "MissForest"},
+	# "NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"},
+	# "Mean": {"color": "#000099", "display": "Mean"}
 }
 
 # rows
 METRICS = {
-	"Test AUC": {
-		"column": ("test", "auc"),
-		"ytrans": None
+	"MSE($\mathbf{Z}$)": {
+		"column": ("error", "ZZt"),
+		"ytrans": "log"
 	},
-	# "MSE(Z)": {
-	# 	"column": ("error", "ZZt"),
-	# 	"ytrans": "log"
-	# },
-	# "MSE(P)": {
-	# 	"column": ("error", "P"),
-	# 	"ytrans": "log"
-	# }
+	"MSE($\mathbf{P}$)": {
+		"column": ("error", "P"),
+		"ytrans": "log"
+	},
+	"MSE($\mathbf{B}\mathbe{B}^\\top$)": {
+		"column": ("error", "P"),
+		"ytrans": "log"
+	}
 }
 
 # columns

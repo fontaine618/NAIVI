@@ -13,78 +13,41 @@ RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_final/results/"
 FIGS_PATH = "/home/simon/Documents/NAIVI/sims_final/figs/"
 FIGSIZE = (10, 4)
 
-FILE_NAME = "data.pdf"
+FILE_NAME = "estimation.pdf"
 
 # curves
-CURVE_COLUMN = ("fit", "algo")
-CURVE_TITLE = "Algorithm"
 CURVES = {
 	"ADVI": {"color": "#ff0000", "display": "NAIVI-QB"},
-	# "MAP": {"color": "#00ff00", "display": "MAP"},
-	# "MLE": {"color": "#00ffff", "display": "MLE"},
+	"MAP": {"color": "#00ff00", "display": "MAP"},
 	"VIMC": {"color": "#ff00ff", "display": "NAIVI-MC"},
 	"MICE": {"color": "#00ff00", "display": "MICE"},
-	"MissForest": {"color": "#009900", "display": "MissForest"},
-	"NetworkSmoothing": {"color": "#0000ff", "display": "NetworkSmoothing"},
-	"Mean": {"color": "#000099", "display": "Mean"}
 }
 
 # rows
 METRICS = {
-	"Test AUC": {
-		"column": ("test", "auc"),
-		"ytrans": None
+	"MSE(Z)": {
+		"column": ("error", "ZZt"),
+		"ytrans": "log"
 	},
-	# "MSE(Z)": {
-	# 	"column": ("error", "ZZt"),
-	# 	"ytrans": "log"
-	# },
-	# "MSE(P)": {
-	# 	"column": ("error", "P"),
-	# 	"ytrans": "log"
-	# }
+	"MSE(P)": {
+		"column": ("error", "P"),
+		"ytrans": "log"
+	}
 }
 
 # columns
 EXPERIMENTS = {
-	"missing_N": {
-		"groupby": ("data", "N"),
-		"display": ("data", "N"),
+	"estimation_N": {
+		"groupby": ("data", "p_cts"),
+		"groups": [0, 50],
 		"xlab": "Network size ($N$)",
-		"xtrans": "log"
-	},
-	"missing_density": {
-		"groupby": ("data", "alpha_mean"),
-		"display": ("data", "density"),
-		"xlab": "Network density",
-		"xtrans": "log"
-	},
-	"missing_rate": {
-		"groupby": ("data", "missing_mean"),
-		"display": ("data", "missing_prop"),
-		"xlab": "Missing proportion",
-		"xtrans": None
-	},
-	"missing_p": {
-		"groupby": ("data", "p_bin"),
-		"display": ("data", "p_bin"),
-		"xlab": "Nb. attributes ($p$)",
+		"title": "Binary attributes",
 		"xtrans": "log"
 	},
 }
 
-
-# initiate plot
-nrow = len(METRICS)
-ncol = len(EXPERIMENTS)
-fig, axs = plt.subplots(nrow, ncol, figsize=FIGSIZE, sharex="col", sharey="row")
-if nrow == 1:
-	axs = [axs]
-if ncol == 1:
-	axs = [[ax] for ax in axs]
-
-# cycle through columns
-for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
+# get all data
+for name, exparms in EXPERIMENTS.items():
 	# gather results
 	df_list = []
 	for _, _, files in os.walk(RESULTS_PATH + name + "/"):
@@ -93,19 +56,35 @@ for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
 				traj = Trajectory(name, add_time=False)
 				traj.f_load(filename=RESULTS_PATH + name + "/" + file, force=True)
 				traj.v_auto_load = True
-				df_list.append(pd.concat(
+				df = pd.concat(
 					[traj.res.summary.results.data, traj.res.summary.parameters.data],
 					axis=1
-				))
+				)
+				df["experiment"] = name
+				df_list.append(df)
 			except:
 				pass
-	results = pd.concat(df_list)
+results = pd.concat(df_list)
+
+# initiate plot
+nrow = len(METRICS)
+ncol = sum([len(x["groups"]) for x in EXPERIMENTS.values()])
+fig, axs = plt.subplots(nrow, ncol, figsize=FIGSIZE, sharex="col", sharey="row")
+if nrow == 1:
+	axs = [axs]
+if ncol == 1:
+	axs = [[ax] for ax in axs]
+
+# cycle through columns
+for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
+
 	# group and aggregate
-	groupings = [CURVE_COLUMN, exparms["groupby"]]
-	means = results.groupby(groupings).agg("mean")
-	stds = results.groupby(groupings).agg("std")
-	us = results.groupby(groupings).agg("max")
-	ls = results.groupby(groupings).agg("min")
+	groupings = [exparms["groupby"], ("fit", "algo")]
+	res = results.loc[results["experiment"] == name]
+	means = res.groupby(groupings).agg("mean")
+	stds = res.groupby(groupings).agg("std")
+	us = res.groupby(groupings).agg("max")
+	ls = res.groupby(groupings).agg("min")
 	# plot
 	for row, (metric, mparms) in enumerate(METRICS.items()):
 		ax = axs[row][col]

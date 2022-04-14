@@ -13,56 +13,23 @@ class NAIVI:
         self.model = model
         self.denum = 1.
         self.reg = 0.
+        self.reg_B = 0.
 
-    def fit_path(self, train, test=None, reg=None, init=None, **kwargs):
-        # TODO: this shouldn't work anymore
+    def fit_path(self, train, test=None, reg=None, **kwargs):
+        if reg is None:
+            reg = 10 ** np.linspace(-1, 1, 11)
+        elif isinstance(reg, int):
+            reg = 10 ** np.linspace(-1, 1, reg)
+        elif ~isinstance(reg, np.ndarray):
+            reg = 10 ** np.linspace(-1, 1, 11)
+        reg = np.sort(reg)[::-1]
         out = {}
         for r in reg:
-            self.init(**init)
-            out_r = self.fit(train, test, reg=r, **kwargs)
-            with torch.no_grad():
-                coef_norm = self.model.covariate_model.weight.norm("fro", 1)
-                which = torch.where(coef_norm > 0., 1, 0)
-                non_zero = which.sum().item()
-                out_r.append(non_zero)
-                out_r.append(which.cpu().numpy())
-            out[r] = out_r
-        results = {
-            n: []
-            for n in ["reg", "llk_train", "mse_train", "auroc_train",
-               "dist_inv", "dist_proj", "llk_test", "mse_test", "auroc_test",
-                      "aic", "bic",
-            "nb_non_zero", "non_zero"]
-        }
-        best_critrion = np.inf
-        best_r = None
-        best_out = None
-        for r, (_, _,
-                llk_train, mse_train, auroc_train,
-                dist_inv, dist_proj,
-                llk_test, mse_test, auroc_test,
-                aic, bic,
-                nb_non_zero, non_zero) in out.items():
-            results["reg"].append(r)
-            results["llk_train"].append(llk_train)
-            results["mse_train"].append(mse_train)
-            results["auroc_train"].append(auroc_train)
-            results["dist_inv"].append(dist_inv)
-            results["dist_proj"].append(dist_proj)
-            results["llk_test"].append(llk_test)
-            results["mse_test"].append(mse_test)
-            results["auroc_test"].append(auroc_test)
-            results["aic"].append(aic)
-            results["bic"].append(bic)
-            results["nb_non_zero"].append(nb_non_zero)
-            results["non_zero"].append(non_zero)
-            if bic < best_critrion:
-                best_critrion = bic
-                best_r = r
-                best_out = out[r]
-        return results, best_r, best_out
+            print(r)
+            out[r] = self.fit(train, test, reg=r, **kwargs)
+        return out
 
-    def fit(self, train, test=None, reg=0.,
+    def fit(self, train, test=None, reg=0., reg_B=0.,
             eps=1.e-6, max_iter=100, optimizer="Rprop", lr=0.01, power=0.0,
             verbose=True, return_log=False, true_values=None
             ):
@@ -71,6 +38,7 @@ class NAIVI:
         for k, v in true_values.items():
             true_values[k] = v.cuda()
         self.reg = reg
+        self.reg_B = reg_B
         self.compute_denum(train)
         optimizer, scheduler = self.prepare_optimizer(lr=lr, power=power, optimizer=optimizer)
         n_char = verbose_init() if verbose else 0
@@ -173,6 +141,9 @@ class NAIVI:
                     Theta_A = alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * W * Z[i1, :], 1, keepdim=True)
                     B = self.model.covariate_model.weight
                     B0 = self.model.covariate_model.bias
+                    if self.model.mnar:
+                        B = B[:(self.model.p_cts+self.model.p_bin)//2, :]
+                        B0 = B0[:(self.model.p_cts+self.model.p_bin)//2]
                     if k == "ZZt":
                         value = ((ZZt - v)**2).sum() / (v**2).sum()
                     if k == "Theta_X":
@@ -189,14 +160,6 @@ class NAIVI:
                     if k == "alpha":
                         value = ((alpha - v)**2).mean()
                     out[("error", k)] = value.item()
-        #     # model size
-        #     nb_non_zero = self.model.covariate_model.weight.abs().gt(0.).sum().item()
-        #     # ICs
-        #     out[("ic", "aic")] = out[("train", "loss")] * 2. + nb_non_zero
-        #     out[("ic", "bic")] = out[("train", "loss")] * 2. + nb_non_zero * np.log(train.N)
-        # # form = "{:<4} {:<10.2e} |" + " {:<11.4f}" * 3 + "|" + \
-        # #        " {:<8.4f}" * 2 + "|" + " {:<11.4f}" * 3 + "|" + \
-        # #        " {:<11.4f}" * 2
         return out
 
     def compute_penalty(self):
@@ -266,7 +229,9 @@ class NAIVI:
         # reset gradient
         optimizer.zero_grad()
         # objective
+        # TODO wrap this in a method
         loss, _, _, _ = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
+        loss += self.reg_B * (self.covariate_weight ** 2).nansum()
         loss /= self.denum
         # compute gradients
         loss.backward()
@@ -310,6 +275,7 @@ class NAIVI:
             A, X_bin, X_cts, i0, i1, j = self.get_batch(data, None)
             # get fitted values
             llk, mean_cts, proba_bin, proba_adj = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
+            llk += self.reg_B * (self.covariate_weight ** 2).nansum()
             # llk /= self.denum
             auc, mse, auc_A = self.prediction_metrics(X_bin, X_cts, A, mean_cts, proba_bin, proba_adj)
         return llk.item(), mse, auc, auc_A
