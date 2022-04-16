@@ -65,13 +65,35 @@ def choose_init(init_method, K, Z, alpha, B, train):
 # Parameters
 # -----------------------------------------------------------------------------
 
-N = 50
+# {('train', 'grad_Linfty'): 0.00021435308703523438,
+#  ('train', 'grad_L1'): 0.03594383669776434,
+#  ('train', 'grad_L2'): 0.0013316982829889312,
+#  ('train', 'loss'): 7837.765197183397,
+#  ('train', 'mse'): 0.9801869509349804,
+#  ('train', 'auc'): 0.8806055805836732,
+#  ('train', 'auc_A'): 0.9455831916095072,
+#  ('test', 'loss'): 6118.997421871443,
+#  ('test', 'mse'): 1.1178065883470472,
+#  ('test', 'auc'): 0.8469045174164136,
+#  ('test', 'auc_A'): 0.9455831916095072,
+#  ('error', 'ZZt'): 0.5292599853387616,
+#  ('error', 'P'): 0.02222798518916297,
+#  ('error', 'Theta_X'): 0.05526458004207313,
+#  ('error', 'Theta_A'): 0.11468221060356415,
+#  ('error', 'BBt'): 0.9520764988373175,
+#  ('error', 'alpha'): 0.16587158335799235,
+#  ('train', 'time'): 116.3155312538147,
+#  ('data', 'density'): 0.12130653266331658,
+#  ('data', 'missing_prop'): 0.26749999999999996}
+
+
+N = 200
 K = 3
-p_cts = 0
-p_bin = 10
+p_cts = 20
+p_bin = 20
 p = p_bin + p_cts
 var_cov = 1.
-missing_mean = -1000000.
+missing_mean = -1.
 seed = 1
 alpha_mean_gen = -1.85
 adjacency_noise = 0.
@@ -82,31 +104,26 @@ alpha_mean_model = -1.85
 network_weight = 1.
 estimate_components = False
 
-algo = "MCMC"
+algo = "VIMC"
+# algo = "ADVI"
 max_iter = 200
-n_sample = 0
+n_sample = 10
 mcmc_n_sample = 2000
 mcmc_n_chains = 5
 mcmc_n_warmup = 1000
 mcmc_n_thin = 10
 optimizer = "Rprop"
-eps = 0.000005
-lr = 0.1 # 0.01 Rprop
+eps = 0.0005
+lr = 0.01
 power = 0.
 init_method = "random"
-reg_B = 1. / (2. * 10.**2)
+reg_B = 0. # 1. / (2. * 10.**2)
 keep_logs = True
 
 # MNAR
 mnar_sparsity = 1.0
 mnar_model = False
-reg = 0. #1000.
-
-
-# MAP: 0.87119, 1.18445
-# MLE: 0.87149, 1.19033
-# ADVI: 0.86157, 1.91098
-# VIMC: 0.86738, 1.26951
+reg = 0.
 
 
 # ---------------------------------------------------------------------
@@ -195,9 +212,9 @@ out[("data", "density")] = density
 out[("data", "missing_prop")] = missing_prop
 
 
-fit_args["reg_B"] =  1. / (2. * 1.**2)
-out = model.fit(**fit_args)
-print(out[0][("test", "auc")])
+# fit_args["reg_B"] =  1. / (2. * 1.**2)
+# out = model.fit(**fit_args)
+# print(out[0][("test", "auc")])
 # # mnar stuff
 # out = model.fit_path(**fit_args)
 #

@@ -24,7 +24,7 @@ table.set_index("Center", inplace=True)
 
 # rest
 
-plt.style.use("seaborn")
+plt.style.use("seaborn-whitegrid")
 
 DATA_PATH = "./facebook/data/raw/"
 FIG_PATH = "./facebook/figs/"
@@ -71,8 +71,8 @@ nx.draw_networkx_edges(ego_graph, pos=pos, ax=ax1,
                        width=0.05, alpha=0.2)
 nx.draw_networkx_nodes(ego_graph, pos=pos, ax=ax1, node_size=10,
         node_color="#4c72b0", with_labels=False, width=0.05)
-nx.draw_networkx_nodes(ego_graph, pos=pos, ax=ax1, node_size=50, nodelist=[node_id],
-        node_color="#c44e52", with_labels=False, width=0.05)
+# nx.draw_networkx_nodes(ego_graph, pos=pos, ax=ax1, node_size=50, nodelist=[node_id],
+#         node_color="#c44e52", with_labels=False, width=0.05)
 ax1.set_title("Ego network (#{})".format(node))
 # correlation
 
@@ -95,7 +95,7 @@ ax4.set_xlabel("Network size")
 ax4.set_ylabel("Nb. attributes")
 ax4.set_xlim(0, 1200)
 for center, row in table.iterrows():
-    ax4.annotate(center, (row["N"]+50, row["p"]-3), fontSize=8)
+    ax4.annotate(center, (row["N"]+50, row["p"]-3), fontsize=8)
 plt.colorbar(plot, ax=ax4, label="Density")
 ax4.set_title("All ego networks")
 

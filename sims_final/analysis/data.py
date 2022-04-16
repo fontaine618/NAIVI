@@ -11,7 +11,7 @@ from matplotlib.lines import Line2D
 
 RESULTS_PATH = "/home/simon/Documents/NAIVI/sims_final/results/"
 FIGS_PATH = "/home/simon/Documents/NAIVI/sims_final/figs/"
-FIGSIZE = (10, 4)
+FIGSIZE = (8, 3.5)
 
 FILE_NAME = "data.pdf"
 
