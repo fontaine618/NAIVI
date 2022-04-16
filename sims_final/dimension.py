@@ -21,7 +21,7 @@ if __name__ == "__main__":
     except IndexError:
         GPU = True
     NAME = "missing_rate" # should be dimension: remember this when doing graphs
-    GPU_ALGOS = ["ADVI", "MAP", ] # with missing values
+    GPU_ALGOS = ["ADVI", "MAP", "VIMC"] # with missing values
     CPU_ALGOS = ["MICE", "MissForest", "Mean"] # with missing values
     ALGOS = GPU_ALGOS if GPU else CPU_ALGOS
     WHICH = ("gpu" if GPU else "cpu") + "_seed" + str(SEED)
@@ -30,7 +30,7 @@ if __name__ == "__main__":
         name=NAME,
         which=WHICH,
         explore_dict={
-            "data.N": np.array([500]),
+            "data.N": np.array([50, 200, 500]),
             "data.K": np.array([3, 5, 8]),
             "data.p_bin": np.array([100]),
             "data.p_cts": np.array([0]),

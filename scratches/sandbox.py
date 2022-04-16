@@ -87,19 +87,19 @@ def choose_init(init_method, K, Z, alpha, B, train):
 #  ('data', 'missing_prop'): 0.26749999999999996}
 
 
-N = 200
-K = 3
-p_cts = 20
-p_bin = 20
+N = 50
+K = 2
+p_cts = 0
+p_bin = 0
 p = p_bin + p_cts
 var_cov = 1.
-missing_mean = -1.
-seed = 1
+missing_mean = -1000000.
+seed = 7
 alpha_mean_gen = -1.85
 adjacency_noise = 0.
 constant_components = False
 
-K_model = 3
+K_model = 2
 alpha_mean_model = -1.85
 network_weight = 1.
 estimate_components = False
@@ -107,13 +107,13 @@ estimate_components = False
 algo = "VIMC"
 # algo = "ADVI"
 max_iter = 200
-n_sample = 10
+n_sample = 0
 mcmc_n_sample = 2000
 mcmc_n_chains = 5
 mcmc_n_warmup = 1000
 mcmc_n_thin = 10
 optimizer = "Rprop"
-eps = 0.0005
+eps = 0.0001
 lr = 0.01
 power = 0.
 init_method = "random"

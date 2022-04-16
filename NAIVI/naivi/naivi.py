@@ -231,7 +231,7 @@ class NAIVI:
         # objective
         # TODO wrap this in a method
         loss, _, _, _ = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
-        loss += self.reg_B * (self.covariate_weight ** 2).nansum()
+        # loss += self.reg_B * (self.covariate_weight ** 2).nansum()
         loss /= self.denum
         # compute gradients
         loss.backward()
@@ -275,7 +275,7 @@ class NAIVI:
             A, X_bin, X_cts, i0, i1, j = self.get_batch(data, None)
             # get fitted values
             llk, mean_cts, proba_bin, proba_adj = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
-            llk += self.reg_B * (self.covariate_weight ** 2).nansum()
+            # llk += self.reg_B * (self.covariate_weight ** 2).nansum()
             # llk /= self.denum
             auc, mse, auc_A = self.prediction_metrics(X_bin, X_cts, A, mean_cts, proba_bin, proba_adj)
         return llk.item(), mse, auc, auc_A

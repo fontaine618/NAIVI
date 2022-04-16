@@ -36,7 +36,7 @@ CURVES =[
 ]
 
 METRICS = {
-	"Train Loss (/min)": {
+	"Train Loss": {
 		"column": ("train", "loss"),
 		"ytrans": None
 	},
@@ -60,12 +60,12 @@ METRICS = {
 
 ALGOS = {
 	"ADVI": {"linestyle": "-", "display": "NAIVI-QB"},
-	"MAP": {"linestyle": ":", "display": "MAP"},
+	# "MAP": {"linestyle": ":", "display": "MAP"},
 }
 
 NS = {
 	500: {"color": "#ff0000", "display": "$N=500$"},
-	50: {"color": "#00ff00", "display": "$N=50$"},
+	# 50: {"color": "#00ff00", "display": "$N=50$"},
 }
 
 X_AXIS = ("model", "K")
@@ -103,7 +103,7 @@ data_K = results[("data", "K")].unique()
 # initiate plot
 nrow = len(METRICS)
 ncol = len(data_K)
-FIGSIZE = (ncol * 3, nrow * 3)
+FIGSIZE = (ncol * 3, nrow * 2)
 
 plt.cla()
 fig, axs = plt.subplots(nrow, ncol, figsize=FIGSIZE, sharex="col", sharey="row")
@@ -124,11 +124,15 @@ for col, K in enumerate(data_K):
 			for n, nparms in NS.items():
 				try:
 					m = means.loc[(K, n, cname, slice(None)), mparms["column"]]
-					if mparms["column"] == ("train", "loss"):
-						m = (m - m.min()) / n
+					s = stds.loc[(K, n, cname, slice(None)), mparms["column"]]
+					# if mparms["column"] == ("train", "loss"):
+					# 	m = (m - m.min()) / n
+					# 	s = s / n
 					x = means.loc[(K, n, cname, slice(None)),:].reset_index().loc[:, X_AXIS]
 					i = ~m.isna()
 					ax.plot(x[i.values], m.loc[i], color=nparms["color"], linestyle=curve["linestyle"])
+					ax.fill_between(x[i.values], m.loc[i] - s.loc[i], m.loc[i] + s.loc[i],
+					                alpha=0.2, color=nparms["color"])
 				except:
 					pass
 		ax.axvline(K, linestyle="--", color="black")
@@ -143,15 +147,15 @@ for row, (metric, mparms) in enumerate(METRICS.items()):
 		axs[row][0].set_yscale(mparms["ytrans"])
 
 
-# legend
-lines = [Line2D([0], [0], color=nparms["color"], linestyle=curve["linestyle"])
-         for nparms in NS.values() for curve in ALGOS.values()]
-labels = [f'{curve["display"]} ($N={n}$)' for n in NS.keys() for curve in ALGOS.values()]
+# # legend
+# lines = [Line2D([0], [0], color=nparms["color"], linestyle=curve["linestyle"])
+#          for nparms in NS.values() for curve in ALGOS.values()]
+# labels = [f'{curve["display"]} ($N={n}$)' for n in NS.keys() for curve in ALGOS.values()]
 
 # some parameters here ...
-fig.legend(lines, labels, loc=8, ncol=4)
+# fig.legend(lines, labels, loc=8, ncol=4)
 fig.tight_layout()
-fig.subplots_adjust(bottom=0.15)
+# fig.subplots_adjust(bottom=0.15)
 
 fig.savefig(FIGS_PATH + FILE_NAME)
 
