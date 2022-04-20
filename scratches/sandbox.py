@@ -87,10 +87,10 @@ def choose_init(init_method, K, Z, alpha, B, train):
 #  ('data', 'missing_prop'): 0.26749999999999996}
 
 
-N = 50
+N = 5000
 K = 2
 p_cts = 0
-p_bin = 0
+p_bin = 8000
 p = p_bin + p_cts
 var_cov = 1.
 missing_mean = -1000000.
@@ -104,7 +104,7 @@ alpha_mean_model = -1.85
 network_weight = 1.
 estimate_components = False
 
-algo = "VIMC"
+algo = "MAP"
 # algo = "ADVI"
 max_iter = 200
 n_sample = 0

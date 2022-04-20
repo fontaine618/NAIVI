@@ -12,7 +12,8 @@ if __name__ == "__main__":
     # from Slurm scheduler
     torch.set_default_dtype(torch.float64)
     SEED = int(os.getenv('SLURM_ARRAY_TASK_ID'))
-    NAME = "fb_dimension"
+    # NAME = "fb_dimension"
+    NAME = "fb_dimension_vimc"
     WHICH = "seed" + str(SEED)
     main(
         path=PATH + "sims_facebook/results/",
@@ -28,7 +29,7 @@ if __name__ == "__main__":
             "model.alpha_mean": np.array([-1.85]),
             "model.network_weight": np.array([1.0]),
             "model.estimate_components": [False],
-            "fit.algo": ["ADVI"],
+            "fit.algo": ["VIMC"],
             "fit.max_iter": np.array([200]),
             "fit.n_sample": np.array([0]),
             "fit.mcmc_n_sample": np.array([2000]),

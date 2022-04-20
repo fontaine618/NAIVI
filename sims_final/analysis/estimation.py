@@ -17,19 +17,22 @@ FILE_NAME = "estimation.pdf"
 
 # curves
 CURVES = {
-	"ADVI": {"color": "#ff0000", "display": "NAIVI-QB"},
-	"MAP": {"color": "#00ff00", "display": "MAP"},
-	"VIMC": {"color": "#ff00ff", "display": "NAIVI-MC"},
-	"MICE": {"color": "#00ff00", "display": "MICE"},
+	"ADVI": {"linestyle": "-", "display": "NAIVI-QB"},
+	"VIMC": {"linestyle": ":", "display": "NAIVI-MC"},
+	"MAP": {"linestyle": "--", "display": "MAP"},
 }
 
 # rows
 METRICS = {
-	"MSE(Z)": {
+	"$D(\mathbf{Z}, \widehat{\mathbf{Z}})$": {
 		"column": ("error", "ZZt"),
 		"ytrans": "log"
 	},
-	"MSE(P)": {
+	"$D(\mathbf{B}, \widehat{\mathbf{B}})$": {
+		"column": ("error", "BBt"),
+		"ytrans": "log"
+	},
+	"$D(\mathbf{P}, \widehat{\mathbf{P}})$": {
 		"column": ("error", "P"),
 		"ytrans": "log"
 	}
@@ -40,16 +43,25 @@ EXPERIMENTS = {
 	"estimation_N": {
 		"groupby": ("data", "p_cts"),
 		"groups": [0, 50],
+		"xgroup": ("data", "N"),
 		"xlab": "Network size ($N$)",
-		"title": "Binary attributes",
+		"title": "$p=$",
+		"xtrans": "log"
+	},
+	"estimation_p": {
+		"groupby": ("data", "N"),
+		"groups": [100, 500],
+		"xgroup": ("data", "p_cts"),
+		"xlab": "Nb attributes ($p$)",
+		"title": "$N=$",
 		"xtrans": "log"
 	},
 }
 
 # get all data
+df_list = []
 for name, exparms in EXPERIMENTS.items():
 	# gather results
-	df_list = []
 	for _, _, files in os.walk(RESULTS_PATH + name + "/"):
 		for file in files:
 			try:
@@ -66,42 +78,46 @@ for name, exparms in EXPERIMENTS.items():
 				pass
 results = pd.concat(df_list)
 
+
+
 # initiate plot
 nrow = len(METRICS)
 ncol = sum([len(x["groups"]) for x in EXPERIMENTS.values()])
+FIGSIZE = (ncol * 3, nrow * 2)
 fig, axs = plt.subplots(nrow, ncol, figsize=FIGSIZE, sharex="col", sharey="row")
 if nrow == 1:
 	axs = [axs]
 if ncol == 1:
 	axs = [[ax] for ax in axs]
 
+col = -1
 # cycle through columns
-for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
-
+for name, exparms in EXPERIMENTS.items():
 	# group and aggregate
-	groupings = [exparms["groupby"], ("fit", "algo")]
+	groupings = [exparms["groupby"], ("fit", "algo"), exparms["xgroup"]]
 	res = results.loc[results["experiment"] == name]
 	means = res.groupby(groupings).agg("mean")
 	stds = res.groupby(groupings).agg("std")
 	us = res.groupby(groupings).agg("max")
 	ls = res.groupby(groupings).agg("min")
-	# plot
-	for row, (metric, mparms) in enumerate(METRICS.items()):
-		ax = axs[row][col]
-		for cname, curve in CURVES.items():
-			try:
-				m = means.loc[(cname, slice(None)), mparms["column"]]
-				x = means.loc[(cname, slice(None)),:].reset_index().loc[:, exparms["display"]]
-				s = stds.loc[(cname, slice(None)), mparms["column"]]
-				i = ~m.isna()
-				ax.plot(x[i.values], m.loc[i], color=curve["color"])
-			except:
-				pass
+	for val in exparms["groups"]:
+		col = col+1
+		# plot
+		for row, (metric, mparms) in enumerate(METRICS.items()):
+			ax = axs[row][col]
+			for cname, curve in CURVES.items():
+				try:
+					m = means.loc[(val, cname, slice(None)), mparms["column"]]
+					x = means.loc[(val, cname, slice(None)),:].reset_index().loc[:, exparms["xgroup"]]
+					i = ~m.isna()
+					ax.plot(x[i.values], m.loc[i], linestyle=curve["linestyle"], color="black")
+				except:
+					pass
 
-	axs[0][col].set_title("Experiment " + "ABCDEFGH"[col])
-	axs[-1][col].set_xlabel(exparms["xlab"])
-	if exparms["xtrans"] is not None:
-		axs[0][col].set_xscale(exparms["xtrans"])
+		axs[0][col].set_title(f"{exparms['title']}{val}")
+		axs[-1][col].set_xlabel(exparms["xlab"])
+		if exparms["xtrans"] is not None:
+			axs[0][col].set_xscale(exparms["xtrans"])
 
 # row things
 for row, (metric, mparms) in enumerate(METRICS.items()):
@@ -113,11 +129,12 @@ for row, (metric, mparms) in enumerate(METRICS.items()):
 for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
 	pass
 
-axs[0][1].set_xticks([0.02, 0.1, 0.5, ])
-axs[0][1].set_xticklabels([0.02, 0.1, 0.5, ])
+# axs[0][1].set_xticks([0.02, 0.1, 0.5, ])
+# axs[0][1].set_xticklabels([0.02, 0.1, 0.5, ])
+axs[1][0].set_ylim(10**-3, 10**-0)
 
 # legend
-lines = [Line2D([0], [0], color=curve["color"], linestyle="-")
+lines = [Line2D([0], [0], linestyle=curve["linestyle"], color="black")
          for curve in CURVES.values()]
 labels = [curve["display"] for curve in CURVES.values()]
 
