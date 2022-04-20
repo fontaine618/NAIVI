@@ -21,7 +21,7 @@ if __name__ == "__main__":
         which=WHICH,
         explore_dict={
             "data.center": np.array([0, 107, 348, 414, 686, 698, 1684, 1912, 3437, 3980]),
-            "data.missing_prop": np.array([0.5]),
+            "data.missing_rate": np.array([0.5]),
             "data.seed": np.array([SEED]),
             "model.K": np.array([2, 3, 4, 5, 6, 7, 8, 9, 10]),
             "model.mnar": [False],
