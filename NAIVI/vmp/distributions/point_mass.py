@@ -13,7 +13,7 @@ class PointMass(Distribution):
 
 	@property
 	def mean(self):
-		return self._value
+		return torch.where(self._value.isnan(), 0., self._value)
 
 	@property
 	def variance(self):
@@ -26,6 +26,14 @@ class PointMass(Distribution):
 	@property
 	def mean_times_precision(self):
 		return torch.where(self._value.isnan(), 0., self._value)
+
+	def __truediv__(self, other):
+		if isinstance(other, PointMass):
+			if (torch.nan_to_num(self._value, nan=-1.) != torch.nan_to_num(other._value, nan=-1.)).any():
+				raise ValueError("cannot dive PointMass if not exactly equal")
+			return Unit(self._dim)
+		# all(?) other cases
+		return self
 
 
 class Unit(PointMass):

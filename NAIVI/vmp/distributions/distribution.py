@@ -20,6 +20,8 @@ class Distribution:
 	def __mul__(self, other):
 		pass
 
+	__rmul__ = __mul__
+
 	def __truediv__(self, other):
 		pass
 
@@ -30,7 +32,7 @@ class Distribution:
 	def shape(self):
 		return self._dim
 
-	def density(self, value):
+	def density(self, value) -> torch.Tensor:
 		return self.log_density(value).exp()
 
 	def log_density(self, value) -> torch.Tensor:
@@ -43,13 +45,14 @@ class Distribution:
 	def cross_entropy(self, other) -> torch.Tensor:
 		pass
 
+	@property
+	def mean(self):
+		pass
 
-class DistributionArray(Distribution):
-	"""
-	Assumes independence across the first dimension
-	"""
+	@property
+	def variance(self):
+		pass
 
-	_name = "DistributionArray"
-
-	def __init__(self, dim, **kw):
-		super(DistributionArray, self).__init__(dim=dim)
+	@property
+	def mean_and_variance(self):
+		return self.mean, self.variance

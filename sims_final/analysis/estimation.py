@@ -19,7 +19,8 @@ FILE_NAME = "estimation.pdf"
 CURVES = {
 	"ADVI": {"linestyle": "-", "display": "NAIVI-QB"},
 	"VIMC": {"linestyle": ":", "display": "NAIVI-MC"},
-	"MAP": {"linestyle": "--", "display": "MAP"},
+	# "MAP": {"linestyle": "--", "display": "MAP"},
+	# "MCMC": {"linestyle": "-.", "display": "MICE"},
 }
 
 # rows
@@ -68,16 +69,18 @@ for name, exparms in EXPERIMENTS.items():
 				traj = Trajectory(name, add_time=False)
 				traj.f_load(filename=RESULTS_PATH + name + "/" + file, force=True)
 				traj.v_auto_load = True
+				print(name, file)
 				df = pd.concat(
 					[traj.res.summary.results.data, traj.res.summary.parameters.data],
 					axis=1
 				)
+				# ensure compatible columns (no idea why, but some are not in the MultiIndex format ...)
+				df.columns = pd.MultiIndex.from_tuples(df.columns.values)
 				df["experiment"] = name
 				df_list.append(df)
 			except:
 				pass
-results = pd.concat(df_list)
-
+results = pd.concat(df_list, ignore_index=True, axis=0)
 
 
 # initiate plot
@@ -108,9 +111,12 @@ for name, exparms in EXPERIMENTS.items():
 			for cname, curve in CURVES.items():
 				try:
 					m = means.loc[(val, cname, slice(None)), mparms["column"]]
+					l = us.loc[(val, cname, slice(None)), mparms["column"]]
+					u = ls.loc[(val, cname, slice(None)), mparms["column"]]
 					x = means.loc[(val, cname, slice(None)),:].reset_index().loc[:, exparms["xgroup"]]
 					i = ~m.isna()
 					ax.plot(x[i.values], m.loc[i], linestyle=curve["linestyle"], color="black")
+					ax.fill_between(x[i.values], l[i.values], u[i.values], color="black", alpha=0.2)
 				except:
 					pass
 

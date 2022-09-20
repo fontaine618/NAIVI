@@ -1,1 +1,1 @@
-from .variable import Variable
+from .variable import Variable, ObservedVariable

@@ -93,9 +93,9 @@ class MCMC:
 
 	def delete_fits(self, path=None):
 		if path is None:
-			path = os.environ["XDG_CACHE_HOME"] + \
-			       f"httpstan/4.4.2/{self._model.model_name}/fits/"
+			path = os.environ["XDG_CACHE_HOME"] + "httpstan/4.4.2/"
 		try:
+			path += f"{self._model.model_name}/fits/"
 			shutil.rmtree(path)
 			print(f"Successfully deleted {path}")
 		except Exception as e:
@@ -121,12 +121,15 @@ class MCMC:
 		if self.p > 0:
 			B0_diag = self.diagnostics("B0").describe().transpose()
 			B0_diag.index = pd.MultiIndex.from_product([["B0"], B0_diag.index])
+			BBt_diag = self.diagnostics("BBt").describe().transpose()
+			BBt_diag.index = pd.MultiIndex.from_product([["BBt"], ZZt_diag.index])
 			Theta_X_diag = self.diagnostics("Theta_X").describe().transpose()
 			Theta_X_diag.index = pd.MultiIndex.from_product([["Theta_X"], Theta_X_diag.index])
 		else:
 			B0_diag = None
+			BBt_diag = None
 			Theta_X_diag = None
-		diagnostics = pd.concat([ZZt_diag, B0_diag, alpha_diag, Theta_X_diag, Theta_A_diag])
+		diagnostics = pd.concat([ZZt_diag, BBt_diag, B0_diag, alpha_diag, Theta_X_diag, Theta_A_diag])
 		diagnostics = diagnostics.melt(ignore_index=False).reset_index().set_index(
 			["level_0", "level_1", "variable"]).transpose()
 		return diagnostics

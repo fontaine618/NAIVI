@@ -20,7 +20,7 @@ FILE_NAME = "dimension.pdf"
 
 FOLDER_NAME = "fb_dimension"
 
-EXPERIMENT_NAME = "fb_dimension"
+EXPERIMENT_NAME = ["fb_dimension", "fb_dimension_vimc"]
 
 CURVES = [
 	("fit", "algo"),
@@ -40,33 +40,37 @@ METRICS = {
 }
 
 ALGOS = {
-	"ADVI": {"color": "#ff0000", "display": "NAIVI-QB"},
-	"MAP": {"color": "#00ff00", "display": "MAP"},
+	"ADVI": {"linestyle": "-", "display": "NAIVI-QB"},
+	"VIMC": {"linestyle": ":", "display": "NAIVI-MC"},
+	# "MAP": {"linestyle": "--", "display": "MAP"},
 }
-algo = "ADVI"
 
 X_AXIS = ("model", "K")
 
 # get data
 df_list = []
-for _, _, files in os.walk(RESULTS_PATH + FOLDER_NAME + "/"):
-	for file in files:
-		try:
-			traj = Trajectory(EXPERIMENT_NAME, add_time=False)
-			traj.f_load(filename=RESULTS_PATH + FOLDER_NAME + "/" + file, force=True)
-			traj.v_auto_load = True
-			df_list.append(pd.concat(
-				[traj.res.summary.results.data, traj.res.summary.parameters.data],
-				axis=1
-			))
-		except:
-			pass
-results = pd.concat(df_list)
+for exp in EXPERIMENT_NAME:
+	for _, _, files in os.walk(RESULTS_PATH + exp + "/"):
+		for file in files:
+			try:
+				traj = Trajectory(exp, add_time=False)
+				traj.f_load(filename=RESULTS_PATH + exp + "/" + file, force=True)
+				traj.v_auto_load = True
+				df = pd.concat(
+					[traj.res.summary.results.data, traj.res.summary.parameters.data],
+					axis=1
+				)
+				print(exp, df.columns[13], df.columns[15])
 
-# patch repeated indices
-cols = results.columns.values
-cols[13] = ("data", "missing_rate")
-results.columns = pd.MultiIndex.from_tuples(cols)
+				# patch repeated indices
+				cols = df.columns.values
+				cols[15] = ("data", "missing_rate")
+				df.columns = pd.MultiIndex.from_tuples(cols)
+				print(exp, df.columns[13], df.columns[15])
+				df_list.append(df)
+			except:
+				pass
+results = pd.concat(df_list)
 
 
 # aggregate over curves
@@ -96,8 +100,8 @@ COLUMNS = {
 
 # best K
 best = {
-	c: means.loc[(algo, c, slice(None)), ("train", "loss")].idxmin()[2]
-	for c in centers.keys()
+	algo: {c: means.loc[(algo, c, slice(None)), ("train", "loss")].idxmin()[2]
+	for c in centers.keys()} for algo in ALGOS
 }
 
 # initiate plot
@@ -119,14 +123,15 @@ for col, (cname, cs) in enumerate(COLUMNS.items()):
 		ax = axs[row][col]
 		ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 		for c in cs:
-			color = centers[c]
-			m = means.loc[(algo, c, slice(None)), mparms["column"]]
-			if mparms["column"] == ("train", "loss"):
-				m = m / m.min()
-			x = means.loc[(algo, c, slice(None)), :].reset_index().loc[:, X_AXIS]
-			i = ~m.isna()
-			ax.plot(x[i.values], m.loc[i], color=color)
-			ax.scatter(best[c], m.loc[(algo, c, best[c])], color=color)
+			for algo, aparms in ALGOS.items():
+				color = centers[c]
+				m = means.loc[(algo, c, slice(None)), mparms["column"]]
+				if mparms["column"] == ("train", "loss"):
+					m = m / m.min()
+				x = means.loc[(algo, c, slice(None)), :].reset_index().loc[:, X_AXIS]
+				i = ~m.isna()
+				ax.plot(x[i.values], m.loc[i], color=color, linestyle=aparms["linestyle"])
+				ax.scatter(best[algo][c], m.loc[(algo, c, best[algo][c])], color=color)
 	axs[0][col].set_title(cname)
 	axs[-1][col].set_xlabel("Fitted dimension")
 

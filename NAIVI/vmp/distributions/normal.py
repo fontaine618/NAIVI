@@ -1,7 +1,8 @@
 import torch
 import torch.distributions
 from torch.distributions.multivariate_normal import _batch_mv
-from .distribution import Distribution, DistributionArray
+from .distribution import Distribution
+from .point_mass import Unit, PointMass
 
 
 def _batch_mahalanobis(bP, bx):
@@ -20,7 +21,7 @@ class Normal(Distribution):
 	_name = "Normal"
 
 	def __init__(self, precision, mean_times_precision, **kw):
-		dim = precision.shape
+		dim = mean_times_precision.shape
 		super(Normal, self).__init__(dim=dim)
 		self.precision = precision
 		self.mean_times_precision = mean_times_precision
@@ -38,6 +39,10 @@ class Normal(Distribution):
 		return self.precision, self.mean_times_precision
 
 	@property
+	def natural_parameters(self):
+		return self.mean_times_precision, self.precision * -0.5
+
+	@property
 	def mean_and_variance(self):
 		var = self.variance
 		mean = self.mean_times_precision * var
@@ -50,33 +55,53 @@ class Normal(Distribution):
 		return Normal(precision, mean_times_precision)
 
 	@classmethod
+	def unit_from_dimension(cls, dim):
+		precision = torch.zeros(dim)
+		mean_times_precision = torch.zeros(dim)
+		return Normal(precision, mean_times_precision)
+
+	@classmethod
 	def from_mean_and_variance(cls, mean, variance):
-		precision = 1. / variance
-		mean_times_precision = mean * precision
+		precision = torch.where(mean.isnan(), 0., 1. / variance)
+		mean_times_precision = torch.where(mean.isnan(), 0., mean * precision)
 		return Normal(precision, mean_times_precision)
 
 	def __mul__(self, other):
-		if isinstance(other, Normal):
+		if type(other) is Normal:
 			precision = self.precision + other.precision
 			mean_times_precision = self.mean_times_precision + other.mean_times_precision
 			return Normal(precision, mean_times_precision)
+		elif type(other) is Unit:
+			return self
+		elif type(other) is PointMass:
+			return other
 		else:
-			raise ValueError(f"Product of Normal with {other.__class__.__name__} "
-			                 f"not implemented yet or is not meaningful.")
+			raise NotImplementedError(
+				f"Product of Normal with {other._name} "
+			    f"not implemented yet or is not meaningful."
+			)
 
 	def __truediv__(self, other):
-		if isinstance(other, Normal):
+		if type(other) is Normal:
 			precision = self.precision - other.precision
 			mean_times_precision = self.mean_times_precision - other.mean_times_precision
 			return Normal(precision, mean_times_precision)
+		elif type(other) is Unit:
+			return self
 		else:
-			raise ValueError(f"Product of Normal with {other.__class__.__name__} "
-			                 f"not implemented yet or is not meaningful.")
+			raise NotImplementedError(
+				f"Product of Normal with {other._name} "
+			    f"not implemented yet or is not meaningful."
+			)
 
-	__rmul__ = __mul__
+	def unsqueeze(self, dim):
+		return Normal(
+			precision=self.precision.unsqueeze(dim),
+			mean_times_precision=self.mean_times_precision.unsqueeze(dim)
+		)
 
 
-class MultivariateNormal(Normal, DistributionArray):
+class MultivariateNormal(Normal):
 
 	_name = "MultivariateNormal"
 
@@ -110,7 +135,48 @@ class MultivariateNormal(Normal, DistributionArray):
 		return MultivariateNormal(precision, mean_times_precision)
 
 	@classmethod
+	def unit_from_dimension(cls, dim):
+		d = dim[-1]
+		precision = torch.zeros(*dim, d)
+		mean_times_precision = torch.zeros(dim)
+		return MultivariateNormal(precision, mean_times_precision)
+
+	@classmethod
 	def from_mean_and_variance(cls, mean, variance):
 		precision = torch.inverse(variance)
 		mean_times_precision = torch.matmul(precision, mean.unsqueeze(-1)).squeeze(-1)
 		return MultivariateNormal(precision, mean_times_precision)
+
+	def __mul__(self, other):
+		if type(other) is MultivariateNormal:
+			precision = self.precision + other.precision
+			mean_times_precision = self.mean_times_precision + other.mean_times_precision
+			return MultivariateNormal(precision, mean_times_precision)
+		elif type(other) is Unit:
+			return self
+		elif type(other) is PointMass:
+			return other
+		else:
+			raise NotImplementedError(
+				f"Product of MultivariateNormal with {other._name} "
+			    f"not implemented yet or is not meaningful."
+			)
+
+	def __truediv__(self, other):
+		if type(other) is MultivariateNormal:
+			precision = self.precision - other.precision
+			mean_times_precision = self.mean_times_precision - other.mean_times_precision
+			return MultivariateNormal(precision, mean_times_precision)
+		elif type(other) is Unit:
+			return self
+		else:
+			raise NotImplementedError(
+				f"Product of MultivariateNormal with {other._name} "
+			    f"not implemented yet or is not meaningful."
+			)
+
+	def MultivariateNormal(self, dim):
+		return Normal(
+			precision=self.precision.unsqueeze(dim),
+			mean_times_precision=self.mean_times_precision.unsqueeze(dim)
+		)

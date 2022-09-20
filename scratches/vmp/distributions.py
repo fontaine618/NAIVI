@@ -18,3 +18,43 @@ dim = [2, 3, 4]
 torch.ones(N, d) * float("Inf")
 
 self = PointMass(torch.full(dim, float("NaN")))
+
+
+
+
+
+# =============================================================================================
+from NAIVI.vmp.factors.normal_prior import NormalPrior, MultivariateNormalPrior
+from NAIVI.vmp.variables import Variable
+
+N, K, p = 10, 5, 3
+
+child = Variable((N, K, p))
+prior = MultivariateNormalPrior(dim=p)
+prior.set_children(child=child)
+print(prior)
+# =============================================================================================
+
+
+
+
+
+
+
+
+
+# =============================================================================================
+from NAIVI.vmp.factors.affine import Affine
+from NAIVI.vmp.variables import Variable
+
+N, K, p = 10, 5, 3
+
+parent = Variable((N, K))
+child = Variable((N, p))
+self = Affine(dim_in=K, dim_out=p, parent=parent)
+self.set_children(child=child)
+print(self)
+
+child.compute_posterior()
+child.posterior
+# =============================================================================================
