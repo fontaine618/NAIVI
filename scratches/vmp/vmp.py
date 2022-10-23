@@ -15,7 +15,7 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	generate_dataset(
 		N=50,
 		K=3,
-		p_cts=10,
+		p_cts=100,
 		p_bin=10,
 		var_cov=1.,
 		missing_mean=0.5,
@@ -35,10 +35,10 @@ vmp = VMP(
 	latent_dim=3
 )
 
-vmp._factors["affine_cts"].parameters["weights"].data = B[:, :10]
-vmp._factors["affine_bin"].parameters["weights"].data = B[:, 10:]
-vmp._factors["affine_cts"].parameters["bias"].data = B0[0, :10]
-vmp._factors["affine_bin"].parameters["bias"].data = B0[0, 10:]
+vmp._factors["affine_cts"].parameters["weights"].data = B[:, :100]
+vmp._factors["affine_bin"].parameters["weights"].data = B[:, 100:]
+vmp._factors["affine_cts"].parameters["bias"].data = B0[0, :100]
+vmp._factors["affine_bin"].parameters["bias"].data = B0[0, 100:]
 
 for _ in range(10):
 	with torch.no_grad():

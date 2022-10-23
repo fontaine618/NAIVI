@@ -107,8 +107,12 @@ class Logistic(Factor):
 	def update_messages_to_parents(self):
 		self._update()
 
+	def elbo(self):
+		# TODO: implement this
+		pass
+
 	def _mk_update(self):
-		# TODO seems incorrect
+		# TODO seems incorrect: maybe use the posterior as the message?
 		"""Uses Knowles & Minka (2011)"""
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
@@ -146,6 +150,7 @@ class Logistic(Factor):
 
 	def _tilted_update(self):
 		"""Uses the tilted bound of Saul and Jordan (1999)"""
+		# TODO seems incorrect: maybe use the posterior as the message?
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		mfc = self.messages_to_children[c_id].message_to_factor

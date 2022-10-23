@@ -119,6 +119,12 @@ class Normal(Distribution):
 			mean_times_precision=self.mean_times_precision.unsqueeze(dim)
 		)
 
+	def expand(self, *sizes):
+		return Normal(
+			precision=self.precision.expand(*sizes),
+			mean_times_precision=self.mean_times_precision.expand(*sizes)
+		)
+
 	def prod(self, dim):
 		p = self.precision.sum(dim)
 		mtp = self.mean_times_precision.sum(dim)
@@ -241,6 +247,12 @@ class MultivariateNormal(Normal):
 		return MultivariateNormal(
 			precision=self.precision.unsqueeze(dim),
 			mean_times_precision=self.mean_times_precision.unsqueeze(dim)
+		)
+
+	def expand(self, *sizes):
+		return MultivariateNormal(
+			precision=self.precision.expand(*(*sizes, -1)),
+			mean_times_precision=self.mean_times_precision.expand(*sizes)
 		)
 
 	def prod(self, dim):

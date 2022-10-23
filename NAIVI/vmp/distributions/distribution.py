@@ -70,6 +70,9 @@ class Distribution:
 	def unsqueeze(self, dim):
 		pass
 
+	def expand(self, *sizes):
+		pass
+
 	def index_select(self, dim, index):
 		pass
 
