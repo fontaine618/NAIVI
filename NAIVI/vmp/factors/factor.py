@@ -19,7 +19,9 @@ class Factor:
 	def __init__(self, **kwargs: Variable):
 		self.id: int = next(Factor.new_id)
 		self.children: Dict[int, Variable] = {}
-		self.parameters: Dict[str, torch.nn.Parameter] = {}
+		if not hasattr(self, "parameters"):
+			# some factors will initialize the parameters beforehand
+			self.parameters: Dict[str, torch.nn.Parameter] = {}
 		self.parents: Dict[int, Variable] = {}
 		self.messages_to_parents: Dict[int, Message] = {}
 		self.messages_to_children: Dict[int, Message] = {}
@@ -47,15 +49,18 @@ class Factor:
 
 	def update_messages_from_parents(self):
 		for i, parent in self.parents.items():
-			mtv = self.messages_to_parents[i].message_to_variable
+			mtp = self.messages_to_parents[i].message_to_variable
 			post = parent.posterior
 			# TODO: if deterministic, this should not divide ? depends on which type of VMP
-			self.messages_to_parents[i].message_to_factor = post / mtv
+			self.messages_to_parents[i].message_to_factor = post / mtp
 
 	def update_messages_to_children(self):
 		pass
 
 	def update_messages_to_parents(self):
+		pass
+
+	def update_parameters(self):
 		pass
 
 	def set_parents(self, **kwargs: Variable):
@@ -78,7 +83,7 @@ class Factor:
 		return self.parameters[parameter].data
 
 	def __repr__(self):
-		return f"[{self.id:>2}] {self._name}"
+		return f"[f{self.id}] {self._name}"
 
 	def __str__(self):
 		out = repr(self) + "\n"

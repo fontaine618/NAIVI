@@ -23,12 +23,25 @@ class Normal(Distribution):
 	def __init__(self, precision, mean_times_precision, **kw):
 		dim = mean_times_precision.shape
 		super(Normal, self).__init__(dim=dim)
+		self._check_args(precision, mean_times_precision)
 		self.precision = precision
 		self.mean_times_precision = mean_times_precision
 
+	@staticmethod
+	def _check_args(precision, mean_times_precision):
+		if precision.shape != mean_times_precision.shape:
+			raise AttributeError(
+				f"precision and mean_times_precision must have the same shape, "
+				f"but got {precision.shape} and {mean_times_precision.shape}"
+			)
+		if not torch.all(precision.ge(-1.e-10)):
+			raise AttributeError(
+				f"precision must be nonnegative"
+			)
+
 	@property
 	def mean(self):
-		return self.mean_times_precision / self.precision
+		return torch.where(self.precision == 0., 0., self.mean_times_precision / self.precision)
 
 	@property
 	def variance(self):
@@ -45,7 +58,7 @@ class Normal(Distribution):
 	@property
 	def mean_and_variance(self):
 		var = self.variance
-		mean = self.mean_times_precision * var
+		mean = torch.where(self.precision == 0., 0., self.mean_times_precision * var)
 		return mean, var
 
 	@classmethod
@@ -81,7 +94,13 @@ class Normal(Distribution):
 			    f"not implemented yet or is not meaningful."
 			)
 
-	def __truediv__(self, other):
+	def __pow__(self, power: float):
+		return Normal(
+			self.precision * power,
+			self.mean_times_precision * power
+		)
+
+	def __truediv__(self, other: Distribution):
 		if type(other) is Normal:
 			precision = self.precision - other.precision
 			mean_times_precision = self.mean_times_precision - other.mean_times_precision
@@ -100,6 +119,32 @@ class Normal(Distribution):
 			mean_times_precision=self.mean_times_precision.unsqueeze(dim)
 		)
 
+	def prod(self, dim):
+		p = self.precision.sum(dim)
+		mtp = self.mean_times_precision.sum(dim)
+		return Normal(p, mtp)
+
+	def index_select(self, dim, index):
+		return Normal(
+			precision=self.precision.index_select(dim, index),
+			mean_times_precision=self.mean_times_precision.index_select(dim, index)
+		)
+
+	def index_sum(self, dim, index, max_index):
+		zeros = torch.zeros(max_index, *self.precision.shape[1:])
+		precision = zeros.index_add(dim, index, self.precision)
+		mean_times_precision = zeros.index_add(dim, index, self.mean_times_precision)
+		return Normal(
+			precision=precision,
+			mean_times_precision=mean_times_precision
+		)
+
+	def clone(self):
+		return Normal(
+			precision=self.precision.clone(),
+			mean_times_precision=self.mean_times_precision.clone()
+		)
+
 
 class MultivariateNormal(Normal):
 
@@ -112,6 +157,17 @@ class MultivariateNormal(Normal):
 			mean_times_precision=mean_times_precision,
 			dim=dim
 		)
+
+	@staticmethod
+	def _check_args(precision, mean_times_precision):
+		if not (torch.isclose(precision, precision.transpose(-1, -2))).all():
+			raise ValueError(
+				f"precision must be symmetric"
+			)
+		if not torch.linalg.eigvalsh(precision).ge(-1.e-6).all():
+			print(
+				f"precision must be positive semi-definite"
+			)
 
 	@property
 	def mean(self):
@@ -162,6 +218,12 @@ class MultivariateNormal(Normal):
 			    f"not implemented yet or is not meaningful."
 			)
 
+	def __pow__(self, power: float):
+		return MultivariateNormal(
+			self.precision * power,
+			self.mean_times_precision * power
+		)
+
 	def __truediv__(self, other):
 		if type(other) is MultivariateNormal:
 			precision = self.precision - other.precision
@@ -175,8 +237,35 @@ class MultivariateNormal(Normal):
 			    f"not implemented yet or is not meaningful."
 			)
 
-	def MultivariateNormal(self, dim):
-		return Normal(
+	def unsqueeze(self, dim):
+		return MultivariateNormal(
 			precision=self.precision.unsqueeze(dim),
 			mean_times_precision=self.mean_times_precision.unsqueeze(dim)
+		)
+
+	def prod(self, dim):
+		p = self.precision.sum(dim)
+		mtp = self.mean_times_precision.sum(dim)
+		return MultivariateNormal(p, mtp)
+
+	def index_select(self, dim, index):
+		return MultivariateNormal(
+			precision=self.precision.index_select(dim, index),
+			mean_times_precision=self.mean_times_precision.index_select(dim, index)
+		)
+
+	def index_sum(self, dim, index, max_index):
+		zeros = torch.zeros(max_index, *self.precision.shape[1:])
+		precision = zeros.index_add(dim, index, self.precision)
+		zeros = torch.zeros(max_index, *self.mean_times_precision.shape[1:])
+		mean_times_precision = zeros.index_add(dim, index, self.mean_times_precision)
+		return MultivariateNormal(
+			precision=precision,
+			mean_times_precision=mean_times_precision
+		)
+
+	def clone(self):
+		return MultivariateNormal(
+			precision=self.precision.clone(),
+			mean_times_precision=self.mean_times_precision.clone()
 		)

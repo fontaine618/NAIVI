@@ -12,6 +12,10 @@ class PointMass(Distribution):
 		self._value = value
 
 	@property
+	def value(self):
+		return self._value
+
+	@property
 	def mean(self):
 		return torch.where(self._value.isnan(), 0., self._value)
 

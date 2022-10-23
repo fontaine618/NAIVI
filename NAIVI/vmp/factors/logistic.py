@@ -36,9 +36,17 @@ _s = torch.tensor([
 _std_normal = torch.distributions.normal.Normal(0., 1.)
 
 
+def _tilted_fixed_point(mean, variance, max_iter=20):
+	a = torch.full_like(mean, 0.5)
+	for _ in range(max_iter):
+		a = torch.sigmoid(mean - (1 - 2 * a) * variance / 2)
+	return a
+
+
 def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
 	n = len(mean.shape)
 	mean = mean.unsqueeze(-1)
+	sd = variance.sqrt()
 	variance = variance.unsqueeze(-1)
 	p = _p
 	s = _s
@@ -50,12 +58,13 @@ def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
 	if degree == 0:
 		f1 = p
 		f2 = _std_normal.cdf(arg)
+		return (f1 * f2).sum(-1)
 	elif degree == 1:
 		f1 = p * s / sqrt
 		f2 = _std_normal.log_prob(arg).exp()
+		return (f1 * f2).sum(-1) * sd
 	else:
 		raise NotImplementedError("only degree 0 or 1 implemented")
-	return (f1 * f2).sum(-1)
 
 
 class Logistic(Factor):
@@ -72,51 +81,99 @@ class Logistic(Factor):
 			self._update = self._quadratic_update
 		elif method == "tilted":
 			self._update = self._tilted_update
+			i = self._name_to_id["parent"]
+			self.messages_to_parents[i].damping = 0.2
 		else:  # default
 			self._update = self._mk_update
+			i = self._name_to_id["parent"]
+			self.messages_to_parents[i].damping = 0.2
 
 	def initialize_messages_to_parents(self):
 		i = self._name_to_id["parent"]
-		self.messages_to_parents[i] = LogisticToParentMessage(self.parents[i], self)
+		self.messages_to_parents[i] = LogisticToLogitMessage(self.parents[i], self)
 
 	def initialize_messages_to_children(self):
 		i = self._name_to_id["child"]
-		self.messages_to_children[i] = LogisticToChildMessage(self.children[i], self)
+		self.messages_to_children[i] = LogisticToObservationMessage(self.children[i], self)
 
 	def update_messages_to_children(self):
-		pass
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfp = self.messages_to_parents[p_id].message_to_factor
+		m, v = mfp.mean_and_variance
+		proba = _ms_expit_moment(0, m, v)
+		self.messages_to_children[c_id].message_to_variable = Probability(proba)
 
 	def update_messages_to_parents(self):
 		self._update()
 
 	def _mk_update(self):
+		# TODO seems incorrect
 		"""Uses Knowles & Minka (2011)"""
-		pass
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfc = self.messages_to_children[c_id].message_to_factor
+		# mfp = self.messages_to_parents[p_id].message_to_factor
+		mfp = self.parents[p_id].posterior
+		m, v = mfp.mean_and_variance
+		p, mtp = mfp.precision_and_mean_times_precision
+		x = mfc.proba
+		b0 = _ms_expit_moment(0, m, v)
+		b1 = _ms_expit_moment(1, m, v)
+		# Knowles and Minka (2011, Section 5.2)
+		m1 = b1 * v.sqrt() + m * b0
+		p1 = (m1 - m * b0) * p
+		mtp1 = m * p1 + x - b0
+		# Nolan and Wand (2017, Eq. 6) I think it's equivalent to the above
+		# p1 = b1 * p.sqrt()
+		# mtp1 = m * p1 + x - b0
+		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _quadratic_update(self):
 		"""Uses the quadratic bound of Jaakola and Jordan (2000)"""
-		pass
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfc = self.messages_to_children[c_id].message_to_factor
+		mfp = self.messages_to_parents[p_id].message_to_factor
+		m, v = mfp.mean_and_variance
+		s = mfc.proba - 0.5
+		t = (m.pow(2.) + v).sqrt()
+		lam = (torch.sigmoid(t) - 0.5) / t
+		p1 = lam
+		mtp1 = s
+		p1 = torch.where(s == 0., torch.zeros_like(p1), p1)  # mtp1 should be fine already
+		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _tilted_update(self):
 		"""Uses the tilted bound of Saul and Jordan (1999)"""
-		pass
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfc = self.messages_to_children[c_id].message_to_factor
+		# mfp = self.messages_to_parents[p_id].message_to_factor
+		mfp = self.parents[p_id].posterior
+		m, v = mfp.mean_and_variance
+		x = mfc.proba
+		a = _tilted_fixed_point(m, v)
+		p1 = a * (1 - a)
+		mtp1 = m * p1 + x - a
+		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 
-class LogisticToParentMessage(Message):
+class LogisticToLogitMessage(Message):
 
-	_name = "LogisticToParentMessage"
+	_name = "LogisticToLogitMessage"
 
-	def __init__(self, variable: Variable, factor: Logistic):
-		super(LogisticToParentMessage, self).__init__(variable, factor)
+	def __init__(self, variable: Variable, factor: Logistic, damping: float = 1.):
+		super(LogisticToLogitMessage, self).__init__(variable, factor, damping=damping)
 		self._message_to_factor = Normal.unit_from_dimension(variable.shape)
 		self._message_to_variable = Normal.unit_from_dimension(variable.shape)
 
 
-class LogisticToChildMessage(Message):
+class LogisticToObservationMessage(Message):
 
-	_name = "LogisticToChildMessage"
+	_name = "LogisticToObservationMessage"
 
 	def __init__(self, variable: Variable, factor: Logistic):
-		super(LogisticToChildMessage, self).__init__(variable, factor)
+		super(LogisticToObservationMessage, self).__init__(variable, factor)
 		self._message_to_factor = Probability.unit_from_dimension(variable.shape)
 		self._message_to_variable = Probability.unit_from_dimension(variable.shape)

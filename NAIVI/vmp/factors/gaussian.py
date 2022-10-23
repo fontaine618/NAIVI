@@ -1,5 +1,6 @@
 from __future__ import annotations
 import torch
+import math
 from .factor import Factor
 from ..distributions.normal import Normal, MultivariateNormal
 from ..messages import Message
@@ -21,7 +22,7 @@ class GaussianFactor(Factor):
 
 	def __init__(self, dim: int, parent: Variable):
 		super(GaussianFactor, self).__init__(parent=parent)
-		self.parameters["variance"] = torch.nn.Parameter(torch.ones(dim))
+		self.parameters["log_variance"] = torch.nn.Parameter(torch.zeros(dim))
 
 	def initialize_messages_to_parents(self):
 		i = self._name_to_id["parent"]
@@ -36,7 +37,7 @@ class GaussianFactor(Factor):
 		c = self._name_to_id["child"]
 		mfp = self.messages_to_parents[p].message_to_factor # N x p
 		m, v = mfp.mean_and_variance # N x p, N x p
-		var = self.parameters["variance"].data # p
+		var = self.parameters["log_variance"].data.exp() # p
 		v = v + var.reshape((1, -1))
 		self.messages_to_children[c].message_to_variable = Normal.from_mean_and_variance(m, v)
 
@@ -45,9 +46,39 @@ class GaussianFactor(Factor):
 		c = self._name_to_id["child"]
 		mfp = self.messages_to_children[c].message_to_factor # N x p
 		m, v = mfp.mean_and_variance # N x p, N x p
-		var = self.parameters["variance"].data # p
+		var = self.parameters["log_variance"].data.exp() # p
 		v = v + var.reshape((1, -1))
 		self.messages_to_parents[p].message_to_variable = Normal.from_mean_and_variance(m, v)
+
+	def update_parameters(self):
+		with torch.no_grad():
+			# curious to see the ELBO comparison with a gradient update
+			p = self._name_to_id["parent"]
+			c = self._name_to_id["child"]
+			# mfp = self.messages_to_parents[p].message_to_factor
+			# mfc = self.messages_to_children[c].message_to_factor
+			mfp = self.parents[p].posterior
+			mfc = self.children[c].posterior
+			m, v = mfp.mean_and_variance
+			observed = mfc.precision > 0.
+			x = mfc.mean
+			s2 = (x - m).pow(2.) + v
+			s2sum = torch.where(observed, s2, torch.zeros_like(s2)).sum(dim=0)
+			n = observed.sum(dim=0)
+			self.parameters["log_variance"].data = torch.log(s2sum / n)
+
+	def elbo(self):
+		p = self._name_to_id["parent"]
+		c = self._name_to_id["child"]
+		m, v = self.parents[p].posterior.mean_and_variance
+		x = self.children[c].posterior.mean
+		observed = self.children[c].posterior.precision > 0.
+		s2 = self.parameters["log_variance"].exp()
+		elbo = (v + m.pow(2.) - 2. * m * x + x.pow(2.)) / s2
+		elbo += torch.log(s2).reshape(1, -1) + math.log(2. * math.pi)
+		elbo = torch.where(observed, elbo, torch.zeros_like(elbo)).sum(dim=0)
+		return - 0.5 * elbo.sum()
+
 
 
 class GaussianFactorToParentMessage(Message):

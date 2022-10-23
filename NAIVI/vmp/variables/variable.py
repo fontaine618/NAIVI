@@ -14,7 +14,7 @@ class Variable:
     new_id = itertools.count()
     instance = dict()
 
-    def __init__(self, dim):
+    def __init__(self, dim, **kw):
         self._dim = torch.Size(dim)
         self.id = next(Variable.new_id)
         self.parents: Dict[int, Factor] = {}
@@ -49,10 +49,11 @@ class Variable:
         self.posterior = post
 
     def update(self, prev_msg, new_msg):
+        # print(f"Update posterior of {self}")
         self.posterior = new_msg * self.posterior / prev_msg
 
     def __repr__(self):
-        return f"[{self.id:>2}] {self._name}"
+        return f"[v{self.id}] {self._name}"
 
 
 class ObservedVariable(Variable):

@@ -1,7 +1,7 @@
 from __future__ import annotations
 import torch
 from .factor import Factor
-from ..distributions.normal import Normal, MultivariateNormal
+from ..distributions.normal import Normal, MultivariateNormal, _batch_mahalanobis
 from ..messages import Message
 
 from typing import TYPE_CHECKING
@@ -27,6 +27,13 @@ class NormalPrior(Factor):
 	def initialize_messages_to_children(self):
 		for n, c in self.children.items():
 			self.messages_to_children[n] = NormalPriorToChildMessage(variable=c, factor=self)
+
+	def elbo(self):
+		m0, v0 = self.parameters["mean"].data, self.parameters["variance"].data
+		i = self._name_to_id["child"]
+		mq, vq = self.children[i].posterior.mean_and_variance
+		elbo = (vq/v0).log() + 1. - (mq.pow(2.) + vq - 2. * m0*mq + m0**2) / v0
+		return elbo.sum() * 0.5
 
 
 class NormalPriorToChildMessage(Message):
@@ -61,6 +68,20 @@ class MultivariateNormalPrior(Factor):
 		for n, c in self.children.items():
 			self.messages_to_children[n] = MultivariateNormalPriorToChildMessage(variable=c, factor=self)
 
+	def elbo(self):
+		m0, v0 = self.parameters["mean"].data, self.parameters["variance"].data
+		m0 = m0.expand(self.dim)
+		det0 = v0**self.dim
+		p0 = torch.eye(self.dim) / v0
+		i = self._name_to_id["child"]
+		mq, vq = self.children[i].posterior.mean_and_variance
+		detq = vq.det().sum()
+		trace = (p0 * vq).sum()
+		diff = m0 - mq
+		quad = torch.einsum("ik, kj, ij->i", diff, p0, diff).sum()
+		elbo = - trace - quad + self.dim + detq.log() - det0.log()
+		return elbo.sum() * 0.5
+
 
 class MultivariateNormalPriorToChildMessage(Message):
 
@@ -72,3 +93,4 @@ class MultivariateNormalPriorToChildMessage(Message):
 		mean = torch.full(dim, factor.get("mean").item())
 		variance = torch.eye(factor.dim).expand(*dim, factor.dim) * factor.get("variance")
 		self._message_to_variable = MultivariateNormal.from_mean_and_variance(mean, variance)
+		self._message_to_factor = MultivariateNormal.unit_from_dimension(dim=variable.shape)

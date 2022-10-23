@@ -22,6 +22,9 @@ class Distribution:
 
 	__rmul__ = __mul__
 
+	def __pow__(self, power: float):
+		return self
+
 	def __truediv__(self, other):
 		pass
 
@@ -54,5 +57,24 @@ class Distribution:
 		pass
 
 	@property
+	def precision_and_mean_times_precision(self):
+		pass
+
+	@property
 	def mean_and_variance(self):
 		return self.mean, self.variance
+
+	def prod(self, dim):
+		pass
+
+	def unsqueeze(self, dim):
+		pass
+
+	def index_select(self, dim, index):
+		pass
+
+	def index_sum(self, dim, index, max_index):
+		pass
+
+	def clone(self):
+		pass

@@ -1,5 +1,6 @@
 from __future__ import annotations
 import itertools
+import torch
 
 from ..distributions.point_mass import Unit
 
@@ -17,23 +18,26 @@ class Message:
 	new_id = itertools.count()
 	instance = dict()
 
-	def __init__(self, variable: Variable, factor: Factor, **kw):
+	def __init__(self, variable: Variable, factor: Factor, damping: float = 1., **kw):
 		self.id = next(Message.new_id)
 		self.variable = variable
 		self.factor = factor
 		self._dim = variable.shape
 		self._message_to_factor: Distribution = Unit(self._dim)
 		self._message_to_variable: Distribution = Unit(self._dim)
+		self.damping = damping
 		Message.instance[self.id] = self
 
 	def __repr__(self):
-		return f"[{self.id:>2}] {self._name}"
+		return f"[m{self.id}] {self._name}"
 
-	def _set_message_to_variable(self, msg):
+	def _set_message_to_variable(self, msg: Distribution):
 		"""Stores the new message and updates the posterior of the variable."""
+		print(f"Update message from {repr(self.factor)} to {self.variable}")
 		prev_msg = self._message_to_variable
 		self._message_to_variable = msg
-		self.variable.update(prev_msg, msg)
+		# for damping, we store the full message, but the posterior update is only partial
+		self.variable.update(prev_msg ** self.damping, self._message_to_variable ** self.damping)
 
 	def _get_message_to_variable(self):
 		return self._message_to_variable
@@ -47,7 +51,8 @@ class Message:
 		_del_message_to_variable
 	)
 
-	def _set_message_to_factor(self, msg):
+	def _set_message_to_factor(self, msg: Distribution):
+		print(f"Update message from {self.variable} to {repr(self.factor)}")
 		self._message_to_factor = msg
 
 	def _get_message_to_factor(self):
