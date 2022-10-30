@@ -5,6 +5,7 @@ from .factor import Factor
 from ..distributions.normal import Normal
 from ..distributions import Distribution
 from ..messages import Message
+from .. import VMP_OPTIONS
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -72,7 +73,7 @@ class SelectToParentMessage(Message):
 		self._message_to_factor = dist.unit_from_dimension(dim)
 
 	def _set_message_to_variable(self, msg: Normal):
-		print(f"Update message from {repr(self.factor)} to {self.variable}")
+		if VMP_OPTIONS["logging"]: print(f"Update message from {repr(self.factor)} to {self.variable}")
 		prev_msg = self.message_to_variable
 		self._message_to_variable = msg
 		agg_msg = msg.index_sum(0, self.indices, self._max_index)

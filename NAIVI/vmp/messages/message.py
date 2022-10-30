@@ -2,6 +2,7 @@ from __future__ import annotations
 import itertools
 import torch
 
+from .. import VMP_OPTIONS
 from ..distributions.point_mass import Unit
 
 from typing import TYPE_CHECKING
@@ -33,7 +34,7 @@ class Message:
 
 	def _set_message_to_variable(self, msg: Distribution):
 		"""Stores the new message and updates the posterior of the variable."""
-		print(f"Update message from {repr(self.factor)} to {self.variable}")
+		if VMP_OPTIONS["logging"]: print(f"Update message from {repr(self.factor)} to {self.variable}")
 		prev_msg = self._message_to_variable
 		self._message_to_variable = msg
 		# for damping, we store the full message, but the posterior update is only partial
@@ -52,7 +53,7 @@ class Message:
 	)
 
 	def _set_message_to_factor(self, msg: Distribution):
-		print(f"Update message from {self.variable} to {repr(self.factor)}")
+		if VMP_OPTIONS["logging"]: print(f"Update message from {self.variable} to {repr(self.factor)}")
 		self._message_to_factor = msg
 
 	def _get_message_to_factor(self):

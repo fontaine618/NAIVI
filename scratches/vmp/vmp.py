@@ -1,6 +1,7 @@
 import torch
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
+from NAIVI.vmp import disable_logging
 from NAIVI.vmp.vmp import VMP
 from NAIVI_experiments.gen_data_mnar import generate_dataset
 
@@ -13,9 +14,9 @@ from NAIVI.vmp.messages.message import Message
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
 	generate_dataset(
-		N=50,
+		N=100,
 		K=3,
-		p_cts=100,
+		p_cts=10,
 		p_bin=10,
 		var_cov=1.,
 		missing_mean=0.5,
@@ -35,12 +36,13 @@ vmp = VMP(
 	latent_dim=3
 )
 
-vmp._factors["affine_cts"].parameters["weights"].data = B[:, :100]
-vmp._factors["affine_bin"].parameters["weights"].data = B[:, 100:]
-vmp._factors["affine_cts"].parameters["bias"].data = B0[0, :100]
-vmp._factors["affine_bin"].parameters["bias"].data = B0[0, 100:]
+vmp._factors["affine_cts"].parameters["weights"].data = B[:, :10]
+vmp._factors["affine_bin"].parameters["weights"].data = B[:, 10:]
+vmp._factors["affine_cts"].parameters["bias"].data = B0[0, :10]
+vmp._factors["affine_bin"].parameters["bias"].data = B0[0, 10:]
 
-for _ in range(10):
+for iter in range(10):
+	print(iter)
 	with torch.no_grad():
 		vmp._e_step()
 
@@ -63,6 +65,18 @@ for i in range(1000):
 print(self.parameters["log_variance"].data.exp())
 self.update_parameters()
 print(self.elbo().item())
+
+
+# test update affine parameters
+
+self = vmp._factors["affine_cts"]
+vmp._factors["cts_model"].elbo()
+self.update_parameters()
+vmp._factors["cts_model"].elbo()
+self.parameters["weights"].data
+B[:, :10]
+self.parameters["bias"].data
+B0[0, :10]
 
 # {'latent': [v0] Variable,
 #  'heterogeneity': [v1] Variable,

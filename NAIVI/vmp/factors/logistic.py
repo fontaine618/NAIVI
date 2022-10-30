@@ -74,19 +74,24 @@ class Logistic(Factor):
 
 	_name = "Logistic"
 
-	def __init__(self, dim: int, parent: Variable, method: str = "MK"):
+	def __init__(self, dim: int, parent: Variable, method: str = "quadratic"):
 		super(Logistic, self).__init__(parent=parent)
 		self.parameters["variance"] = torch.nn.Parameter(torch.ones(dim))
 		if method == "quadratic":
 			self._update = self._quadratic_update
+			self._elbo = self._quadratic_elbo
 		elif method == "tilted":
 			self._update = self._tilted_update
 			i = self._name_to_id["parent"]
 			self.messages_to_parents[i].damping = 0.2
-		else:  # default
+			self._elbo = self._tilted_elbo
+		elif method == "mk":  # default
 			self._update = self._mk_update
 			i = self._name_to_id["parent"]
 			self.messages_to_parents[i].damping = 0.2
+			self._elbo = self._mk_elbo
+		else:
+			raise ValueError(f"cannot recognize method {method}")
 
 	def initialize_messages_to_parents(self):
 		i = self._name_to_id["parent"]
@@ -108,6 +113,18 @@ class Logistic(Factor):
 		self._update()
 
 	def elbo(self):
+		# TODO: implement this
+		return self._elbo()
+
+	def _quadratic_elbo(self):
+		# TODO: implement this
+		pass
+
+	def _mk_elbo(self):
+		# TODO: implement this
+		pass
+
+	def _tilted_elbo(self):
 		# TODO: implement this
 		pass
 

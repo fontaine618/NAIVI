@@ -62,8 +62,38 @@ class Affine(Factor):
 
 	def update_parameters(self):
 		# TODO: implement this
-		pass
+		self._update_bias()
+		self._update_weights()
 
+	def _update_bias(self):
+		# NB: missing values will have precision 0 and therefore will not count towards any sums
+		p = self._name_to_id["parent"]
+		c = self._name_to_id["child"]
+		mfc = self.messages_to_children[c].message_to_factor
+		mfp = self.messages_to_parents[p].message_to_factor
+		mp = mfp.mean  # N x p x K, N x p x K x K
+		pc, mtpc = mfc.precision_and_mean_times_precision  # N x p, N x p
+		B = self.parameters["weights"]  # K x p
+		WR = mtpc.sum(0) - torch.einsum("ijk, kj, ij -> j", mp, B, pc)
+		W = pc.sum(0) # N x p x K
+		self.parameters["bias"].data = WR / W
+
+	def _update_weights(self):
+		# NB: missing values will have precision 0 and therefore will not count towards any sums
+		p = self._name_to_id["parent"]
+		c = self._name_to_id["child"]
+		mfc = self.messages_to_children[c].message_to_factor
+		mfp = self.messages_to_parents[p].message_to_factor
+		mp, vp = mfp.mean_and_variance  # N x p x K, N x p x K x K
+		pc, mtpc = mfc.precision_and_mean_times_precision  # N x p, N x p
+		B0 = self.parameters["bias"].data
+		# X'X
+		Vpmmt = vp + torch.einsum("ijk, ijl -> ijkl", mp, mp)
+		SpVpmmt = torch.einsum("ij, ijkl -> jkl", pc, Vpmmt)
+		# X'Y
+		pr = mtpc - B0.reshape((1, -1)) * pc
+		Sprm = torch.einsum("ij, ijk -> kj", pr, mp)
+		self.parameters["weights"].data = torch.linalg.solve(SpVpmmt, Sprm.T).T
 
 class AffineToParentMessage(Message):
 

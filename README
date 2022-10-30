@@ -1,0 +1,12 @@
+# VMP: To do list
+
+[x] Implement affine parameters update
+[ ] Implement ELBO for logistic fragment
+[ ] Implement wrapper similar to ADVI/VIMC
+
+# VMP: Ideas
+
+[ ] Memoize covariances:
+    - if intantiated from mean and covariance, store them too
+    - when variance is called, check if it is stored. If yes, just return.
+      If no, compute it and store it.
