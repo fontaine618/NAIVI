@@ -4,7 +4,7 @@ traj.f_load(filename="/home/simon/Documents/NAIVI/"
                      "results/example.hdf5")
 traj.v_auto_load = True
 traj.res.summary.results.df
-traj.res.summary.parameters.df[("fit", "algo")]
+traj.res.summary.hyperparameters.df[("fit", "algo")]
 
 traj.v_idx = 2
 

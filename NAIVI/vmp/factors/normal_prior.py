@@ -1,5 +1,6 @@
 from __future__ import annotations
 import torch
+import math
 from .factor import Factor
 from ..distributions.normal import Normal, MultivariateNormal, _batch_mahalanobis
 from ..messages import Message
@@ -34,6 +35,17 @@ class NormalPrior(Factor):
 		mq, vq = self.children[i].posterior.mean_and_variance
 		elbo = (vq/v0).log() + 1. - (mq.pow(2.) + vq - 2. * m0*mq + m0**2) / v0
 		return elbo.sum() * 0.5
+
+	# def forward(self, n_samples: int = 1):
+	# 	c_id = self._name_to_id["child"]
+	# 	dim = tuple(self.children[c_id].shape)
+	# 	dim = n_samples, *dim
+	# 	m0, v0 = self.parameters["mean"].data.item(), self.parameters["variance"].data.item()
+	# 	sc = torch.full(dim, m0) + torch.randn(dim) * torch.sqrt(torch.full(dim, v0))
+	# 	self.children[c_id].sample = sc
+
+	def elbo_mc(self):
+		return self.elbo()
 
 
 class NormalPriorToChildMessage(Message):
@@ -70,17 +82,37 @@ class MultivariateNormalPrior(Factor):
 
 	def elbo(self):
 		m0, v0 = self.parameters["mean"].data, self.parameters["variance"].data
-		m0 = m0.expand(self.dim)
-		det0 = v0**self.dim
+		logdet0 = math.log(v0 * 2 * math.pi) * self.dim
 		p0 = torch.eye(self.dim) / v0
 		i = self._name_to_id["child"]
 		mq, vq = self.children[i].posterior.mean_and_variance
-		detq = vq.det().sum()
-		trace = (p0 * vq).sum()
+		logdetq = (vq * 2 * math.pi).logdet()
+		trace = (p0.unsqueeze(0) * vq).sum((-1, -2))
 		diff = m0 - mq
-		quad = torch.einsum("ik, kj, ij->i", diff, p0, diff).sum()
-		elbo = - trace - quad + self.dim + detq.log() - det0.log()
-		return elbo.sum() * 0.5
+		quad = torch.einsum("ik, kj, ij->i", diff, p0, diff)
+		elbo = trace + quad - logdetq + logdet0 - self.dim
+		return 0.5 * elbo.sum()  # NB we take positive because this is the -KL term
+
+	def elbo_mc(self):
+		return self.elbo()
+		# # NB the above is exact, so this is just to check
+		# c_id = self._name_to_id["child"]
+		# m0, v0 = self.parameters["mean"].data.item(), self.parameters["variance"].data.item()
+		# sc = self.children[c_id].samples
+		# # cross entropy with prior
+		# logdet0 = math.log(v0 * 2 * math.pi) * self.dim
+		# ce0 = (sc - m0).pow(2.).sum(-1) / v0
+		# ce0 += logdet0
+		# # entropy of posterior
+		# mq, vq = self.children[c_id].posterior.mean_and_variance
+		# pq = self.children[c_id].posterior.precision
+		# logdetq = (vq * 2 * math.pi).logdet()
+		# diff = sc - mq.unsqueeze(0)
+		# quad = torch.einsum("mij, ikj, mik->mi", diff, pq, diff)
+		# eq = logdetq + quad
+		# # sum both
+		# elbo = ce0 - eq
+		# return 0.5 * elbo.sum(dim=-1).mean(dim=0)
 
 
 class MultivariateNormalPriorToChildMessage(Message):

@@ -71,7 +71,7 @@ for name, exparms in EXPERIMENTS.items():
 				traj.v_auto_load = True
 				print(name, file)
 				df = pd.concat(
-					[traj.res.summary.results.data, traj.res.summary.parameters.data],
+					[traj.res.summary.results.data, traj.res.summary.hyperparameters.data],
 					axis=1
 				)
 				# ensure compatible columns (no idea why, but some are not in the MultiIndex format ...)

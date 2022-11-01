@@ -83,7 +83,7 @@ class NAIVI:
     def prepare_optimizer(self, lr, power=1.0, optimizer="Adam"):
         params = [
             {'params': p, "lr": lr}
-            for p in self.model.parameters()
+            for p in self.model.hyperparameters()
         ]
         optimizer = getattr(torch.optim, optimizer)(params)
         scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** power)
@@ -284,15 +284,15 @@ class NAIVI:
         with torch.no_grad():
             grad_Linfty = torch.tensor([
                 parm.grad.abs().max()
-                for parm in self.model.parameters() if parm.grad is not None
+                for parm in self.model.hyperparameters() if parm.grad is not None
             ]).max().item()
             grad_L1 = torch.tensor([
                 parm.grad.abs().nansum()
-                for parm in self.model.parameters() if parm.grad is not None
+                for parm in self.model.hyperparameters() if parm.grad is not None
             ]).nansum().item()
             grad_L2 = torch.tensor([
                 (parm.grad**2).nansum()
-                for parm in self.model.parameters() if parm.grad is not None
+                for parm in self.model.hyperparameters() if parm.grad is not None
             ]).nansum().sqrt().item()
             converged = False
             if grad_L2 < tol:

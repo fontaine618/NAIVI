@@ -81,3 +81,6 @@ class Distribution:
 
 	def clone(self):
 		pass
+
+	def sample(self, n_samples: int = 1):
+		pass

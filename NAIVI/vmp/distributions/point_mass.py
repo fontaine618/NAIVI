@@ -39,6 +39,9 @@ class PointMass(Distribution):
 		# all(?) other cases
 		return self
 
+	def sample(self, n_samples: int = 1):
+		return self._value.expand(n_samples, *self._dim)
+
 
 class Unit(PointMass):
 	

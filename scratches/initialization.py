@@ -52,4 +52,4 @@ self = MLE(K, N, p_cts, p_bin)
 self.init(positions=Z_hat, heterogeneity=alpha_hat)
 self.fit(train, test, Z, batch_size=len(train), eps=1.e-6, max_iter=200, lr=0.1)
 
-list(self.model.parameters())
+list(self.model.hyperparameters())

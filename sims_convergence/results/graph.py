@@ -16,7 +16,7 @@ traj = Trajectory("optimizer")
 traj.f_load(filename=RESULTS_PATH + "optimizer.hdf5", force=True)
 traj.v_auto_load = True
 results = traj.res.summary.results.df
-parameters = traj.res.summary.parameters.df
+parameters = traj.res.summary.hyperparameters.df
 logs = traj.res.summary.logs.df
 
 # Prepare stuff

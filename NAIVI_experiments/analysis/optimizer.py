@@ -17,7 +17,7 @@ traj = Trajectory(EXP_NAME, add_time=False)
 traj.f_load(filename=RESULTS_PATH + EXP_NAME + ".hdf5", force=True)
 traj.v_auto_load = True
 
-parms = traj.res.summary.parameters.df
+parms = traj.res.summary.hyperparameters.df
 ns = parms[("data", "N")].unique()
 ps = parms[("data", "p_cts")].unique()
 exps = list(it.product(ns, ps))

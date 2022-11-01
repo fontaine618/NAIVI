@@ -12,7 +12,7 @@ def load_results(name, path="/home/simon/Documents/NAIVI/sims_final/results/"):
 		traj.f_load(filename=path + file, load_results=0)
 		traj.v_auto_load = True
 		results[file] = traj.res.summary.results.df
-		parameters[file] = traj.res.summary.parameters.df
+		parameters[file] = traj.res.summary.hyperparameters.df
 	results = pd.concat(results.values(), ignore_index=True)
 	parameters = pd.concat(parameters.values(), ignore_index=True)
 	return results, parameters

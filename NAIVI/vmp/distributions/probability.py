@@ -57,3 +57,6 @@ class Probability(Distribution):
 				f"Division of Probability with {other._name} "
 			    f"not implemented yet or is not meaningful."
 			)
+
+	def sample(self, n_samples: int = 1):
+		return torch.distributions.Bernoulli(self.proba).sample((n_samples,))

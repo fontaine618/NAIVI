@@ -1,4 +1,5 @@
 import torch
+import math
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 from NAIVI.vmp import disable_logging
@@ -11,13 +12,17 @@ from NAIVI.vmp.factors.factor import Factor
 from NAIVI.vmp.variables.variable import Variable
 from NAIVI.vmp.messages.message import Message
 
+N = 50
+p_bin = 10
+p_cts = 10
+
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
 	generate_dataset(
-		N=100,
+		N=N,
 		K=3,
-		p_cts=10,
-		p_bin=10,
+		p_cts=p_cts,
+		p_bin=p_bin,
 		var_cov=1.,
 		missing_mean=0.5,
 		alpha_mean=-1.5,
@@ -28,6 +33,7 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	)
 
 vmp = VMP(
+	n_nodes=N,
 	binary_covariates=X_bin,
 	continuous_covariates=X_cts,
 	edges=A,
@@ -36,47 +42,81 @@ vmp = VMP(
 	latent_dim=3
 )
 
-vmp._factors["affine_cts"].parameters["weights"].data = B[:, :10]
-vmp._factors["affine_bin"].parameters["weights"].data = B[:, 10:]
-vmp._factors["affine_cts"].parameters["bias"].data = B0[0, :10]
-vmp._factors["affine_bin"].parameters["bias"].data = B0[0, 10:]
+vmp.factors["affine_cts"].parameters["weights"].data = B[:, :p_cts]
+vmp.factors["affine_bin"].parameters["weights"].data = B[:, p_cts:]
+vmp.factors["affine_cts"].parameters["bias"].data = B0[0, :p_cts]
+vmp.factors["affine_bin"].parameters["bias"].data = B0[0, p_cts:]
 
-for iter in range(10):
+disable_logging()
+
+print([x for x in vmp._elbo().values() if x != 0])
+print(vmp.elbo().item())
+for iter in range(25):
 	print(iter)
 	with torch.no_grad():
 		vmp._e_step()
+		# vmp._m_step()
+		print([x for x in vmp._elbo().values() if x != 0])
+		print(vmp.elbo().item())
 
-self = vmp._factors["affine_cts"]
+self = vmp.factors["affine_cts"]
 
 
-vmp._variables["latent"].posterior.mean[0:10, :]
+vmp.variables["latent"].posterior.mean[0:10, :]
 Z[0:10, :]
 
 
 # test update of variance
-self = vmp._factors["cts_model"]
+self = vmp.factors["cts_model"]
 
 for i in range(1000):
 	elbo = self.elbo()
 	elbo.backward()
-	self.parameters["log_variance"].data += 0.00001 * self.parameters["log_variance"].grad
+	self.hyperparameters["log_variance"].data += 0.00001 * self.hyperparameters["log_variance"].grad
 	print(i, elbo.item())
 
-print(self.parameters["log_variance"].data.exp())
+print(self.hyperparameters["log_variance"].data.exp())
 self.update_parameters()
 print(self.elbo().item())
 
 
 # test update affine parameters
 
-self = vmp._factors["affine_cts"]
-vmp._factors["cts_model"].elbo()
+self = vmp.factors["affine_cts"]
 self.update_parameters()
-vmp._factors["cts_model"].elbo()
-self.parameters["weights"].data
+self.hyperparameters["weights"].data
 B[:, :10]
-self.parameters["bias"].data
+self.hyperparameters["bias"].data
 B0[0, :10]
+vmp.factors["cts_model"].hyperparameters["log_variance"].data.exp()
+
+
+# Logistic ELBO
+
+self = vmp.factors["bin_model"]
+
+# Samples and forward
+
+with torch.no_grad():
+	vmp._elbo()
+	vmp.sample(100)
+	vmp.forward()
+	vmp._elbo_mc()
+	vmp.sample(100)
+	vmp._elbo_mc()
+
+self = vmp.factors["cts_model"]
+
+self = MultivariateNormal.from_mean_and_variance(
+	mean=torch.ones((2, 3)),
+	variance=torch.eye(3).unsqueeze(0).repeat(2, 1, 1)
+)
+
+self.sample(7)
+
+self = vmp.variables["latent"].posterior
+
+
 
 # {'latent': [v0] Variable,
 #  'heterogeneity': [v1] Variable,

@@ -113,12 +113,20 @@ class Logistic(Factor):
 		self._update()
 
 	def elbo(self):
-		# TODO: implement this
 		return self._elbo()
 
 	def _quadratic_elbo(self):
-		# TODO: implement this
-		pass
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfc = self.children[c_id].posterior
+		mfp = self.parents[p_id].posterior
+		m, v = mfp.mean_and_variance
+		s = mfc.proba - 0.5
+		t = (m.pow(2.) + v).sqrt()
+		elbo = torch.sigmoid(t).log() + s * m - t * 0.5
+		elbo = torch.where(s.abs()==0.5, elbo, torch.zeros_like(elbo))
+		return elbo.sum()
+
 
 	def _mk_elbo(self):
 		# TODO: implement this
@@ -179,6 +187,19 @@ class Logistic(Factor):
 		p1 = a * (1 - a)
 		mtp1 = m * p1 + x - a
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
+
+	def elbo_mc(self):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		sp = self.parents[p_id].samples  # B x ...
+		sc = self.children[c_id].samples  # B x ...
+		# sc has no missing values, need to fetch them back
+		proba = self.messages_to_children[c_id].message_to_factor.proba
+		# proba should only contain 0., 0.5 or 1.
+		obs = torch.logical_or(proba.lt(1.e-10), proba.gt(1.-1.e-10))
+		sc = torch.where(obs, sc, torch.full_like(sc, float("nan")))
+		elbo = torch.sigmoid((2. * sc -1.) * sp).log()
+		return elbo.nansum(dim=(-1, -2)).nanmean(0)
 
 
 class LogisticToLogitMessage(Message):

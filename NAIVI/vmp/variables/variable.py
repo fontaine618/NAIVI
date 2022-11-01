@@ -20,6 +20,7 @@ class Variable:
         self.parents: Dict[int, Factor] = {}
         self.children: Dict[int, Factor] = {}
         self.posterior: Distribution = Unit(dim)
+        self.samples: torch.Tensor = torch.zeros(1, *self._dim)
         Variable.instance[self.id] = self
 
     def set_parents(self, **kwargs: Factor):
@@ -55,6 +56,10 @@ class Variable:
     def __repr__(self):
         return f"[v{self.id}] {self._name}"
 
+    def sample(self, n_samples):
+        self.samples = self.posterior.sample(n_samples)
+        return self.samples
+
 
 class ObservedVariable(Variable):
 
@@ -63,4 +68,8 @@ class ObservedVariable(Variable):
     def __init__(self, values):
         super(ObservedVariable, self).__init__(values.shape)
         self.values = values
+        self.samples = values.reshape(1, *self._dim)
+
+    def sample(self, n_samples):
+        pass
 

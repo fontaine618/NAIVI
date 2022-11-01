@@ -85,7 +85,7 @@ self.fit(10, 0, 1, verbose=True,
          positions_true=tf.convert_to_tensor(Z.numpy(), dtype=np.float32)
          )
 
-for n in self.parameters():
+for n in self.hyperparameters():
     print(n)
 
 self.position_prior.mean.value()

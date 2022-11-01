@@ -20,12 +20,15 @@ class Normal(Distribution):
 
 	_name = "Normal"
 
-	def __init__(self, precision, mean_times_precision, **kw):
+	def __init__(self, precision, mean_times_precision,
+	             mean=None, variance=None, **kw):
 		dim = mean_times_precision.shape
 		super(Normal, self).__init__(dim=dim)
 		self._check_args(precision, mean_times_precision)
 		self.precision = precision
 		self.mean_times_precision = mean_times_precision
+		self._mean = mean
+		self._variance = variance
 
 	@staticmethod
 	def _check_args(precision, mean_times_precision):
@@ -41,11 +44,17 @@ class Normal(Distribution):
 
 	@property
 	def mean(self):
-		return torch.where(self.precision == 0., 0., self.mean_times_precision / self.precision)
+		if self._mean is None:
+			self._mean = torch.where(self.precision == 0., 0., self.mean_times_precision / self.precision)
+		return self._mean
 
 	@property
 	def variance(self):
-		return 1. / self.precision
+		if self._variance is None:
+			self._variance = 1. / self.precision
+		# else:
+		# 	print("variance already computed")
+		return self._variance
 
 	@property
 	def precision_and_mean_times_precision(self):
@@ -57,9 +66,7 @@ class Normal(Distribution):
 
 	@property
 	def mean_and_variance(self):
-		var = self.variance
-		mean = torch.where(self.precision == 0., 0., self.mean_times_precision * var)
-		return mean, var
+		return self.mean, self.variance
 
 	@classmethod
 	def standard_from_dimension(cls, dim):
@@ -77,7 +84,7 @@ class Normal(Distribution):
 	def from_mean_and_variance(cls, mean, variance):
 		precision = torch.where(mean.isnan(), 0., 1. / variance)
 		mean_times_precision = torch.where(mean.isnan(), 0., mean * precision)
-		return Normal(precision, mean_times_precision)
+		return Normal(precision, mean_times_precision, mean=mean, variance=variance)
 
 	def __mul__(self, other):
 		if type(other) is Normal:
@@ -112,6 +119,12 @@ class Normal(Distribution):
 				f"Product of Normal with {other._name} "
 			    f"not implemented yet or is not meaningful."
 			)
+
+	def sample(self, n_samples: int = 1):
+		return torch.normal(
+			self.mean.unsqueeze(0).expand(n_samples, *self._dim),
+			self.variance.unsqueeze(0).expand(n_samples, *self._dim).sqrt()
+		)
 
 	def unsqueeze(self, dim):
 		return Normal(
@@ -156,11 +169,14 @@ class MultivariateNormal(Normal):
 
 	_name = "MultivariateNormal"
 
-	def __init__(self, precision, mean_times_precision, **kw):
+	def __init__(self, precision, mean_times_precision,
+	             mean=None, variance=None, **kw):
 		dim = mean_times_precision.shape
 		super(MultivariateNormal, self).__init__(
 			precision=precision,
 			mean_times_precision=mean_times_precision,
+			mean=mean,
+			variance=variance,
 			dim=dim
 		)
 
@@ -177,17 +193,19 @@ class MultivariateNormal(Normal):
 
 	@property
 	def mean(self):
-		return _batch_mv(self.variance, self.mean_times_precision)
+		if self._mean is None:
+			self._mean = _batch_mv(self.variance, self.mean_times_precision)
+		# else:
+		# 	print("mean already computed")
+		return self._mean
 
 	@property
 	def variance(self):
-		return torch.inverse(self.precision)
-
-	@property
-	def mean_and_variance(self):
-		var = self.variance
-		mean = _batch_mv(var, self.mean_times_precision)
-		return mean, var
+		if self._variance is None:
+			self._variance = torch.inverse(self.precision)
+		# else:
+		# 	print("covariance already computed")
+		return self._variance
 
 	@classmethod
 	def standard_from_dimension(cls, dim):
@@ -207,7 +225,7 @@ class MultivariateNormal(Normal):
 	def from_mean_and_variance(cls, mean, variance):
 		precision = torch.inverse(variance)
 		mean_times_precision = torch.matmul(precision, mean.unsqueeze(-1)).squeeze(-1)
-		return MultivariateNormal(precision, mean_times_precision)
+		return MultivariateNormal(precision, mean_times_precision, mean=mean, variance=variance)
 
 	def __mul__(self, other):
 		if type(other) is MultivariateNormal:
@@ -281,3 +299,10 @@ class MultivariateNormal(Normal):
 			precision=self.precision.clone(),
 			mean_times_precision=self.mean_times_precision.clone()
 		)
+
+	def sample(self, n_samples: int = 1):
+		samples = torch.distributions.multivariate_normal.MultivariateNormal(
+			self.mean, self.variance
+		).sample((n_samples,))
+		return samples
+

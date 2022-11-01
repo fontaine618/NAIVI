@@ -51,21 +51,20 @@ class GaussianFactor(Factor):
 		self.messages_to_parents[p].message_to_variable = Normal.from_mean_and_variance(m, v)
 
 	def update_parameters(self):
-		with torch.no_grad():
-			# curious to see the ELBO comparison with a gradient update
-			p = self._name_to_id["parent"]
-			c = self._name_to_id["child"]
-			# mfp = self.messages_to_parents[p].message_to_factor
-			# mfc = self.messages_to_children[c].message_to_factor
-			mfp = self.parents[p].posterior
-			mfc = self.children[c].posterior
-			m, v = mfp.mean_and_variance
-			observed = mfc.precision > 0.
-			x = mfc.mean
-			s2 = (x - m).pow(2.) + v
-			s2sum = torch.where(observed, s2, torch.zeros_like(s2)).sum(dim=0)
-			n = observed.sum(dim=0)
-			self.parameters["log_variance"].data = torch.log(s2sum / n)
+		# curious to see the ELBO comparison with a gradient update
+		p = self._name_to_id["parent"]
+		c = self._name_to_id["child"]
+		# mfp = self.messages_to_parents[p].message_to_factor
+		# mfc = self.messages_to_children[c].message_to_factor
+		mfp = self.parents[p].posterior
+		mfc = self.children[c].posterior
+		m, v = mfp.mean_and_variance
+		observed = mfc.precision > 0.
+		x = mfc.mean
+		s2 = (x - m).pow(2.) + v
+		s2sum = torch.where(observed, s2, torch.zeros_like(s2)).sum(dim=0)
+		n = observed.sum(dim=0)
+		self.parameters["log_variance"].data = torch.log(s2sum / n)
 
 	def elbo(self):
 		p = self._name_to_id["parent"]
@@ -78,6 +77,26 @@ class GaussianFactor(Factor):
 		elbo += torch.log(s2).reshape(1, -1) + math.log(2. * math.pi)
 		elbo = torch.where(observed, elbo, torch.zeros_like(elbo)).sum(dim=0)
 		return - 0.5 * elbo.sum()
+
+	def forward(self, **kwargs):
+		pass
+		# This should be the update, but here the child is observed, so we don't update it
+		# p_id = self._name_to_id["parent"]
+		# c_id = self._name_to_id["child"]
+		# sp = self.parents[p_id].sample
+		# s2 = self.parameters["log_variance"].exp()
+		# sc = sp + torch.randn_like(sp) * s2.sqrt()
+		# self.children[c_id].sample = sc
+
+	def elbo_mc(self):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		sp = self.parents[p_id].samples
+		s2 = self.parameters["log_variance"].exp()
+		sc = self.children[c_id].samples
+		d = (sc - sp).pow(2.) / s2
+		d += torch.log(s2).reshape(1, 1, -1) + math.log(2. * math.pi)
+		return - 0.5 * d.nansum(dim=(-1, -2)).nanmean(dim=0)
 
 
 

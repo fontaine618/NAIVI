@@ -94,7 +94,7 @@ for col, (name, exparms) in enumerate(EXPERIMENTS.items()):
 				traj.f_load(filename=RESULTS_PATH + name + "/" + file, force=True)
 				traj.v_auto_load = True
 				df_list.append(pd.concat(
-					[traj.res.summary.results.data, traj.res.summary.parameters.data],
+					[traj.res.summary.results.data, traj.res.summary.hyperparameters.data],
 					axis=1
 				))
 			except:

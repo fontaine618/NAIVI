@@ -36,10 +36,9 @@ class Factor:
 	def initialize_messages_to_children(self):
 		pass
 
-	@property
 	def elbo(self):
 		"""If not reimplemented, we assume there is no elbo contribution from this factor."""
-		return 0.
+		return torch.Tensor([0.])
 
 	def update_messages_from_children(self):
 		for i, child in self.children.items():
@@ -81,6 +80,14 @@ class Factor:
 
 	def get(self, parameter: str) -> torch.Tensor:
 		return self.parameters[parameter].data
+
+	def forward(self, n_samples: int = 1):
+		"""Takes parents.sample and updates children.sample"""
+		pass
+
+	def elbo_mc(self):
+		"""Approximates ELBO using MC from the samples."""
+		return torch.Tensor([0.])
 
 	def __repr__(self):
 		return f"[f{self.id}] {self._name}"

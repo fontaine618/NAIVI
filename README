@@ -2,11 +2,17 @@
 
 [x] Implement affine parameters update
 [ ] Implement ELBO for logistic fragment
+    [x] Quadratic
+    [ ] MK
+    [ ] Tilted
 [ ] Implement wrapper similar to ADVI/VIMC
+[x] ELBO: MC at each factor (to check elbo computation/Logistic LB)
+[x] ELBO: Like VIMC (to check messages)
 
 # VMP: Ideas
 
-[ ] Memoize covariances:
+[x] Memoize covariances:
     - if intantiated from mean and covariance, store them too
     - when variance is called, check if it is stored. If yes, just return.
       If no, compute it and store it.
+[ ] JIT?

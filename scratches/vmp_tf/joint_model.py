@@ -49,16 +49,16 @@ for i in range(10):
     print("=== M-step")
     for j in range(10):
         with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
-            g.watch(self._parameters())
+            g.watch(self.hyperparameters())
             target = self.elbo2()
-        grad = g.gradient(target, self._parameters())
+        grad = g.gradient(target, self.hyperparameters())
         for k, v in grad.items():
-            self.parameters[k].grad = v
-            self.parameters[k].step(lr * (1.0 if k == "noise_adjacency" else self.N))
+            self.hyperparameters[k].grad = v
+            self.hyperparameters[k].step(lr * (1.0 if k == "noise_adjacency" else self.N))
         print(i, j, target.numpy())
 
 
-for k, v in self.parameters.items():
+for k, v in self.hyperparameters.items():
     print(k)
     print(v.value())
 
@@ -73,17 +73,17 @@ for _ in range(10):
 
 
 with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
-    g.watch(self._parameters())
+    g.watch(self.hyperparameters())
     target = self.pass_and_elbo()
 
 self.propagate()
 with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
-    g.watch(self._parameters())
+    g.watch(self.hyperparameters())
     target = self.elbo2()
 
 
-grad = g.gradient(target, self._parameters())
-for k, v in self.parameters.items():
+grad = g.gradient(target, self.hyperparameters())
+for k, v in self.hyperparameters.items():
     print(k)
     print(grad[k])
     print(v.value())
@@ -101,18 +101,18 @@ lr = 0.01
 for _ in range(30):
 
     with tf.GradientTape(persistent=True, watch_accessed_variables=False) as g:
-        g.watch(self._parameters())
+        g.watch(self.hyperparameters())
         target = self.pass_and_elbo()
 
-    grad = g.gradient(target, self._parameters())
+    grad = g.gradient(target, self.hyperparameters())
     for k, v in grad.items():
-        self.parameters[k].grad = v
+        self.hyperparameters[k].grad = v
         #self.parameters[k].step(lr)
-        self.parameters[k].step(lr * (1.0 if k == "noise_adjacency" else self.N))
+        self.hyperparameters[k].step(lr * (1.0 if k == "noise_adjacency" else self.N))
     print(target)
 
 
-for k, v in self.parameters.items():
+for k, v in self.hyperparameters.items():
     print(k)
     print(grad[k])
     print(v.value())
@@ -171,7 +171,7 @@ GaussianArray.observed(X)
 
 mean=self.nodes["linear_predictor_covariate"]
 x=self.nodes["covariates_continuous"]
-variance=self.parameters["noise_covariate"].value()
+variance=self.hyperparameters["noise_covariate"].value()
 
 
 self = self.nodes["covariates_continuous"]

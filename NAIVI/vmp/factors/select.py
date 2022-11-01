@@ -57,6 +57,12 @@ class Select(Factor):
 		mfc = self.messages_to_children[c].message_to_factor
 		self.messages_to_parents[p].message_to_variable = mfc.clone()
 
+	def forward(self, **kwargs):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		sp = self.parents[p_id].samples  # B x E X K, e in [N]
+		self.children[c_id].samples = sp.index_select(1, self.indices)
+
 
 class SelectToParentMessage(Message):
 	"""Dispatch message."""

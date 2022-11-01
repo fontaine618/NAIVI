@@ -57,7 +57,7 @@ for exp in EXPERIMENT_NAME:
 				traj.f_load(filename=RESULTS_PATH + exp + "/" + file, force=True)
 				traj.v_auto_load = True
 				df = pd.concat(
-					[traj.res.summary.results.data, traj.res.summary.parameters.data],
+					[traj.res.summary.results.data, traj.res.summary.hyperparameters.data],
 					axis=1
 				)
 				print(exp, df.columns[13], df.columns[15])

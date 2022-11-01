@@ -37,7 +37,8 @@ class Affine(Factor):
 		b = self.parameters["bias"].data  # p
 		w = self.parameters["weights"].data  # K x p
 		m, v = mfp.mean_and_variance  # N x p x k, N x p x K x K
-		mean = torch.einsum("j, kj, ijk -> ij", b, w, m)  # N x p
+		mean = torch.einsum("kj, ijk -> ij", w, m)  # N x p
+		mean += b.reshape((1, -1))  # 1 x p
 		variance = torch.einsum("kj, ijkl, lj -> ij", w, v, w)  # N x p
 		self.messages_to_children[c].message_to_variable = Normal.from_mean_and_variance(mean, variance)
 
@@ -45,13 +46,13 @@ class Affine(Factor):
 		p = self._name_to_id["parent"]
 		c = self._name_to_id["child"]
 		mfc = self.messages_to_children[c].message_to_factor  # N x p
-		m, v = mfc.mean_and_variance  # N x p, N x p
-		m = torch.where(m.isnan(), 0., m)
+		mc = mfc.mean  # N x p, N x p
+		pc = mfc.precision  # N x p
 		b = self.parameters["bias"].data  # p
 		w = self.parameters["weights"].data  # K x p
-		mmb = m - b.reshape((1, -1))  # N x p
-		prec = torch.einsum("kj, lj, ij -> ijkl", w, w, 1/v)  # N x p x K x K
-		mtp = torch.einsum("ij, kj, ij -> ijk", mmb, w, 1/v)  # N x p x K
+		mmb = mc - b.reshape((1, -1))  # N x p
+		prec = torch.einsum("kj, lj, ij -> ijkl", w, w, pc)  # N x p x K x K
+		mtp = torch.einsum("ij, kj, ij -> ijk", mmb, w, pc)  # N x p x K
 		self.messages_to_parents[p].message_to_variable = MultivariateNormal(prec, mtp)
 
 	def update_messages_from_parents(self):
@@ -94,6 +95,17 @@ class Affine(Factor):
 		pr = mtpc - B0.reshape((1, -1)) * pc
 		Sprm = torch.einsum("ij, ijk -> kj", pr, mp)
 		self.parameters["weights"].data = torch.linalg.solve(SpVpmmt, Sprm.T).T
+
+	def forward(self, **kwargs):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		sp = self.parents[p_id].samples # B x N x p
+		b = self.parameters["bias"].data  # p
+		w = self.parameters["weights"].data  # K x p
+		sc = torch.einsum("kj, bik -> bij", w, sp)  # B x N x p
+		sc += b.reshape((1, 1, -1))  # 1 x 1 x p
+		self.children[c_id].samples = sc
+
 
 class AffineToParentMessage(Message):
 

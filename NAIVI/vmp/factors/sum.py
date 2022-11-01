@@ -56,6 +56,13 @@ class Sum(Factor):
 			v = torch.where(v.isnan(), float("inf"), v)
 			msg.message_to_variable = Normal.from_mean_and_variance(m, v)
 
+	def forward(self, **kwargs):
+		c_id = self._name_to_id["child"]
+		sc = 0.
+		for i, parent in self.parents.items():
+			sc += parent.samples
+		self.children[c_id].samples = sc
+
 
 class SumToParentMessage(Message):
 

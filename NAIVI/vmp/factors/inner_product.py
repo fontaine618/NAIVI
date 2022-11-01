@@ -68,6 +68,15 @@ class InnerProduct(Factor):
 		self.messages_to_parents[l_id].message_to_variable = MultivariateNormal(ptl, mtptl)
 		self.messages_to_parents[r_id].message_to_variable = MultivariateNormal(ptr, mtptr)
 
+	def forward(self, **kwargs):
+		l_id = self._name_to_id["left"]
+		r_id = self._name_to_id["right"]
+		c_id = self._name_to_id["child"]
+		sl = self.parents[l_id].samples
+		sr = self.parents[r_id].samples
+		sc = (sl * sr).sum(-1).unsqueeze(-1)
+		self.children[c_id].samples = sc
+
 
 class InnerProductToParentMessage(Message):
 
