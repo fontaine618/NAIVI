@@ -76,7 +76,7 @@ class Logistic(Factor):
 
 	def __init__(self, dim: int, parent: Variable, method: str = "quadratic"):
 		super(Logistic, self).__init__(parent=parent)
-		self.parameters["variance"] = torch.nn.Parameter(torch.ones(dim))
+		# self.parameters["variance"] = torch.nn.Parameter(torch.ones(dim))
 		if method == "quadratic":
 			self._update = self._quadratic_update
 			self._elbo = self._quadratic_elbo

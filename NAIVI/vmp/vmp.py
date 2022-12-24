@@ -2,7 +2,7 @@ from __future__ import annotations
 import itertools
 import torch
 import numpy as np
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Optional
 
 from .factors.affine import Affine
 from .factors.gaussian import GaussianFactor
@@ -43,6 +43,7 @@ class VMP:
 		**kwargs
 	):
 		self._prepare_hyperparameters(**kwargs)
+		self.latent_dim = latent_dim
 		self.factors = dict()
 		self.variables = dict()
 		self._vmp_sequence = list()
@@ -56,6 +57,8 @@ class VMP:
 			edge_index_right=edge_index_right,
 			edges=edges,
 		)
+		self.elbo_history = dict()
+		self.metrics_history = dict()
 
 	def _prepare_hyperparameters(self, **kwargs):
 		self.hyperparameters = self._default_hyperparameters.copy()
@@ -76,12 +79,10 @@ class VMP:
 
 		# initialize factors and variables
 		heterogeneity, latent = self._initialize_priors(K, N)
-		# TODO: condition on p_cts, p_bin >0 and update teh sequence and m_step
 		self._initialize_binary_model(K, N, binary_covariates, latent)
 		self._initialize_continuous_model(K, N, continuous_covariates, latent)
-		# TODO condition on having at least one edge and update sequence
 		self._initialize_edge_model(K, edge_index_left, edge_index_right, edges, heterogeneity, latent)
-
+		self._break_symmetry()
 		self._initialize_posterior()
 		self._vmp_forward()
 
@@ -245,6 +246,10 @@ class VMP:
 		for variable in self.variables.values():
 			variable.compute_posterior()
 
+	def _break_symmetry(self):
+		# TODO implement this
+		pass
+
 	def _vmp_backward(self):
 		for fname in self._vmp_sequence[::-1]:
 			self.factors[fname].update_messages_from_children()
@@ -307,4 +312,138 @@ class VMP:
 		for fname in self._vmp_sequence:
 			self.factors[fname].forward()
 
+	def _update_elbo_history(self, elbo: dict[str, float]):
+		for k, v in elbo.items():
+			if k not in self.elbo_history:
+				self.elbo_history[k] = [v]
+			self.elbo_history[k].append(v)
 
+	def _update_metrics_history(self, metrics: Dict[str, float]):
+		for k, v in metrics.items():
+			if k not in self.metrics_history:
+				self.metrics_history[k] = [v]
+			self.metrics_history[k].append(v)
+
+	def fit_and_evaluate(
+			self,
+			max_iter: int = 1000,
+			rel_tol: float = 1e-6,
+			verbose: bool = True,
+			true_values: Dict[str, torch.Tensor] = {},
+	):
+		elbo = self.elbo()
+		for i in range(max_iter):
+			self._e_step()
+			self._m_step()
+			new_elbo = self.elbo().item()
+			elbos = self._elbo()
+			elbos["sum"] = new_elbo
+			self._update_elbo_history(elbos)
+			self.evaluate(true_values)
+			increased = new_elbo > elbo
+			if verbose:
+				print(f"[VMP] Iteration {i:<4} Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
+			if abs(new_elbo - elbo) < rel_tol * abs(elbo):
+				break
+			elbo = new_elbo
+
+	def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6, verbose: bool = True):
+		self.fit_and_evaluate(max_iter, rel_tol, verbose)
+
+	def evaluate(self, true_values: Dict[str, torch.Tensor] = {}):
+		# add observed data
+		if "bin_observed" in self.factors:
+			true_values["X_bin"] = self.factors["bin_observed"].values.values
+		if "cts_observed" in self.factors:
+			true_values["X_cts"] = self.factors["cts_observed"].values.values
+		if "edge_observed" in self.factors:
+			true_values["A"] = self.factors["edge_observed"].values.values
+		for name, value in true_values.items():
+			self._evaluate(name, value)
+
+	@property
+	def weights(self) -> torch.Tensor:
+		weights = torch.zeros(self.latent_dim, 0)
+		if "affine_cts" in self.parameters:
+			weights = torch.cat([weights, self.parameters["affine_cts"]["weights"].data], dim=1)
+		if "affine_bin" in self.parameters:
+			weights = torch.cat([weights, self.parameters["affine_bin"]["weights"].data], dim=1)
+		return weights
+
+	@property
+	def bias(self) -> torch.Tensor:
+		bias = torch.zeros(0)
+		if "affine_cts" in self.parameters:
+			bias = torch.cat([bias, self.parameters["affine_cts"]["bias"].data], dim=0)
+		if "affine_bin" in self.parameters:
+			bias = torch.cat([bias, self.parameters["affine_bin"]["bias"].data], dim=0)
+		return bias.reshape(1, -1)
+
+	def _evaluate(self, name: str, value: torch.Tensor):
+		metrics = dict()
+		# compute metrics
+		if name == "heterogeneity":
+			post = self.variables["heterogeneity"].posterior.mean
+			diff = (post - value).abs()
+			metrics["heteregeneity_l2"] = (diff ** 2).sum().sqrt().item()
+		elif name == "latent":
+			post = self.variables["latent"].posterior.mean
+			ZZt = post @ post.T
+			ZtZinv = torch.linalg.inv(post.T @ post)
+			Proj = post @ ZtZinv @ post.T
+
+			ZZt0 = value @ value.T
+			ZtZinv0 = torch.linalg.inv(value.T @ value)
+			Proj0 = value @ ZtZinv0 @ value.T
+
+			metrics["latent_ZZt_fro"] = (ZZt - ZZt0).pow(2.).sum().sqrt().item()
+			metrics["latent_Proj_fro"] = (Proj - Proj0).pow(2.).sum().sqrt().item()
+		elif name == "bias":
+			bias = self.bias
+			diff = (bias - value).abs()
+			metrics["bias_l2"] = (diff ** 2).sum().sqrt().item()
+		elif name == "weights":
+			weights = self.weights.T
+			ZZt = weights @ weights.T
+			ZtZinv = torch.linalg.inv(weights.T @ weights)
+			Proj = weights @ ZtZinv @ weights.T
+
+			value = value.T
+			ZZt0 = value @ value.T
+			ZtZinv0 = torch.linalg.inv(value.T @ value)
+			Proj0 = value @ ZtZinv0 @ value.T
+
+			metrics["weights_BBt_fro"] = (ZZt - ZZt0).pow(2.).sum().sqrt().item()
+			metrics["weights_Proj_fro"] = (Proj - Proj0).pow(2.).sum().sqrt().item()
+		elif name == "cts_noise":
+			# TODO
+			pass
+		elif name == "Theta_X":
+			# TODO
+			pass
+		elif name == "Theta_A":
+			# TODO
+			pass
+		elif name == "P":
+			# TODO
+			pass
+		elif name == "X_cts":
+			# TODO
+			pass
+		elif name == "X_bin":
+			# TODO
+			pass
+		elif name == "X_cts_missing":
+			# TODO
+			pass
+		elif name == "X_bin_missing":
+			# TODO
+			pass
+		elif name == "A":
+			# TODO
+			pass
+		else:
+			# could print a warning message, but that would appear every iteration ...
+			pass
+		# update history
+		self._update_metrics_history(metrics)

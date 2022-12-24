@@ -8,11 +8,18 @@
 [ ] Implement wrapper similar to ADVI/VIMC
 [x] ELBO: MC at each factor (to check elbo computation/Logistic LB)
 [x] ELBO: Like VIMC (to check messages)
+[ ] Figure out why mean is never updated ???
+    [ ] Break symmetry?
+[ ] Profile and make faster
+[ ] Add true values with some metrics
+    [x] Do a fit_and_evaluate method
+[ ] Initialization
+    [ ] Use ADVI first? VMP is then just a refinement?
 
 # VMP: Ideas
 
 [x] Memoize covariances:
-    - if intantiated from mean and covariance, store them too
+    - if instantiated from mean and covariance, store them too
     - when variance is called, check if it is stored. If yes, just return.
       If no, compute it and store it.
 [ ] JIT?

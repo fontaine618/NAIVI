@@ -1,7 +1,6 @@
 import torch
 import numpy as np
-from pytorch_lightning.metrics.functional import auroc
-from pytorch_lightning.metrics.functional import mean_squared_error
+from torchmetrics.functional import auroc, mean_squared_error
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer
 from sklearn.linear_model import BayesianRidge

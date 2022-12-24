@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 import pandas as pd
-from pytorch_lightning.metrics.functional import auroc, mean_squared_error
+from torchmetrics.functional import auroc, mean_squared_error
 # from NAIVI.utils.metrics import invariant_distance, projection_distance, proba_distance
 from NAIVI.utils.base import verbose_init
 from torch.optim.lr_scheduler import LambdaLR

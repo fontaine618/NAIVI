@@ -1,5 +1,12 @@
 import torch
-import math
+import pandas as pd
+import matplotlib.pyplot as plt
+import sys
+
+sys.path.append("/home/simon/Documents/NAIVI/")
+
+# plt.style.use("seaborn-v0_8-whitegrid")
+plt.style.use("seaborn-whitegrid")
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 from NAIVI.vmp import disable_logging
@@ -12,9 +19,9 @@ from NAIVI.vmp.factors.factor import Factor
 from NAIVI.vmp.variables.variable import Variable
 from NAIVI.vmp.messages.message import Message
 
-N = 50
-p_bin = 10
-p_cts = 10
+N = 200
+p_bin = 7
+p_cts = 0
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
@@ -36,11 +43,48 @@ vmp = VMP(
 	n_nodes=N,
 	binary_covariates=X_bin,
 	continuous_covariates=X_cts,
-	edges=A,
+	# edges=A,
+	edges=None,
 	edge_index_left=i0,
 	edge_index_right=i1,
-	latent_dim=3
+	latent_dim=3,
+	heterogeneity_prior_mean=-1.5
 )
+self = vmp
+
+vmp.fit_and_evaluate(
+	max_iter=20,
+	true_values={
+		"heterogeneity": alpha,
+		"latent": Z,
+		"bias": B0,
+		"weights": B,
+	}
+)
+
+vmp.metrics_history
+
+vmp.fit(rel_tol=1e-6)
+
+df = pd.DataFrame(vmp.elbo_history)
+df = df.loc[:, df.var() > 0.]
+df.plot()
+plt.xscale("log")
+plt.show()
+
+
+torch.hstack([
+	vmp.variables["heterogeneity"].posterior.mean,
+	alpha
+])
+
+
+plt.scatter(
+	alpha.cpu(),
+	vmp.variables["heterogeneity"].posterior.mean.cpu()
+)
+plt.show()
+
 
 vmp.factors["affine_cts"].parameters["weights"].data = B[:, :p_cts]
 vmp.factors["affine_bin"].parameters["weights"].data = B[:, p_cts:]
@@ -52,12 +96,11 @@ disable_logging()
 print([x for x in vmp._elbo().values() if x != 0])
 print(vmp.elbo().item())
 for iter in range(25):
-	print(iter)
 	with torch.no_grad():
 		vmp._e_step()
-		# vmp._m_step()
+		vmp._m_step()
 		print([x for x in vmp._elbo().values() if x != 0])
-		print(vmp.elbo().item())
+		print(iter, vmp.elbo().item())
 
 self = vmp.factors["affine_cts"]
 
