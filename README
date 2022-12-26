@@ -1,4 +1,10 @@
-# VMP: To do list
+# Node attribute imputation using variational inference (NAIVI)
+
+Author: **Simon Fontaine** (simfont@umich.edu)
+
+## To do list
+
+### VMP 
 
 [x] Implement affine parameters update
 [ ] Implement ELBO for logistic fragment
@@ -15,11 +21,21 @@
     [x] Do a fit_and_evaluate method
 [ ] Initialization
     [ ] Use ADVI first? VMP is then just a refinement?
-
-# VMP: Ideas
-
 [x] Memoize covariances:
     - if instantiated from mean and covariance, store them too
     - when variance is called, check if it is stored. If yes, just return.
       If no, compute it and store it.
 [ ] JIT?
+
+## Changelog
+
+### Version 0.1.0
+
+Implemented methods:
+- Stochastic VI with reparameterization trick (VIMC)
+- Direct optimization (ADVI)
+- MLE & MAP
+- MICE, MissForest, mean imputation (no network)
+
+Under development:
+- Variational message passing (VMP) with multivariate normal variational approximation

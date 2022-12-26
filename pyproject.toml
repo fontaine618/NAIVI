@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "naivi"
+version = "0.1.0"
+description = "Node attribute imputation using Variational inference"
+authors = ["Simon Fontaine <simfont@umich.edu>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^1.13.1"
+torchmetrics = "^0.11.0"
+numpy = "^1.24.1"
+pandas = "^1.5.2"
+scikit-learn = "^1.2.0"
+matplotlib = "^3.6.2"
+missingpy = "^0.2.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
