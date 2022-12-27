@@ -5,8 +5,7 @@ import sys
 
 sys.path.append("/home/simon/Documents/NAIVI/")
 
-# plt.style.use("seaborn-v0_8-whitegrid")
-plt.style.use("seaborn-whitegrid")
+plt.style.use("seaborn-v0_8-whitegrid")
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 from NAIVI.vmp import disable_logging
@@ -20,7 +19,7 @@ from NAIVI.vmp.variables.variable import Variable
 from NAIVI.vmp.messages.message import Message
 
 N = 200
-p_bin = 7
+p_bin = 100
 p_cts = 0
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
@@ -43,8 +42,8 @@ vmp = VMP(
 	n_nodes=N,
 	binary_covariates=X_bin,
 	continuous_covariates=X_cts,
-	# edges=A,
-	edges=None,
+	edges=A,
+	# edges=None,
 	edge_index_left=i0,
 	edge_index_right=i1,
 	latent_dim=3,
@@ -53,7 +52,7 @@ vmp = VMP(
 self = vmp
 
 vmp.fit_and_evaluate(
-	max_iter=20,
+	max_iter=100,
 	true_values={
 		"heterogeneity": alpha,
 		"latent": Z,
@@ -66,24 +65,20 @@ vmp.metrics_history
 
 vmp.fit(rel_tol=1e-6)
 
+# ELBO History plot
 df = pd.DataFrame(vmp.elbo_history)
 df = df.loc[:, df.var() > 0.]
 df.plot()
 plt.xscale("log")
 plt.show()
 
-
-torch.hstack([
-	vmp.variables["heterogeneity"].posterior.mean,
-	alpha
-])
-
-
-plt.scatter(
-	alpha.cpu(),
-	vmp.variables["heterogeneity"].posterior.mean.cpu()
-)
+# Metric plot
+df = pd.DataFrame(vmp.metrics_history["latent_Proj_fro"])
+df = df.loc[:, df.var() > 0.]
+df.plot()
+plt.xscale("log")
 plt.show()
+
 
 
 vmp.factors["affine_cts"].parameters["weights"].data = B[:, :p_cts]

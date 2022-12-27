@@ -36,6 +36,7 @@ Implemented methods:
 - Direct optimization (ADVI)
 - MLE & MAP
 - MICE, MissForest, mean imputation (no network)
+- MCMC (No missing values allowed)
 
 Under development:
 - Variational message passing (VMP) with multivariate normal variational approximation

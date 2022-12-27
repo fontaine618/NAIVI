@@ -247,8 +247,26 @@ class VMP:
 			variable.compute_posterior()
 
 	def _break_symmetry(self):
-		# TODO implement this
-		pass
+		"""Break the rotational symmetry in the latent variables.
+  
+  		Particularly useful when there are only edges; if there are covariates, 
+    	then the symmetry is broken by the randomness in the initiailization
+    	of the weight parameters.
+
+		This is done by randomly initializing the messages from the edges to the 
+		latent variables.
+     
+     	The posterior should be updated after this step to ensure consistency of
+      	the messages with the posterior. (I am not sure if this is true, 
+    	since setting the messages should automatically update the posterior.)"""
+		if "select_left_latent" in self.factors:
+			p_id = self.variables["latent"].id
+			dim = self.variables["left_latent"].shape
+			k = dim[-1]
+			precision = torch.eye(k).expand(*dim, k)
+			mean_times_precision = torch.randn(dim)
+			msg = MultivariateNormal(precision, mean_times_precision)
+			self.factors["select_left_latent"].messages_to_parents[p_id].message_to_variable = msg
 
 	def _vmp_backward(self):
 		for fname in self._vmp_sequence[::-1]:
@@ -363,6 +381,8 @@ class VMP:
 
 	@property
 	def weights(self) -> torch.Tensor:
+		"""If there are both models, then the first columns are
+  		for the Gaussian (cts) model."""
 		weights = torch.zeros(self.latent_dim, 0)
 		if "affine_cts" in self.parameters:
 			weights = torch.cat([weights, self.parameters["affine_cts"]["weights"].data], dim=1)
@@ -400,10 +420,14 @@ class VMP:
 			metrics["latent_Proj_fro"] = (Proj - Proj0).pow(2.).sum().sqrt().item()
 		elif name == "bias":
 			bias = self.bias
+			if bias.shape[-1] == 0:
+				return
 			diff = (bias - value).abs()
 			metrics["bias_l2"] = (diff ** 2).sum().sqrt().item()
 		elif name == "weights":
 			weights = self.weights.T
+			if weights.shape[0] == 0:
+				return
 			ZZt = weights @ weights.T
 			ZtZinv = torch.linalg.inv(weights.T @ weights)
 			Proj = weights @ ZtZinv @ weights.T
