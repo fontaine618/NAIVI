@@ -18,9 +18,9 @@ from NAIVI.vmp.factors.factor import Factor
 from NAIVI.vmp.variables.variable import Variable
 from NAIVI.vmp.messages.message import Message
 
-N = 200
-p_bin = 100
-p_cts = 0
+N = 500
+p_bin = 40
+p_cts = 40
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
@@ -38,6 +38,29 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 		constant_components=True
 	)
 
+# compute some intermediary things
+theta_X = Z @ B
+ZtZ = (Z[i0, :] * Z[i1, :]).sum(1, keepdim=True)
+theta_A = ZtZ + alpha[i0] + alpha[i1]
+P = torch.sigmoid(theta_A)
+cts_noise = torch.ones(p_cts)
+
+true_values = {
+	"heterogeneity": alpha,
+	"latent": Z,
+	"bias": B0,
+	"weights": B,
+	"cts_noise": cts_noise,
+	"Theta_X": theta_X,
+	"Theta_A": theta_A,
+	"P": P,
+	"X_cts": X_cts,
+	"X_bin": X_bin,
+	"X_cts_missing": X_cts_missing,
+	"X_bin_missing": X_bin_missing,
+	"A": A,
+}
+
 vmp = VMP(
 	n_nodes=N,
 	binary_covariates=X_bin,
@@ -53,17 +76,14 @@ self = vmp
 
 vmp.fit_and_evaluate(
 	max_iter=100,
-	true_values={
-		"heterogeneity": alpha,
-		"latent": Z,
-		"bias": B0,
-		"weights": B,
-	}
+	true_values=true_values
 )
 
-vmp.metrics_history
+vmp.variables["latent"].samples
+vmp.variables["edge_logit"].sample(1)
+vmp.factors["edge_model"].elbo_mc()
+vmp.elbo_history["edge_model"]
 
-vmp.fit(rel_tol=1e-6)
 
 # ELBO History plot
 df = pd.DataFrame(vmp.elbo_history)
@@ -73,12 +93,18 @@ plt.xscale("log")
 plt.show()
 
 # Metric plot
-df = pd.DataFrame(vmp.metrics_history["latent_Proj_fro"])
+df = pd.DataFrame(vmp.metrics_history["X_bin_missing_auroc"])
 df = df.loc[:, df.var() > 0.]
 df.plot()
 plt.xscale("log")
 plt.show()
 
+
+
+# devel _evaluate
+name = "X_cts"
+value = A
+self = vmp
 
 
 vmp.factors["affine_cts"].parameters["weights"].data = B[:, :p_cts]

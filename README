@@ -14,10 +14,10 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 [ ] Implement wrapper similar to ADVI/VIMC
 [x] ELBO: MC at each factor (to check elbo computation/Logistic LB)
 [x] ELBO: Like VIMC (to check messages)
-[ ] Figure out why mean is never updated ???
-    [ ] Break symmetry?
+[x] Figure out why mean is never updated ???
+    [x] Break symmetry?
 [ ] Profile and make faster
-[ ] Add true values with some metrics
+[x] Add true values with some metrics
     [x] Do a fit_and_evaluate method
 [ ] Initialization
     [ ] Use ADVI first? VMP is then just a refinement?
@@ -26,6 +26,9 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     - when variance is called, check if it is stored. If yes, just return.
       If no, compute it and store it.
 [ ] JIT?
+[ ] ELBO MC probably better for early stopping & model selection:
+    - Indeed, I note that the MC one seems to increase with iteration
+      (up to noise), while the LB one decreaases at some point.
 
 ## Changelog
 
@@ -37,6 +40,7 @@ Implemented methods:
 - MLE & MAP
 - MICE, MissForest, mean imputation (no network)
 - MCMC (No missing values allowed)
+- NerworkSmoothing: average of the neighbors until stable
 
 Under development:
 - Variational message passing (VMP) with multivariate normal variational approximation
