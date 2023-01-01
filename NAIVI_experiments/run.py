@@ -2,9 +2,14 @@ import numpy as np
 import time
 import torch
 from pypet import Parameter
+from collections import defaultdict
+
+# need to set this before loading NAIVI because of the Logistic fragment
+torch.set_default_tensor_type(torch.cuda.FloatTensor)
+
 from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.utils.data import JointDataset
-from NAIVI import ADVI, MLE, MAP, VIMC, MCMC, GLM, MissForest, MICE, NetworkSmoothing, Mean
+from NAIVI import VMP, ADVI, MLE, MAP, VIMC, MCMC, GLM, MissForest, MICE, NetworkSmoothing, Mean
 from NAIVI.initialization import initialize
 import os
 import arviz
@@ -57,7 +62,7 @@ def run(traj):
             alpha_mean=alpha_mean_gen, seed=seed, mnar_sparsity=mnar_sparsity,
             adjacency_noise=adjacency_noise, constant_components=constant_components
         )
-        cuda = (algo in ["ADVI", "MLE", "MAP", "VIMC", "NetworkSmoothing"])
+        cuda = (algo in ["VMP", "ADVI", "MLE", "MAP", "VIMC", "NetworkSmoothing"])
         train = JointDataset(i0, i1, A, X_cts, X_bin, return_missingness=mnar, cuda=cuda)
         test = JointDataset(i0, i1, A, X_cts_missing, X_bin_missing, return_missingness=mnar,
                             test=True, cuda=cuda)
@@ -101,6 +106,63 @@ def run(traj):
             if keep_logs:
                 out, logs = out
                 traj.f_add_result("logs.$", df=logs)
+        elif algo == "VMP":
+            model = VMP(
+                n_nodes=N,
+                binary_covariates=X_bin,
+                continuous_covariates=X_cts,
+                edges=A,
+                edge_index_left=i0,
+                edge_index_right=i1,
+                latent_dim=K_model,
+                heterogeneity_prior_mean=h_prior[0],
+                heterogeneity_prior_variance=h_prior[1]
+            )
+            theta_X = Z @ B
+            ZtZ = (Z[i0, :] * Z[i1, :]).sum(1, keepdim=True)
+            theta_A = ZtZ + alpha[i0] + alpha[i1]
+            P = torch.sigmoid(theta_A)
+            true_values = {
+                "heterogeneity": alpha,
+                "latent": Z,
+                "weights": B,
+                "Theta_X": theta_X,
+                "Theta_A": theta_A,
+                "P": P,
+                "X_cts": X_cts,
+                "X_bin": X_bin,
+                "X_cts_missing": X_cts_missing,
+                "X_bin_missing": X_bin_missing,
+                "A": A,
+            }
+            if keep_logs:
+                model.fit_and_evaluate(max_iter=max_iter, rel_tol=eps, true_values=true_values)
+                # dropping this for now as it needs to be stored differently
+                # logs = {
+                #     "elbo": model.elbo_history,
+                #     "elbo_mc": model.elbo_mc_history,
+                #     "metrics": model.metrics_history
+                # }
+                # traj.f_add_result("logs.$", df=logs)
+            else:
+                model.fit(max_iter=max_iter, rel_tol=eps)
+            metrics = model.evaluate(true_values, False)
+            metrics = defaultdict(lambda: np.nan, metrics)
+            out = {
+                ("train", "loss"): model.elbo(),
+                ("train", "mse"): metrics["X_cts_mse"],
+                ("train", "auc"): metrics["X_bin_auroc"],
+                ("train", "auc_A"): metrics["A_auroc"],
+                ("error", "ZZt"): metrics["latent_ZZt_fro_rel"],
+                ("error", "Theta_X"): metrics["Theta_X_l2_rel"],
+                ("error", "Theta_A"): metrics["Theta_A_l2_rel"],
+                ("error", "P"): metrics["P_l2"],
+                ("error", "BBt"): metrics["weights_BBt_fro_rel"],
+                ("error", "alpha"): metrics["heteregeneity_l2_rel"],
+                ("test", "mse"): metrics["X_cts_missing_mse"],
+                ("test", "auc"): metrics["X_bin_missing_auroc"],
+                ("test", "auc_A"): metrics["A_auroc"]
+            }
         elif algo == "MCMC":
             model = MCMC(K, N, p_cts, p_bin, (0., 1.), (alpha_mean_model, 1.))
             out = model.fit(

@@ -127,7 +127,6 @@ class Logistic(Factor):
 		elbo = torch.where(s.abs()==0.5, elbo, torch.zeros_like(elbo))
 		return elbo.sum()
 
-
 	def _mk_elbo(self):
 		# TODO: implement this
 		pass
@@ -188,11 +187,11 @@ class Logistic(Factor):
 		mtp1 = m * p1 + x - a
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
-	def elbo_mc(self):
+	def elbo_mc(self, n_samples: int = 1):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
-		sp = self.parents[p_id].samples  # B x ...
-		sc = self.children[c_id].samples  # B x ...
+		sp = self.parents[p_id].sample(n_samples)  # B x ...
+		sc = self.children[c_id].sample(n_samples)  # B x ...
 		# sc has no missing values, need to fetch them back
 		proba = self.messages_to_children[c_id].message_to_factor.proba
 		# proba should only contain 0., 0.5 or 1.

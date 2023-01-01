@@ -21,6 +21,7 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     [x] Do a fit_and_evaluate method
 [ ] Initialization
     [ ] Use ADVI first? VMP is then just a refinement?
+    [ ] I think just breaking symmetry should be fine ...
 [x] Memoize covariances:
     - if instantiated from mean and covariance, store them too
     - when variance is called, check if it is stored. If yes, just return.
@@ -29,6 +30,7 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 [ ] ELBO MC probably better for early stopping & model selection:
     - Indeed, I note that the MC one seems to increase with iteration
       (up to noise), while the LB one decreaases at some point.
+[ ] MNAR model
 
 ## Changelog
 

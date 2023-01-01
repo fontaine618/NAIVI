@@ -88,15 +88,16 @@ class GaussianFactor(Factor):
 		# sc = sp + torch.randn_like(sp) * s2.sqrt()
 		# self.children[c_id].sample = sc
 
-	def elbo_mc(self):
-		p_id = self._name_to_id["parent"]
-		c_id = self._name_to_id["child"]
-		sp = self.parents[p_id].samples
-		s2 = self.parameters["log_variance"].exp()
-		sc = self.children[c_id].samples
-		d = (sc - sp).pow(2.) / s2
-		d += torch.log(s2).reshape(1, 1, -1) + math.log(2. * math.pi)
-		return - 0.5 * d.nansum(dim=(-1, -2)).nanmean(dim=0)
+	# exact elbo, so we do not need this
+	# def elbo_mc(self):
+	# 	p_id = self._name_to_id["parent"]
+	# 	c_id = self._name_to_id["child"]
+	# 	sp = self.parents[p_id].samples
+	# 	s2 = self.parameters["log_variance"].exp()
+	# 	sc = self.children[c_id].samples
+	# 	d = (sc - sp).pow(2.) / s2
+	# 	d += torch.log(s2).reshape(1, 1, -1) + math.log(2. * math.pi)
+	# 	return - 0.5 * d.nansum(dim=(-1, -2)).nanmean(dim=0)
 
 
 

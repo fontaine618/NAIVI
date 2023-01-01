@@ -60,7 +60,7 @@ def main(path, name, which, explore_dict):
         "data.adjacency_noise", np.float64(0.0), "variance of gaussian error added to logit probability"
     )
     traj.f_add_parameter(
-        "data.constant_components", np.bool(True), "W=1 in ZWZ', otherwise exp(N(0,4)) sorted"
+        "data.constant_components", True, "W=1 in ZWZ', otherwise exp(N(0,4)) sorted"
     )
 
     # parameters (model)
@@ -68,7 +68,7 @@ def main(path, name, which, explore_dict):
         "model.K", np.int64(5), "Number of latent components in the model"
     )
     traj.f_add_parameter(
-        "model.mnar", np.bool(False), "Whether to fit MNAR or not"
+        "model.mnar", False, "Whether to fit MNAR or not"
     )
     traj.f_add_parameter(
         "model.alpha_mean", np.float64(-1.85), "Mean of the heterogeneity parameter"
@@ -80,12 +80,12 @@ def main(path, name, which, explore_dict):
         "model.network_weight", np.float64(1.0), "weight of the network in the objective"
     )
     traj.f_add_parameter(
-        "model.estimate_components", np.bool(False), "whether to estimate W in ZWZ'"
+        "model.estimate_components", False, "whether to estimate W in ZWZ'"
     )
 
     # parameters (fit)
     traj.f_add_parameter(
-        "fit.keep_logs", np.bool(True), "Whether to store logs"
+        "fit.keep_logs", True, "Whether to store logs"
     )
     traj.f_add_parameter(
         "fit.algo", "MLE", "Inference algorithm"

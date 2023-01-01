@@ -3,7 +3,7 @@ import itertools
 import torch
 import numpy as np
 from typing import Tuple, Dict, Optional
-from torchmetrics.functional import auroc
+from torchmetrics.functional import auroc, mean_squared_error
 
 from .factors.affine import Affine
 from .factors.gaussian import GaussianFactor
@@ -22,8 +22,8 @@ from .distributions.normal import MultivariateNormal, Normal
 
 class VMP:
     """
-	NAIVI using Variational message passing with multivariate posterior.
-	"""
+    NAIVI using Variational message passing with multivariate posterior.
+    """
 
     _default_hyperparameters = {
         "latent_prior_variance": 1.,
@@ -60,6 +60,7 @@ class VMP:
             edges=edges,
         )
         self.elbo_history = dict()
+        self.elbo_mc_history = dict()
         self.metrics_history = dict()
 
     def _prepare_hyperparameters(self, **kwargs):
@@ -251,16 +252,16 @@ class VMP:
     def _break_symmetry(self):
         """Break the rotational symmetry in the latent variables.
 
-  		Particularly useful when there are only edges; if there are covariates,
-		then the symmetry is broken by the randomness in the initiailization
-		of the weight parameters.
+        Particularly useful when there are only edges; if there are covariates,
+        then the symmetry is broken by the randomness in the initiailization
+        of the weight parameters.
 
-		This is done by randomly initializing the messages from the edges to the
-		latent variables.
+        This is done by randomly initializing the messages from the edges to the
+        latent variables.
 
-		The posterior should be updated after this step to ensure consistency of
-		the messages with the posterior. (I am not sure if this is true,
-		since setting the messages should automatically update the posterior.)"""
+        The posterior should be updated after this step to ensure consistency of
+        the messages with the posterior. (I am not sure if this is true,
+        since setting the messages should automatically update the posterior.)"""
         if "select_left_latent" in self.factors:
             p_id = self.variables["latent"].id
             dim = self.variables["left_latent"].shape
@@ -298,7 +299,7 @@ class VMP:
         return parms
 
     def elbo(self) -> float:
-        return sum([factor.elbo() for factor in self.factors.values()])
+        return sum([factor.elbo() for factor in self.factors.values()]).item()
 
     def _elbo(self):
         return {
@@ -306,17 +307,17 @@ class VMP:
             for fname, factor in self.factors.items()
         }
 
-    def elbo_mc(self) -> float:
+    def elbo_mc(self, n_samples: int = 1) -> float:
         """Compute approximate elbo using samples from the posterior.
-		NB: the samples can be obtained in two ways:
-		- sample latent variables + forward
-		- sample all
-		"""
-        return sum([factor.elbo_mc() for factor in self.factors.values()])
+        NB: the samples can be obtained in two ways:
+        - sample latent variables + forward
+        - sample all
+        """
+        return sum([factor.elbo_mc(n_samples) for factor in self.factors.values()]).item()
 
-    def _elbo_mc(self):
+    def _elbo_mc(self, n_samples: int = 1) -> Dict[str, float]:
         return {
-            fname: factor.elbo_mc()
+            fname: factor.elbo_mc(n_samples).item()
             for fname, factor in self.factors.items()
         }
 
@@ -338,6 +339,12 @@ class VMP:
                 self.elbo_history[k] = [v]
             self.elbo_history[k].append(v)
 
+    def _update_elbo_mc_history(self, elbo_mc: dict[str, float]):
+        for k, v in elbo_mc.items():
+            if k not in self.elbo_mc_history:
+                self.elbo_mc_history[k] = [v]
+            self.elbo_mc_history[k].append(v)
+
     def _update_metrics_history(self, metrics: Dict[str, float]):
         for k, v in metrics.items():
             if k not in self.metrics_history:
@@ -347,22 +354,32 @@ class VMP:
     def fit_and_evaluate(
             self,
             max_iter: int = 1000,
-            rel_tol: float = 1e-6,
+            rel_tol: float = 1e-5,
             verbose: bool = True,
+            mc_samples: int = 10,
             true_values: Dict[str, torch.Tensor] = {},
     ):
         elbo = self.elbo()
         for i in range(max_iter):
             self._e_step()
             self._m_step()
-            new_elbo = self.elbo().item()
+
+            new_elbo = self.elbo()
             elbos = self._elbo()
             elbos["sum"] = new_elbo
             self._update_elbo_history(elbos)
+
+            if mc_samples > 0:
+                new_elbo_mc = self.elbo_mc(mc_samples)
+                elbos_mc = self._elbo_mc(mc_samples)
+                elbos_mc["sum"] = new_elbo_mc
+                self._update_elbo_mc_history(elbos_mc)
+
             self.evaluate(true_values)
             increased = new_elbo > elbo
             if verbose:
-                print(f"[VMP] Iteration {i:<4} Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
+                print(f"[VMP] Iteration {i:<4} "
+                      f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
             if abs(new_elbo - elbo) < rel_tol * abs(elbo):
                 break
             elbo = new_elbo
@@ -370,21 +387,20 @@ class VMP:
     def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6, verbose: bool = True):
         self.fit_and_evaluate(max_iter, rel_tol, verbose)
 
-    def evaluate(self, true_values: Dict[str, torch.Tensor] = {}):
-        # add observed data
-        if "bin_observed" in self.factors:
-            true_values["X_bin"] = self.factors["bin_observed"].values.values
-        if "cts_observed" in self.factors:
-            true_values["X_cts"] = self.factors["cts_observed"].values.values
-        if "edge_observed" in self.factors:
-            true_values["A"] = self.factors["edge_observed"].values.values
+    def evaluate(self, true_values: Dict[str, torch.Tensor] | None = None, store: bool = True):
+        if true_values is None:
+            true_values = {}
+        metrics = dict()
         for name, value in true_values.items():
-            self._evaluate(name, value)
+            metrics.update(self._evaluate(name, value))
+        if store:
+            self._update_metrics_history(metrics)
+        return metrics
 
     @property
     def weights(self) -> torch.Tensor:
         """If there are both models, then the first columns are
-  		for the Gaussian (cts) model."""
+        for the Gaussian (cts) model."""
         weights = torch.zeros(self.latent_dim, 0)
         if "affine_cts" in self.parameters:
             weights = torch.cat([weights, self.parameters["affine_cts"]["weights"].data], dim=1)
@@ -395,7 +411,7 @@ class VMP:
     @property
     def theta_X(self) -> torch.Tensor:
         """If there are both models, then the first columns are
-  		for the Gaussian (cts) model."""
+        for the Gaussian (cts) model."""
         theta_X = torch.zeros(self.n_nodes, 0)
         if "mean_cts" in self.variables:
             theta_X = torch.cat([theta_X, self.variables["mean_cts"].posterior.mean], dim=1)
@@ -412,14 +428,23 @@ class VMP:
             bias = torch.cat([bias, self.parameters["affine_bin"]["bias"].data], dim=0)
         return bias.reshape(1, -1)
 
-    def _evaluate(self, name: str, value: torch.Tensor | None):
+    def _evaluate(self, name: str, value: torch.Tensor | None) -> Dict[str, float]:
+        # TODO refactor as dispatch:
+        # method_name = f"_evaluate_{name}"
+        # if hasattr(self, method_name):
+        #     metrics = getattr(self, method_name)(value)
+        # else:
+        #     raise ValueError(f"Unknown quantity to evaluate: {name}")
         metrics = dict()
         if value is None:
-            return
+            return metrics
         if name == "heterogeneity":
+            if "heterogeneity" not in self.variables:
+                return metrics
             post = self.variables["heterogeneity"].posterior.mean
             diff = (post - value).abs()
             metrics["heteregeneity_l2"] = diff.norm().item()
+            metrics["heteregeneity_l2_rel"] = diff.pow(2.).mean().item()
         elif name == "latent":
             post = self.variables["latent"].posterior.mean
             ZZt = post @ post.T
@@ -431,17 +456,20 @@ class VMP:
             Proj0 = value @ ZtZinv0 @ value.T
 
             metrics["latent_ZZt_fro"] = (ZZt - ZZt0).norm().item()
+            metrics["latent_ZZt_fro_rel"] = (metrics["latent_ZZt_fro"] / ZZt0.norm()).item() ** 2
             metrics["latent_Proj_fro"] = (Proj - Proj0).norm().item()
+            metrics["latent_Proj_fro_rel"] = (metrics["latent_Proj_fro"] / Proj0.norm()).item() ** 2
         elif name == "bias":
             bias = self.bias
             if bias.shape[-1] == 0:
-                return
+                return metrics
             diff = (bias - value).abs()
             metrics["bias_l2"] = (diff ** 2).sum().sqrt().item()
+            metrics["bias_l2_rel"] = (metrics["bias_l2"] / value.norm()).item() ** 2
         elif name == "weights":
             weights = self.weights.T
             if weights.shape[0] == 0:
-                return
+                return metrics
             ZZt = weights @ weights.T
             ZtZinv = torch.linalg.inv(weights.T @ weights)
             Proj = weights @ ZtZinv @ weights.T
@@ -452,52 +480,66 @@ class VMP:
             Proj0 = value @ ZtZinv0 @ value.T
 
             metrics["weights_BBt_fro"] = (ZZt - ZZt0).norm().item()
+            metrics["weights_BBt_fro_rel"] = (metrics["weights_BBt_fro"] / ZZt0.norm()).item() ** 2
             metrics["weights_Proj_fro"] = (Proj - Proj0).norm().item()
+            metrics["weights_Proj_fro_rel"] = (metrics["weights_Proj_fro"] / Proj0.norm()).item() ** 2
         elif name == "cts_noise":
             if "cts_noise" not in self.parameters:
-                return
+                return metrics
             var = self.parameters["cts_model"]["log_variance"].exp()
             metrics["cts_noise_l2"] = (var - value).norm().item()
             metrics["cts_noise_sqrt_l2"] = (var.sqrt() - value.sqrt()).norm().item()
             metrics["cts_noise_log_l2"] = (var.log() - value.log()).norm().item()
         elif name == "Theta_X":
             metrics["Theta_X_l2"] = (value - self.theta_X).norm().item()
+            metrics["Theta_X_l2_rel"] = (metrics["Theta_X_l2"] / value.norm()).item() ** 2
         elif name == "Theta_A":
             if "edge_logit" not in self.variables:
-                return
+                return metrics
             theta_A = self.variables["edge_logit"].posterior.mean
             metrics["Theta_A_l2"] = (value - theta_A).norm().item()
+            metrics["Theta_A_l2_rel"] = (metrics["Theta_A_l2"] / value.norm()).item() ** 2
         elif name == "P":
             if "edge_model" not in self.factors:
-                return
+                return metrics
             c_id = self.variables["edge"].id
             P = self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
-            metrics["P_l2"] = (value - P).norm().item()
+            metrics["P_l2"] = (value - P).pow(2.).mean().item()
         elif name == "X_cts":
+            if "cts_obs" not in self.variables:
+                return metrics
             c_id = self.variables["cts_obs"].id
             mean_cts = self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean
-            diff = mean_cts - value
-            diff = diff[~torch.isnan(diff)]
-            metrics["X_cts_l2"] = diff.norm().item()
+            mean_cts = mean_cts[~value.isnan()]
+            value = value[~value.isnan()]
+            metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item()
         elif name == "X_bin":
+            if "bin_obs" not in self.variables:
+                return metrics
             c_id = self.variables["bin_obs"].id
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
             obs = value[~torch.isnan(value)]
             proba = proba[~torch.isnan(value)]
             metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item()
         elif name == "X_cts_missing":
+            if "cts_obs" not in self.variables:
+                return metrics
             c_id = self.variables["cts_obs"].id
             mean_cts = self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean
-            diff = mean_cts - value
-            diff = diff[~torch.isnan(diff)]
-            metrics["X_cts_missing_l2"] = diff.norm().item()
+            mean_cts = mean_cts[~value.isnan()]
+            value = value[~value.isnan()]
+            metrics["X_cts_missing_mse"] = mean_squared_error(mean_cts, value).item()
         elif name == "X_bin_missing":
+            if "bin_obs" not in self.variables:
+                return metrics
             c_id = self.variables["bin_obs"].id
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
             obs = value[~torch.isnan(value)]
             proba = proba[~torch.isnan(value)]
             metrics["X_bin_missing_auroc"] = auroc(proba, obs, "binary").item()
         elif name == "A":
+            if "edge" not in self.variables:
+                return metrics
             c_id = self.variables["edge"].id
             proba = self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
             obs = value[~torch.isnan(value)]
@@ -507,4 +549,4 @@ class VMP:
             # could print a warning message, but that would appear every iteration ...
             pass
         # update history
-        self._update_metrics_history(metrics)
+        return metrics

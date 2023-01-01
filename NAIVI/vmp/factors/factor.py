@@ -40,6 +40,13 @@ class Factor:
 		"""If not reimplemented, we assume there is no elbo contribution from this factor."""
 		return torch.Tensor([0.])
 
+	def elbo_mc(self, n_samples: int = 1):
+		"""Approximates ELBO using MC from the samples.
+
+		If not implemented, simply returns the elbo.
+		This should be done when the elbo is exact."""
+		return self.elbo()
+
 	def update_messages_from_children(self):
 		for i, child in self.children.items():
 			mtv = self.messages_to_children[i].message_to_variable
@@ -84,10 +91,6 @@ class Factor:
 	def forward(self, n_samples: int = 1):
 		"""Takes parents.sample and updates children.sample"""
 		pass
-
-	def elbo_mc(self):
-		"""Approximates ELBO using MC from the samples."""
-		return torch.Tensor([0.])
 
 	def __repr__(self):
 		return f"[f{self.id}] {self._name}"

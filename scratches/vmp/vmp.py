@@ -19,8 +19,8 @@ from NAIVI.vmp.variables.variable import Variable
 from NAIVI.vmp.messages.message import Message
 
 N = 500
-p_bin = 40
-p_cts = 40
+p_bin = 10
+p_cts = 0
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
@@ -30,7 +30,7 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 		p_cts=p_cts,
 		p_bin=p_bin,
 		var_cov=1.,
-		missing_mean=0.5,
+		missing_mean=0.,
 		alpha_mean=-1.5,
 		seed=0,
 		mnar_sparsity=0.,
@@ -79,17 +79,22 @@ vmp.fit_and_evaluate(
 	true_values=true_values
 )
 
-vmp.variables["latent"].samples
-vmp.variables["edge_logit"].sample(1)
-vmp.factors["edge_model"].elbo_mc()
-vmp.elbo_history["edge_model"]
-
+vmp.evaluate(true_values)
 
 # ELBO History plot
 df = pd.DataFrame(vmp.elbo_history)
 df = df.loc[:, df.var() > 0.]
 df.plot()
 plt.xscale("log")
+plt.title("ELBOs")
+plt.show()
+
+# ELBO MC History plot
+df = pd.DataFrame(vmp.elbo_mc_history)
+df = df.loc[:, df.var() > 0.]
+df.plot()
+plt.xscale("log")
+plt.title("ELBOs (MC)")
 plt.show()
 
 # Metric plot
@@ -98,6 +103,46 @@ df = df.loc[:, df.var() > 0.]
 df.plot()
 plt.xscale("log")
 plt.show()
+
+
+
+
+
+# For experiment
+
+N = 200
+K = 3
+p_cts = 50
+p_bin = 50
+p = p_cts + p_bin
+var_cov = 1.
+missing_mean = 0.
+seed = 0
+alpha_mean_gen = -1.85
+mnar_sparsity = 0.
+adjacency_noise = 0.
+constant_components = True
+K_model = 3
+mnar = False
+alpha_mean_model = 0.
+reg = 0.
+network_weight = 1.
+estimate_components = False
+algo = "VMP"
+max_iter = 100
+n_samples = 0
+eps = 1e-5
+keep_logs = True
+power = 1.
+init_method = ""
+optimizer = "RProp"
+lr = 0.01
+mcmc_n_sample = 0
+mcmc_n_chains = 0
+mcmc_n_warmup = 0
+mcmc_n_thin = 0
+
+
 
 
 
@@ -213,3 +258,66 @@ self = vmp.variables["latent"].posterior
 #  'edge_sum': [f13] Sum,
 #  'edge_model': [f14] Logistic,
 #  'edge_observed': [f15] ObservedFactor}
+
+
+# # VMP
+# train      loss             -37021.163457
+# train      mse               nan
+# train      auc              0.876003
+# train      auc_A            0.911218
+# error      ZZt              0.079061
+# error      Theta_X          0.340332
+# error      Theta_A          0.030570
+# error      P                0.002404
+# error      BBt              0.537513
+# error      alpha            0.101361
+# test       mse               nan
+# test       auc              0.854116
+# test       auc_A            0.911218
+# train      time             120.855487
+# data       density          0.096096
+# data       missing_prop     0.268500
+#
+# # MLE
+# train      grad_Linfty      0.000003
+# train      grad_L1          0.000280
+# train      grad_L2          0.000009
+# train      loss             39273.627060
+# train      mse              0.000000
+# train      auc              0.886348
+# train      auc_A            0.919652
+# test       loss             30270.588934
+# test       mse              0.000000
+# test       auc              0.855271
+# test       auc_A            0.919652
+# error      ZZt              0.067644
+# error      P                0.002274
+# error      Theta_X          0.108714
+# error      Theta_A          0.025730
+# error      BBt              0.294152
+# error      alpha            0.084860
+# train      time             1.570883
+# data       density          0.096096
+# data       missing_prop     0.268500
+#
+# # ADVI
+# train      grad_Linfty      0.000003
+# train      grad_L1          0.000353
+# train      grad_L2          0.000009
+# train      loss             55946.405569
+# train      mse              0.000000
+# train      auc              0.875910
+# train      auc_A            0.920160
+# test       loss             58360.800399
+# test       mse              0.000000
+# test       auc              0.849639
+# test       auc_A            0.920160
+# error      ZZt              0.080062
+# error      P                0.002452
+# error      Theta_X          0.339360
+# error      Theta_A          0.030735
+# error      BBt              0.436466
+# error      alpha            0.103582
+# train      time             2.847495
+# data       density          0.096096
+# data       missing_prop     0.268500

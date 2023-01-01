@@ -29,7 +29,7 @@ class MICE:
         X = torch.cat([X_cts, X_bin], 1)
 
         # predict
-        X_pred = self.model.fit_transform(X)
+        X_pred = self.model.fit_transform(X.cpu())
         X_cts_pred, X_bin_pred, _ = np.split(
             X_pred, indices_or_sections=[self.p_cts, self.p_cts + self.p_bin], axis=1
         )

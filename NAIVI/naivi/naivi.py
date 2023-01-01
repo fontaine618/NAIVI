@@ -64,7 +64,8 @@ class NAIVI:
             out = self.epoch_metrics(test, train, grad_norms, true_values)
             if return_log:
                 df = pd.DataFrame(out, index=[0])
-                logs = logs.append(df, ignore_index=True)
+                # logs = logs.append(df, ignore_index=True)
+                logs = pd.concat([logs, df], ignore_index=True)
             if verbose and epoch % 10 == 0:
                 form = "{:<4} {:<12.2e} |" + " {:<12.4f}" * 4
                 log = form.format(epoch, out[("train", "grad_L2")],
@@ -83,7 +84,7 @@ class NAIVI:
     def prepare_optimizer(self, lr, power=1.0, optimizer="Adam"):
         params = [
             {'params': p, "lr": lr}
-            for p in self.model.hyperparameters()
+            for p in self.model.parameters()
         ]
         optimizer = getattr(torch.optim, optimizer)(params)
         scheduler = LambdaLR(optimizer, lr_lambda=lambda epoch: 1. / (1 + epoch) ** power)
@@ -214,14 +215,14 @@ class NAIVI:
         auc = 0.
         auc_A = 0.
         if A is not None:
-            auc_A = auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().flatten()).item()
+            auc_A = auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().flatten(), task="binary").item()
         if X_cts is not None:
             which_cts = ~X_cts.isnan()
             mse = mean_squared_error(mean_cts[which_cts], X_cts[which_cts]).item()
         if X_bin is not None:
             which_bin = ~X_bin.isnan()
             if which_bin.sum() > 0.:
-                auc = auroc(proba_bin[which_bin].clamp_(0., 1.), X_bin.int()[which_bin]).item()
+                auc = auroc(proba_bin[which_bin].clamp_(0., 1.), X_bin.int()[which_bin], task="binary").item()
         return auc, mse, auc_A
 
     def batch_update(self, batch, optimizer, train, epoch):
@@ -284,15 +285,15 @@ class NAIVI:
         with torch.no_grad():
             grad_Linfty = torch.tensor([
                 parm.grad.abs().max()
-                for parm in self.model.hyperparameters() if parm.grad is not None
+                for parm in self.model.parameters() if parm.grad is not None
             ]).max().item()
             grad_L1 = torch.tensor([
                 parm.grad.abs().nansum()
-                for parm in self.model.hyperparameters() if parm.grad is not None
+                for parm in self.model.parameters() if parm.grad is not None
             ]).nansum().item()
             grad_L2 = torch.tensor([
                 (parm.grad**2).nansum()
-                for parm in self.model.hyperparameters() if parm.grad is not None
+                for parm in self.model.parameters() if parm.grad is not None
             ]).nansum().sqrt().item()
             converged = False
             if grad_L2 < tol:
