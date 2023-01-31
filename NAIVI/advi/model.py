@@ -1,7 +1,7 @@
 import torch.nn as nn
 from NAIVI.advi.decoder import CovariateModel, AdjacencyModel
 from NAIVI.advi.encoder import Encoder
-from NAIVI.naivi.naivi import NAIVI
+from NAIVI.gradient_based.gradient_based import GradientBased
 
 
 class JointModel(nn.Module):
@@ -59,7 +59,7 @@ class JointModel(nn.Module):
         pass
 
 
-class ADVI(NAIVI):
+class ADVI(GradientBased):
 
     def __init__(self,
                  K, N, p_cts, p_bin, mnar=False, network_weight=1.0,

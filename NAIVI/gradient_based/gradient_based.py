@@ -7,7 +7,7 @@ from NAIVI.utils.base import verbose_init
 from torch.optim.lr_scheduler import LambdaLR
 
 
-class NAIVI:
+class GradientBased:
 
     def __init__(self, model=None):
         self.model = model
@@ -230,7 +230,6 @@ class NAIVI:
         # reset gradient
         optimizer.zero_grad()
         # objective
-        # TODO wrap this in a method
         loss, _, _, _ = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
         # loss += self.reg_B * (self.covariate_weight ** 2).nansum()
         loss /= self.denum

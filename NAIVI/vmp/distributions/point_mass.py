@@ -1,14 +1,15 @@
 import torch
 from .distribution import Distribution
+from .. import VMP_OPTIONS
 
 
 class PointMass(Distribution):
 
 	_name = "PointMass"
 
-	def __init__(self, value):
+	def __init__(self, value, check_args=None):
 		dim = value.shape
-		super(PointMass, self).__init__(dim=dim)
+		super(PointMass, self).__init__(dim=dim, check_args=check_args)
 		self._value = value
 
 	@property
@@ -47,6 +48,6 @@ class Unit(PointMass):
 	
 	_name = "Unit"
 	
-	def __init__(self, dim):
+	def __init__(self, dim, check_args=None):
 		value = torch.full(dim, float("NaN"))
-		super(Unit, self).__init__(value)
+		super(Unit, self).__init__(value=value, check_args=check_args)

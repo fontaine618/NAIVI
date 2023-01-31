@@ -9,13 +9,13 @@ class Probability(Distribution):
 
 	_name = "Probability"
 
-	def __init__(self, proba: torch.Tensor):
-		super(Probability, self).__init__(dim=proba.shape)
+	def __init__(self, proba: torch.Tensor, check_args=None):
+		super(Probability, self).__init__(dim=proba.shape, check_args=check_args)
 		self.proba = proba
 
 	@classmethod
-	def unit_from_dimension(cls, dim):
-		return Probability(torch.full(dim, 0.5))
+	def unit_from_dimension(cls, dim, check_args=None):
+		return Probability(torch.full(dim, 0.5), check_args=check_args)
 
 	def __mul__(self, other):
 		if type(other) is Unit:

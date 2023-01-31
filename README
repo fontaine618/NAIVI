@@ -17,6 +17,9 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 [x] Figure out why mean is never updated ???
     [x] Break symmetry?
 [ ] Profile and make faster
+    - more than 50% time is spent inverting matrices
+    - need to check if some can be avoided, by I think this
+    is the best I can do ...
 [x] Add true values with some metrics
     [x] Do a fit_and_evaluate method
 [ ] Initialization
@@ -31,6 +34,8 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     - Indeed, I note that the MC one seems to increase with iteration
       (up to noise), while the LB one decreaases at some point.
 [ ] MNAR model
+
+remember to run with -O
 
 ## Changelog
 

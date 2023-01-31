@@ -1,10 +1,10 @@
 import torch
 import copy
 from NAIVI.mle.decoder import CovariateModel
-from NAIVI.naivi.naivi import NAIVI
+from NAIVI.gradient_based.gradient_based import GradientBased
 
 
-class GLM(NAIVI):
+class GLM(GradientBased):
 
     def __init__(self, K, N, p_cts, p_bin, mnar=False, latent_positions=None):
         super().__init__()

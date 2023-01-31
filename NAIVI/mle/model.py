@@ -1,7 +1,7 @@
 import torch.nn as nn
 from NAIVI.mle.decoder import CovariateModel, AdjacencyModel
 from NAIVI.mle.encoder import Encoder
-from NAIVI.naivi.naivi import NAIVI
+from NAIVI.gradient_based.gradient_based import GradientBased
 
 
 class JointModel(nn.Module):
@@ -55,7 +55,7 @@ class JointModel(nn.Module):
         self.encoder.project()
 
 
-class MLE(NAIVI):
+class MLE(GradientBased):
 
     def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),
@@ -95,7 +95,7 @@ class JointModelMAP(JointModel):
         return loss
 
 
-class MAP(NAIVI):
+class MAP(GradientBased):
 
     def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
 				 position_prior=(0., 1.),

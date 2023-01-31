@@ -21,9 +21,9 @@ class Normal(Distribution):
 	_name = "Normal"
 
 	def __init__(self, precision, mean_times_precision,
-	             mean=None, variance=None, **kw):
+	             mean=None, variance=None, check_args=None, **kw):
 		dim = mean_times_precision.shape
-		super(Normal, self).__init__(dim=dim)
+		super(Normal, self).__init__(dim=dim, check_args=check_args)
 		self._check_args(precision, mean_times_precision)
 		self.precision = precision
 		self.mean_times_precision = mean_times_precision
@@ -32,15 +32,16 @@ class Normal(Distribution):
 
 	@staticmethod
 	def _check_args(precision, mean_times_precision):
-		if precision.shape != mean_times_precision.shape:
-			raise AttributeError(
-				f"precision and mean_times_precision must have the same shape, "
-				f"but got {precision.shape} and {mean_times_precision.shape}"
-			)
-		if not torch.all(precision.ge(-1.e-10)):
-			raise AttributeError(
-				f"precision must be nonnegative"
-			)
+		if Distribution._check_args:
+			if precision.shape != mean_times_precision.shape:
+				raise AttributeError(
+					f"precision and mean_times_precision must have the same shape, "
+					f"but got {precision.shape} and {mean_times_precision.shape}"
+				)
+			if not torch.all(precision.ge(-1.e-10)):
+				raise AttributeError(
+					f"precision must be nonnegative"
+				)
 
 	@property
 	def mean(self):
@@ -69,22 +70,22 @@ class Normal(Distribution):
 		return self.mean, self.variance
 
 	@classmethod
-	def standard_from_dimension(cls, dim):
+	def standard_from_dimension(cls, dim, check_args=None):
 		precision = torch.ones(dim)
 		mean_times_precision = torch.zeros(dim)
-		return Normal(precision, mean_times_precision)
+		return Normal(precision, mean_times_precision, check_args=check_args)
 
 	@classmethod
-	def unit_from_dimension(cls, dim):
+	def unit_from_dimension(cls, dim, check_args=None):
 		precision = torch.zeros(dim)
 		mean_times_precision = torch.zeros(dim)
-		return Normal(precision, mean_times_precision)
+		return Normal(precision, mean_times_precision, check_args=check_args)
 
 	@classmethod
-	def from_mean_and_variance(cls, mean, variance):
+	def from_mean_and_variance(cls, mean, variance, check_args=None):
 		precision = torch.where(mean.isnan(), 0., 1. / variance)
 		mean_times_precision = torch.where(mean.isnan(), 0., mean * precision)
-		return Normal(precision, mean_times_precision, mean=mean, variance=variance)
+		return Normal(precision, mean_times_precision, mean=mean, variance=variance, check_args=check_args)
 
 	def __mul__(self, other):
 		if type(other) is Normal:
@@ -170,26 +171,28 @@ class MultivariateNormal(Normal):
 	_name = "MultivariateNormal"
 
 	def __init__(self, precision, mean_times_precision,
-	             mean=None, variance=None, **kw):
+	             mean=None, variance=None, check_args=None, **kw):
 		dim = mean_times_precision.shape
 		super(MultivariateNormal, self).__init__(
 			precision=precision,
 			mean_times_precision=mean_times_precision,
 			mean=mean,
 			variance=variance,
-			dim=dim
+			dim=dim,
+			check_args=check_args
 		)
 
 	@staticmethod
 	def _check_args(precision, mean_times_precision):
-		if not (torch.isclose(precision, precision.transpose(-1, -2))).all():
-			raise ValueError(
-				f"precision must be symmetric"
-			)
-		if not torch.linalg.eigvalsh(precision).ge(-1.e-6).all():
-			print(
-				f"precision must be positive semi-definite"
-			)
+		if Distribution._check_args:
+			if not (torch.isclose(precision, precision.transpose(-1, -2))).all():
+				raise ValueError(
+					f"precision must be symmetric"
+				)
+			if not torch.linalg.eigvalsh(precision).ge(-1.e-6).all():
+				print(
+					f"precision must be positive semi-definite"
+				)
 
 	@property
 	def mean(self):
@@ -208,24 +211,24 @@ class MultivariateNormal(Normal):
 		return self._variance
 
 	@classmethod
-	def standard_from_dimension(cls, dim):
+	def standard_from_dimension(cls, dim, check_args=None):
 		d = dim[-1]
 		precision = torch.eye(d).expand(*dim, d)
 		mean_times_precision = torch.zeros(dim)
-		return MultivariateNormal(precision, mean_times_precision)
+		return MultivariateNormal(precision, mean_times_precision, check_args=check_args)
 
 	@classmethod
-	def unit_from_dimension(cls, dim):
+	def unit_from_dimension(cls, dim, check_args=None):
 		d = dim[-1]
 		precision = torch.zeros(*dim, d)
 		mean_times_precision = torch.zeros(dim)
-		return MultivariateNormal(precision, mean_times_precision)
+		return MultivariateNormal(precision, mean_times_precision, check_args=check_args)
 
 	@classmethod
-	def from_mean_and_variance(cls, mean, variance):
+	def from_mean_and_variance(cls, mean, variance, check_args=None):
 		precision = torch.inverse(variance)
 		mean_times_precision = torch.matmul(precision, mean.unsqueeze(-1)).squeeze(-1)
-		return MultivariateNormal(precision, mean_times_precision, mean=mean, variance=variance)
+		return MultivariateNormal(precision, mean_times_precision, mean=mean, variance=variance, check_args=check_args)
 
 	def __mul__(self, other):
 		if type(other) is MultivariateNormal:

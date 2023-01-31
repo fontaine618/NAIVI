@@ -5,7 +5,7 @@ import torch
 import arviz as az
 import pandas as pd
 from NAIVI.mcmc.stan_models import model_cts, model_bin, model_both, model_none
-from NAIVI import NAIVI
+from NAIVI import GradientBased
 
 
 class MCMC:
@@ -181,7 +181,7 @@ class MCMC:
 				mean_cts = None
 				proba_bin = None
 			proba_adj = torch.Tensor(self.posterior_mean("proba"))
-			auc, mse, auc_A = NAIVI.prediction_metrics(
+			auc, mse, auc_A = GradientBased.prediction_metrics(
 				X_bin=X_bin, X_cts=X_cts, A=A,
 				mean_cts=mean_cts,
 				proba_bin=proba_bin,

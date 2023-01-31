@@ -4,9 +4,27 @@ import torch
 class Distribution:
 
 	_name = "Distribution"
+	_check_args = __debug__
 
-	def __init__(self, dim=None, **kw):
+	@staticmethod
+	def set_default_check_args(value: bool) -> None:
+		"""
+		Sets whether validation is enabled or disabled.
+		The default behavior mimics Python's ``assert`` statement: validation
+		is on by default, but is disabled if Python is run in optimized mode
+		(via ``python -O``). Validation may be expensive, so you may want to
+		disable it once a model is working.
+		Args:
+			value (bool): Whether to enable validation.
+		"""
+		if value not in [True, False]:
+			raise ValueError
+		Distribution._check_args = value
+
+	def __init__(self, dim=None, check_args=None, **kw):
 		self._dim = torch.Size(dim)
+		if check_args is not None:
+			self._check_args = check_args
 
 	def __repr__(self):
 		dim_str = ""

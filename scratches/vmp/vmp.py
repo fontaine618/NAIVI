@@ -8,18 +8,22 @@ sys.path.append("/home/simon/Documents/NAIVI/")
 plt.style.use("seaborn-v0_8-whitegrid")
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
-from NAIVI.vmp import disable_logging
-from NAIVI.vmp.vmp import VMP
 from NAIVI_experiments.gen_data_mnar import generate_dataset
+from NAIVI.vmp import disable_logging
+from NAIVI.vmp import VMP
+from NAIVI.vmp.distributions import Distribution
 
 # for debugging
-from NAIVI.vmp.distributions.normal import MultivariateNormal, Normal, _batch_mahalanobis
-from NAIVI.vmp.factors.factor import Factor
-from NAIVI.vmp.variables.variable import Variable
-from NAIVI.vmp.messages.message import Message
+from NAIVI.vmp.distributions.normal import MultivariateNormal
+
+# to remove argument checking in distribution
+# using -O also does this since this defualts to __debug__
+Distribution.set_default_check_args(False)
+
+
 
 N = 500
-p_bin = 10
+p_bin = 0
 p_cts = 0
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
@@ -61,7 +65,9 @@ true_values = {
 	"A": A,
 }
 
-vmp = VMP(
+
+
+self = VMP(
 	n_nodes=N,
 	binary_covariates=X_bin,
 	continuous_covariates=X_cts,
@@ -69,17 +75,31 @@ vmp = VMP(
 	# edges=None,
 	edge_index_left=i0,
 	edge_index_right=i1,
-	latent_dim=3,
+	latent_dim=2,
 	heterogeneity_prior_mean=-1.5
 )
-self = vmp
+self.fit(max_iter=100, rel_tol=1e-2)
+self.fit(max_iter=100, rel_tol=1e-6)
 
-vmp.fit_and_evaluate(
+
+self.fit_and_evaluate(
 	max_iter=100,
 	true_values=true_values
 )
 
-vmp.evaluate(true_values)
+self.evaluate(true_values)
+
+
+import cProfile
+cProfile.run("vmp.fit_and_evaluate(max_iter=100, true_values=true_values)")
+
+
+
+
+
+
+
+
 
 # ELBO History plot
 df = pd.DataFrame(vmp.elbo_history)
@@ -321,3 +341,10 @@ self = vmp.variables["latent"].posterior
 # train      time             2.847495
 # data       density          0.096096
 # data       missing_prop     0.268500
+
+
+n = 3
+H = torch.eye(n) * n - 1
+torch.linalg.slogdet(H)
+torch.linalg.eigvalsh(H)
+torch.linalg.eigh(H)

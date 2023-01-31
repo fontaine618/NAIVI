@@ -354,10 +354,10 @@ class VMP:
     def fit_and_evaluate(
             self,
             max_iter: int = 1000,
-            rel_tol: float = 1e-5,
+            rel_tol: float = 1e-6,
             verbose: bool = True,
-            mc_samples: int = 10,
-            true_values: Dict[str, torch.Tensor] = {},
+            mc_samples: int = 0,
+            true_values: dict[str: torch.Tensor] = dict(),
     ):
         elbo = self.elbo()
         for i in range(max_iter):
@@ -376,7 +376,7 @@ class VMP:
                 self._update_elbo_mc_history(elbos_mc)
 
             self.evaluate(true_values)
-            increased = new_elbo > elbo
+            increased = new_elbo >= elbo
             if verbose:
                 print(f"[VMP] Iteration {i:<4} "
                       f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
@@ -429,6 +429,7 @@ class VMP:
         return bias.reshape(1, -1)
 
     def _evaluate(self, name: str, value: torch.Tensor | None) -> Dict[str, float]:
+        # TODO: maybe use torchmetrics more?
         # TODO refactor as dispatch:
         # method_name = f"_evaluate_{name}"
         # if hasattr(self, method_name):
