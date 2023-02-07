@@ -4,6 +4,7 @@ import torch
 import numpy as np
 from typing import Tuple, Dict, Optional
 from torchmetrics.functional import auroc, mean_squared_error
+from collections import defaultdict
 
 from .factors.affine import Affine
 from .factors.gaussian import GaussianFactor
@@ -380,7 +381,7 @@ class VMP:
             if verbose:
                 print(f"[VMP] Iteration {i:<4} "
                       f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
-            if abs(new_elbo - elbo) < rel_tol * abs(elbo):
+            if (new_elbo - elbo) < rel_tol * abs(elbo):
                 break
             elbo = new_elbo
 
@@ -390,7 +391,7 @@ class VMP:
     def evaluate(self, true_values: Dict[str, torch.Tensor] | None = None, store: bool = True):
         if true_values is None:
             true_values = {}
-        metrics = dict()
+        metrics = defaultdict(lambda: float("nan"))
         for name, value in true_values.items():
             metrics.update(self._evaluate(name, value))
         if store:
@@ -513,7 +514,7 @@ class VMP:
             mean_cts = self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean
             mean_cts = mean_cts[~value.isnan()]
             value = value[~value.isnan()]
-            metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item()
+            metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item() if obs.numel() else float("nan")
         elif name == "X_bin":
             if "bin_obs" not in self.variables:
                 return metrics
@@ -521,7 +522,7 @@ class VMP:
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
             obs = value[~torch.isnan(value)]
             proba = proba[~torch.isnan(value)]
-            metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item()
+            metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
         elif name == "X_cts_missing":
             if "cts_obs" not in self.variables:
                 return metrics
@@ -529,7 +530,7 @@ class VMP:
             mean_cts = self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean
             mean_cts = mean_cts[~value.isnan()]
             value = value[~value.isnan()]
-            metrics["X_cts_missing_mse"] = mean_squared_error(mean_cts, value).item()
+            metrics["X_cts_missing_mse"] = mean_squared_error(mean_cts, value).item() if obs.numel() else float("nan")
         elif name == "X_bin_missing":
             if "bin_obs" not in self.variables:
                 return metrics
@@ -537,7 +538,7 @@ class VMP:
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
             obs = value[~torch.isnan(value)]
             proba = proba[~torch.isnan(value)]
-            metrics["X_bin_missing_auroc"] = auroc(proba, obs, "binary").item()
+            metrics["X_bin_missing_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
         elif name == "A":
             if "edge" not in self.variables:
                 return metrics
@@ -545,7 +546,15 @@ class VMP:
             proba = self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
             obs = value[~torch.isnan(value)]
             proba = proba[~torch.isnan(value)]
-            metrics["A_auroc"] = auroc(proba, obs, "binary").item()
+            metrics["A_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+        elif name == "A_missing":
+            if "edge" not in self.variables:
+                return metrics
+            c_id = self.variables["edge"].id
+            proba = self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
+            obs = value[~torch.isnan(value)]
+            proba = proba[~torch.isnan(value)]
+            metrics["A_missing_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
         else:
             # could print a warning message, but that would appear every iteration ...
             pass
