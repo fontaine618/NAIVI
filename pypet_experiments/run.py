@@ -1,3 +1,6 @@
+import gc
+
+import torch
 from pypet import Environment, cartesian_product, Trajectory, Parameter, ParameterGroup
 from .data import Dataset
 from .method import Method
@@ -15,3 +18,7 @@ def run(traj: Trajectory):
     results_dict = results.to_dict()
     for k, v in results_dict.items():
         traj.f_add_result(f"$.{k}", v)
+    # do some GC here since pypet won't do it well for torch.
+    del data, method, results, results_dict
+    gc.collect()
+    torch.cuda.empty_cache()
