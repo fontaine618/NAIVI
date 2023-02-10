@@ -21,4 +21,5 @@ def run(traj: Trajectory):
     # do some GC here since pypet won't do it well for torch.
     del data, method, results, results_dict
     gc.collect()
-    torch.cuda.empty_cache()
+    with torch.no_grad():
+        torch.cuda.empty_cache()
