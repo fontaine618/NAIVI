@@ -8,6 +8,10 @@ from .results import Results
 
 
 def run(traj: Trajectory):
+    # do some GC here since pypet won't do it well for torch.
+    gc.collect()
+    with torch.no_grad():
+        torch.cuda.empty_cache()
     # get data instance (this could be loaded data or synthetic data)
     data: Dataset = Dataset.from_parameters(traj.data)
     # get method instance
@@ -19,10 +23,6 @@ def run(traj: Trajectory):
     for k, v in results_dict.items():
         traj.f_add_result(f"$.{k}", v)
     # do some GC here since pypet won't do it well for torch.
-    data = None
-    method = None
-    results = None
-    results_dict = None
     gc.collect()
     with torch.no_grad():
         torch.cuda.empty_cache()
