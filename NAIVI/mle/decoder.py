@@ -17,6 +17,10 @@ class CovariateModel(nn.Module):
         self.n_cts = 0.
         self.n_bin = 0.
 
+    @property
+    def cts_noise(self):
+        return torch.exp(self.cts_logvar)
+
     def forward(self, latent_positions):
         mean = self.mean_model(latent_positions)
         mean_cts, logit_bin = mean.split((self.p_cts, self.p_bin), dim=1)

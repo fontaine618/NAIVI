@@ -18,6 +18,10 @@ class CovariateModel(nn.Module):
         self.n_cts = 0.
         self.n_bin = 0.
 
+    @property
+    def cts_noise(self):
+        return self.model_cts.log_var.exp()
+
     def forward(self, mean, var):
         mean, var = self.mean_model(mean, var)
         mean_cts, mean_bin = mean.split((self.p_cts, self.p_bin), dim=-1)

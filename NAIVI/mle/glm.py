@@ -64,6 +64,8 @@ class GLM(GradientBased):
         # objective
         loss, _, _ = self.model.loss_and_fitted_values(latent_positions, X_cts, X_bin)
         loss /= self.denum
+        # minimum norm solution: add a small ridge penalty
+        loss += self.covariate_weight.pow(2.).sum() * 0.01
         # compute gradients
         loss.backward()
         # store previous regression coefficient
@@ -85,3 +87,6 @@ class GLM(GradientBased):
             llk /= self.denum
             auc, mse, _ = self.prediction_metrics(X_bin, X_cts, None, mean_cts, proba_bin, None)
         return llk.item(), mse, auc, 0.
+
+    def compute_Theta_A(self, i0, i1):
+        pass

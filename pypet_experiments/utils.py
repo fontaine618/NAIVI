@@ -23,11 +23,26 @@ _default_model_parameters = {
     "heterogeneity_prior_variance": 1.,
     "latent_prior_mean": 0.,
     "latent_prior_variance": 1.,
+    "mnar": False,
+    "regularization": 0.
 }
 
 _default_fit_parameters = {
     "vmp.max_iter": 1000,
     "vmp.rel_tol": 1e-5,
+    "map.lr": 0.01,
+    "map.max_iter": 1000,
+    "map.eps": 1e-4,
+    "map.optimizer": "Rprop",
+    "advi.lr": 0.01,
+    "advi.max_iter": 1000,
+    "advi.eps": 1e-4,
+    "advi.optimizer": "Rprop",
+    "vimc.lr": 0.1,
+    "vimc.max_iter": 1000,
+    "vimc.eps": 1e-4,
+    "vimc.optimizer": "Adam",
+    "vimc.n_samples": 0,
 }
 
 

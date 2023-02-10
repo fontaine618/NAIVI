@@ -381,7 +381,7 @@ class VMP:
             if verbose:
                 print(f"[VMP] Iteration {i:<4} "
                       f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
-            if (new_elbo - elbo) < rel_tol * abs(elbo):
+            if abs(new_elbo - elbo) < rel_tol * abs(elbo):
                 break
             elbo = new_elbo
 
@@ -429,14 +429,7 @@ class VMP:
             bias = torch.cat([bias, self.parameters["affine_bin"]["bias"].data], dim=0)
         return bias.reshape(1, -1)
 
-    def _evaluate(self, name: str, value: torch.Tensor | None) -> Dict[str, float]:
-        # TODO: maybe use torchmetrics more?
-        # TODO refactor as dispatch:
-        # method_name = f"_evaluate_{name}"
-        # if hasattr(self, method_name):
-        #     metrics = getattr(self, method_name)(value)
-        # else:
-        #     raise ValueError(f"Unknown quantity to evaluate: {name}")
+    def _evaluate(self, name: str, value: torch.Tensor | None) -> dict[str, float]:
         metrics = dict()
         if value is None:
             return metrics
@@ -514,7 +507,7 @@ class VMP:
             mean_cts = self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean
             mean_cts = mean_cts[~value.isnan()]
             value = value[~value.isnan()]
-            metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item() if obs.numel() else float("nan")
+            metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item() if value.numel() else float("nan")
         elif name == "X_bin":
             if "bin_obs" not in self.variables:
                 return metrics
@@ -530,7 +523,7 @@ class VMP:
             mean_cts = self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean
             mean_cts = mean_cts[~value.isnan()]
             value = value[~value.isnan()]
-            metrics["X_cts_missing_mse"] = mean_squared_error(mean_cts, value).item() if obs.numel() else float("nan")
+            metrics["X_cts_missing_mse"] = mean_squared_error(mean_cts, value).item() if value.numel() else float("nan")
         elif name == "X_bin_missing":
             if "bin_obs" not in self.variables:
                 return metrics

@@ -4,6 +4,7 @@ from typing import Any
 
 
 def gather_results_to_DataFrame(traj: Trajectory) -> pd.DataFrame:
+    traj.f_load(load_results=2)
     run_ids = list(traj.f_iter_runs())
     results_dict = dict()
     for run_id in run_ids:

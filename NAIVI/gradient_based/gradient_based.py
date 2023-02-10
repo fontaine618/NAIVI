@@ -5,6 +5,7 @@ from torchmetrics.functional import auroc, mean_squared_error
 # from NAIVI.utils.metrics import invariant_distance, projection_distance, proba_distance
 from NAIVI.utils.base import verbose_init
 from torch.optim.lr_scheduler import LambdaLR
+from collections import defaultdict
 
 
 class GradientBased:
@@ -43,29 +44,24 @@ class GradientBased:
         optimizer, scheduler = self.prepare_optimizer(lr=lr, power=power, optimizer=optimizer)
         n_char = verbose_init() if verbose else 0
         epoch, out = 0, None
-        outcols = [("train", "grad_norm"),
-                   ("train", "loss"), ("train", "mse"), ("train", "auc"),
+        outcols = [("train", "grad_Linfty"), ("train", "grad_L2"), ("train", "grad_L1"),
+                   ("train", "loss"), ("train", "mse"), ("train", "auc"), ("train", "auc_A"),
                    ("ic", "aic"), ("ic", "bic")]
         if test is not None:
-            outcols += [("test", "loss"), ("test", "mse"), ("test", "auc")]
+            outcols += [("test", "loss"), ("test", "mse"), ("test", "auc"), ("test", "auc_A")]
         if return_log:
             outcols += [("error", k) for k in true_values.keys()]
-            logs = pd.DataFrame(columns=pd.MultiIndex.from_tuples(outcols))
-            logs.index.name = "iter"
+            logs = {k: [] for k in outcols}
         for epoch in range(max_iter+1):
             optimizer.zero_grad()
-            # batches = torch.split(torch.randperm(len(train)), batch_size)
-            # for batch in batches:
-            #     self.batch_update(batch, optimizer, train, epoch)
             self.batch_update(None, optimizer, train, epoch)
             if scheduler is not None:
                 scheduler.step()
             converged, grad_norms = self.check_convergence(eps)
             out = self.epoch_metrics(test, train, grad_norms, true_values)
             if return_log:
-                df = pd.DataFrame(out, index=[0])
-                # logs = logs.append(df, ignore_index=True)
-                logs = pd.concat([logs, df], ignore_index=True)
+                for k, v in out.items():
+                    logs[k].append(v)
             if verbose and epoch % 10 == 0:
                 form = "{:<4} {:<12.2e} |" + " {:<12.4f}" * 4
                 log = form.format(epoch, out[("train", "grad_L2")],
@@ -76,6 +72,9 @@ class GradientBased:
                 break
         if verbose:
             print("-" * n_char)
+        out = self.epoch_metrics(test, train, grad_norms, true_values)
+        i0, i1, _, _, _, _ = train[:]
+        self.Theta_A = self.compute_Theta_A(i0, i1)
         if return_log:
             return out, logs
         else:
@@ -162,6 +161,22 @@ class GradientBased:
                         value = ((alpha - v)**2).mean()
                     out[("error", k)] = value.item()
         return out
+
+    @property
+    def Theta_X(self):
+        Z = self.latent_positions()
+        B = self.model.covariate_model.weight
+        B0 = self.model.covariate_model.bias
+        if self.model.mnar:
+            B = B[:(self.model.p_cts+self.model.p_bin)//2, :]
+            B0 = B0[:(self.model.p_cts+self.model.p_bin)//2]
+        return B0.reshape((1, -1)) + torch.mm(Z, B.t())
+
+    def compute_Theta_A(self, i0, i1):
+        Z = self.latent_positions()
+        alpha = self.latent_heterogeneity()
+        W = self.model.adjacency_model.components
+        return alpha[i0] + alpha[i1] + torch.sum(Z[i0, :] * W * Z[i1, :], 1, keepdim=True)
 
     def compute_penalty(self):
         with torch.no_grad():
@@ -283,7 +298,7 @@ class GradientBased:
     def check_convergence(self, tol):
         with torch.no_grad():
             grad_Linfty = torch.tensor([
-                parm.grad.abs().max()
+                parm.grad.abs().max() if parm.grad.numel() else 0.
                 for parm in self.model.parameters() if parm.grad is not None
             ]).max().item()
             grad_L1 = torch.tensor([
@@ -298,3 +313,79 @@ class GradientBased:
             if grad_L2 < tol:
                 converged = True
             return converged, {"Linfty": grad_Linfty, "L1": grad_L1, "L2": grad_L2}
+
+    def results(self, true_values: dict[str, torch.Tensor] | None = None) -> dict[str, float]:
+        if true_values is None:
+            true_values = {}
+        metrics = defaultdict(lambda: float("nan"))
+        for name, value in true_values.items():
+            metrics.update(self._evaluate(name, value))
+        return metrics
+
+    def _evaluate(self, name: str, value: torch.Tensor | None) -> dict[str, float]:
+        metrics = dict()
+        if value is None:
+            return metrics
+        if name == "heterogeneity":
+            post = self.latent_heterogeneity()
+            diff = (post - value).abs()
+            metrics["heteregeneity_l2"] = diff.norm().item()
+            metrics["heteregeneity_l2_rel"] = diff.pow(2.).mean().item()
+        elif name == "latent":
+            post = self.latent_positions()
+            ZZt = post @ post.T
+            ZtZinv = torch.linalg.inv(post.T @ post)
+            Proj = post @ ZtZinv @ post.T
+
+            ZZt0 = value @ value.T
+            ZtZinv0 = torch.linalg.inv(value.T @ value)
+            Proj0 = value @ ZtZinv0 @ value.T
+
+            metrics["latent_ZZt_fro"] = (ZZt - ZZt0).norm().item()
+            metrics["latent_ZZt_fro_rel"] = (metrics["latent_ZZt_fro"] / ZZt0.norm()).item() ** 2
+            metrics["latent_Proj_fro"] = (Proj - Proj0).norm().item()
+            metrics["latent_Proj_fro_rel"] = (metrics["latent_Proj_fro"] / Proj0.norm()).item() ** 2
+        elif name == "bias":
+            bias = self.model.covariate_model.bias
+            if bias.shape[-1] == 0:
+                return metrics
+            diff = (bias - value).abs()
+            metrics["bias_l2"] = (diff ** 2).sum().sqrt().item()
+            metrics["bias_l2_rel"] = (metrics["bias_l2"] / value.norm()).item() ** 2
+        elif name == "weights":
+            weights = self.model.covariate_model.weight
+            if weights.shape[0] == 0:
+                return metrics
+            ZZt = weights @ weights.T
+            ZtZinv = torch.linalg.inv(weights.T @ weights)
+            Proj = weights @ ZtZinv @ weights.T
+
+            value = value.T
+            ZZt0 = value @ value.T
+            ZtZinv0 = torch.linalg.inv(value.T @ value)
+            Proj0 = value @ ZtZinv0 @ value.T
+
+            metrics["weights_BBt_fro"] = (ZZt - ZZt0).norm().item()
+            metrics["weights_BBt_fro_rel"] = (metrics["weights_BBt_fro"] / ZZt0.norm()).item() ** 2
+            metrics["weights_Proj_fro"] = (Proj - Proj0).norm().item()
+            metrics["weights_Proj_fro_rel"] = (metrics["weights_Proj_fro"] / Proj0.norm()).item() ** 2
+        elif name == "cts_noise":
+            var = self.model.covariate_model.cts_noise
+            metrics["cts_noise_l2"] = (var - value).norm().item()
+            metrics["cts_noise_sqrt_l2"] = (var.sqrt() - value.sqrt()).norm().item()
+            metrics["cts_noise_log_l2"] = (var.log() - value.log()).norm().item()
+        elif name == "Theta_X":
+            metrics["Theta_X_l2"] = (value - self.Theta_X).norm().item()
+            metrics["Theta_X_l2_rel"] = (metrics["Theta_X_l2"] / value.norm()).item() ** 2
+        elif name == "Theta_A":
+            theta_A = self.Theta_A
+            metrics["Theta_A_l2"] = (value - theta_A).norm().item()
+            metrics["Theta_A_l2_rel"] = (metrics["Theta_A_l2"] / value.norm()).item() ** 2
+        elif name == "P":
+            P = torch.sigmoid(self.Theta_A)
+            metrics["P_l2"] = (value - P).pow(2.).mean().item()
+        else:
+            # could print a warning message, but that would appear every iteration ...
+            pass
+        # update history
+        return metrics

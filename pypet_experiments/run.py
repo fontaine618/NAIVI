@@ -12,6 +12,6 @@ def run(traj: Trajectory):
     # run method on data and get results
     results: Results = method.fit(data, traj.fit)
     # save results
-    results = results.to_dict()
-    for k, v in results.items():
+    results_dict = results.to_dict()
+    for k, v in results_dict.items():
         traj.f_add_result(f"$.{k}", v)

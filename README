@@ -11,12 +11,12 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     [x] Quadratic
     [ ] MK
     [ ] Tilted
-[ ] Implement wrapper similar to ADVI/VIMC
+[x] Implement wrapper similar to ADVI/VIMC
 [x] ELBO: MC at each factor (to check elbo computation/Logistic LB)
 [x] ELBO: Like VIMC (to check messages)
 [x] Figure out why mean is never updated ???
     [x] Break symmetry?
-[ ] Profile and make faster
+[x] Profile and make faster
     - more than 50% time is spent inverting matrices
     - need to check if some can be avoided, by I think this
     is the best I can do ...
@@ -24,7 +24,7 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     [x] Do a fit_and_evaluate method
 [ ] Initialization
     [ ] Use ADVI first? VMP is then just a refinement?
-    [ ] I think just breaking symmetry should be fine ...
+    [x] I think just breaking symmetry should be fine ...
 [x] Memoize covariances:
     - if instantiated from mean and covariance, store them too
     - when variance is called, check if it is stored. If yes, just return.

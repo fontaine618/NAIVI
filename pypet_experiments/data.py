@@ -57,6 +57,18 @@ class Dataset:
         return self._true_values
 
     @property
+    def p_cts(self) -> int:
+        if self.continuous_covariates is not None:
+            return self.continuous_covariates.shape[1]
+        return 0
+
+    @property
+    def p_bin(self) -> int:
+        if self.binary_covariates is not None:
+            return self.binary_covariates.shape[1]
+        return 0
+
+    @property
     def n_nodes(self) -> int:
         if self.binary_covariates is not None:
             return self.binary_covariates.shape[0]
@@ -120,8 +132,8 @@ class Dataset:
                 bias=bias,
                 mean_cts=mean_cts,
                 logit_bin=logit_bin,
-                theta_A=theta_A,
-                theta_X=theta_X,
+                Theta_A=theta_A,
+                Theta_X=theta_X,
                 P=torch.sigmoid(theta_A),
                 X_cts=X_cts,
                 X_bin=X_bin,

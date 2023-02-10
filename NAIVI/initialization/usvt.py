@@ -54,7 +54,7 @@ def doubly_center(residuals):
 
 def project_symmetric_pd(residuals):
 	symmetric = 0.5 * (residuals + residuals.t())
-	evals, evecs = torch.symeig(symmetric, eigenvectors=True)
+	evals, evecs = torch.linalg.eigh(symmetric)
 	evals = torch.where(evals < 0., 0., evals)
 	return evecs @ torch.diag(evals) @ evecs.t()
 
