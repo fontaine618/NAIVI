@@ -513,7 +513,7 @@ class VMP:
                 return metrics
             c_id = self.variables["bin_obs"].id
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
-            obs = value[~torch.isnan(value)]
+            obs = value[~torch.isnan(value)].int()
             proba = proba[~torch.isnan(value)]
             metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
         elif name == "X_cts_missing":
@@ -529,7 +529,7 @@ class VMP:
                 return metrics
             c_id = self.variables["bin_obs"].id
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
-            obs = value[~torch.isnan(value)]
+            obs = value[~torch.isnan(value)].int()
             proba = proba[~torch.isnan(value)]
             metrics["X_bin_missing_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
         elif name == "A":
@@ -537,7 +537,7 @@ class VMP:
                 return metrics
             c_id = self.variables["edge"].id
             proba = self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
-            obs = value[~torch.isnan(value)]
+            obs = value[~torch.isnan(value)].int()
             proba = proba[~torch.isnan(value)]
             metrics["A_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
         elif name == "A_missing":
@@ -545,7 +545,7 @@ class VMP:
                 return metrics
             c_id = self.variables["edge"].id
             proba = self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
-            obs = value[~torch.isnan(value)]
+            obs = value[~torch.isnan(value)].int()
             proba = proba[~torch.isnan(value)]
             metrics["A_missing_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
         else:
