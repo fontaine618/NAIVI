@@ -163,7 +163,10 @@ class Dataset:
         X_cts_n = self.continuous_covariates.numel()
         X_bin_missing_n = self.binary_covariates[~torch.isnan(self.binary_covariates)].numel()
         X_bin_n = self.binary_covariates.numel()
-        return (X_cts_missing_n + X_bin_missing_n) / (X_cts_n + X_bin_n)
+        denum = X_cts_n + X_bin_n
+        if denum == 0:
+            return float("nan")
+        return (X_cts_missing_n + X_bin_missing_n) / denum
 
 
 
