@@ -32,23 +32,11 @@ def run(traj: Trajectory):
 
 def print_run_summary(traj: Trajectory):
     out = f"""
-    ============================================================
-    RUN SETTINGS
-    ------------------------------------------------------------
-    Data settings:\n"""
-    for v in traj.par.data:
-        out += f"- {v.v_name:30s} = {v._data}\n"
-    out += "------------------------------------------------------------\n"
-    out += f"Method settings:\n"
-    for v in traj.par.method:
-        out += f"- {v.v_name:30s} = {v._data}\n"
-    out += "------------------------------------------------------------\n"
-    out += f"Model settings:\n"
-    for v in traj.par.model:
-        out += f"- {v.v_name:30s} = {v._data}\n"
-    out += "------------------------------------------------------------\n"
-    out += f"Fit settings:\n"
-    for v in traj.par.fit:
-        out += f"- {v.v_name:30s} = {v._data}\n"
-    out += f"============================================================"
+================================================================================
+RUN SETTINGS
+--------------------------------------------------------------------------------\n"""
+    for v in traj.par.f_iter_leaves():
+        if isinstance(v, Parameter):
+            out += f"{v.v_full_name:50s} : {v.data}\n"
+    out += f"================================================================================"
     print(out)
