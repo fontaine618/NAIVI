@@ -12,6 +12,7 @@ def run(traj: Trajectory):
     gc.collect()
     with torch.no_grad():
         torch.cuda.empty_cache()
+    print_run_summary(traj)
     # get data instance (this could be loaded data or synthetic data)
     data: Dataset = Dataset.from_parameters(traj.data)
     # get method instance
@@ -27,3 +28,27 @@ def run(traj: Trajectory):
     gc.collect()
     with torch.no_grad():
         torch.cuda.empty_cache()
+
+
+def print_run_summary(traj: Trajectory):
+    out = f"""
+    ============================================================
+    RUN SETTINGS
+    ------------------------------------------------------------
+    Data settings:\n"""
+    for v in traj.par.data:
+        out += f"- {v.name:30s} = {v.value}\n"
+    out += "------------------------------------------------------------\n"
+    out += f"Method settings:\n"
+    for v in traj.par.method:
+        out += f"- {v.name:30s} = {v.value}\n"
+    out += "------------------------------------------------------------\n"
+    out += f"Model settings:\n"
+    for v in traj.par.model:
+        out += f"- {v.name:30s} = {v.value}\n"
+    out += "------------------------------------------------------------\n"
+    out += f"Fit settings:\n"
+    for v in traj.par.fit:
+        out += f"- {v.name:30s} = {v.value}\n"
+    out += f"============================================================"
+    print(out)
