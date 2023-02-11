@@ -378,7 +378,7 @@ class VMP:
 
             self.evaluate(true_values)
             increased = new_elbo >= elbo
-            if verbose:
+            if verbose and (i % 10) == 0:
                 print(f"[VMP] Iteration {i:<4} "
                       f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
             if abs(new_elbo - elbo) < rel_tol * abs(elbo):
