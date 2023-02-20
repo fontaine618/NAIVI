@@ -11,7 +11,7 @@ seed = sys.argv[1]
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 env = Environment(
     trajectory="n_covariates_binary",
-    filename="./results.hdf5",
+    filename=f"./results{seed}.hdf5",
     overwrite_file=True,
     multiproc=True,
     ncores=1,

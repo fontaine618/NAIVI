@@ -4,7 +4,7 @@
 #SBATCH --job-name=naivi_n_cov_bin
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=4:00:00
+#SBATCH --time=2:00:00
 #SBATCH --array=0,1
 #SBATCH --account=stats_dept1
 #SBATCH --partition=gpu
