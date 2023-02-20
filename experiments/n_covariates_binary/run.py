@@ -10,7 +10,7 @@ env = Environment(
     trajectory="n_covariates_binary",
     filename="./results.hdf5",
     overwrite_file=True,
-    multiproc=False,
+    multiproc=True,
     ncores=1,
 )
 traj = env.trajectory
