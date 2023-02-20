@@ -11,16 +11,16 @@ env = Environment(
     filename="./results.hdf5",
     overwrite_file=True,
     multiproc=True,
-    ncores=4,
+    ncores=1,
 )
 traj = env.trajectory
 add_parameters(traj)
 
 traj.f_explore(cartesian_product({
     "data.dataset": ["synthetic"],
-    "data.n_nodes": [50, 100, 200, 500, 1000, 2000],
+    "data.n_nodes": [1000],
     "data.p_cts": [0],
-    "data.p_bin": [0, 100],
+    "data.p_bin": [100],
     "data.seed": np.arange(0, 30).tolist(),
     "data.latent_dim": [5],
     "data.latent_variance": [1.],
@@ -35,7 +35,7 @@ traj.f_explore(cartesian_product({
     "model.heterogeneity_prior_variance": [1.],
     "model.latent_prior_mean": [0.],
     "model.latent_prior_variance": [1.],
-    "method": ["MAP", "ADVI", "VMP"],
+    "method": ["VMP"],
     "fit.vmp.max_iter": [1000],
     "fit.vmp.rel_tol": [1e-5],
     "fit.map.lr": [0.01],

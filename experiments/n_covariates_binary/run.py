@@ -7,10 +7,10 @@ from pypet_experiments.utils import add_parameters
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 env = Environment(
-    trajectory="n_covaraites_binary",
+    trajectory="n_covariates_binary",
     filename="./results.hdf5",
     overwrite_file=True,
-    multiproc=True,
+    multiproc=False,
     ncores=1,
 )
 traj = env.trajectory
@@ -20,7 +20,7 @@ traj.f_explore(cartesian_product({
     "data.dataset": ["synthetic"],
     "data.n_nodes": [100, 1000],
     "data.p_cts": [0],
-    "data.p_bin": [0, 10, 20, 50, 100, 200, 500, 1000],
+    "data.p_bin": [5, 10, 20, 50, 100, 200, 500, 1000],
     "data.seed": np.arange(0, 30).tolist(),
     "data.latent_dim": [5],
     "data.latent_variance": [1.],

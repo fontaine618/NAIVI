@@ -4,12 +4,15 @@ from typing import Any
 
 
 def gather_results_to_DataFrame(traj: Trajectory) -> pd.DataFrame:
-    traj.f_load(load_results=2)
+    traj.f_load(load_results=2, force=True)
     run_ids = list(traj.f_iter_runs())
     results_dict = dict()
     for run_id in run_ids:
-        traj.f_set_crun(run_id)
-        results_dict[run_id] = flatten_group_to_dict(traj.res.crun)
+        try:
+            traj.f_set_crun(run_id)
+            results_dict[run_id] = flatten_group_to_dict(traj.res.crun)
+        except AttributeError:
+            continue
     return pd.DataFrame(results_dict).T
 
 
@@ -17,8 +20,11 @@ def gather_parameters_to_DataFrame(traj: Trajectory) -> pd.DataFrame:
     run_ids = list(traj.f_iter_runs())
     parameters_dict = dict()
     for run_id in run_ids:
-        traj.f_set_crun(run_id)
-        parameters_dict[run_id] = flatten_group_to_dict(traj.par)
+        try:
+            traj.f_set_crun(run_id)
+            parameters_dict[run_id] = flatten_group_to_dict(traj.par)
+        except AttributeError:
+            continue
     return pd.DataFrame(parameters_dict).T
 
 
