@@ -1,12 +1,12 @@
 import numpy as np
 import torch
 import sys
-sys.path.extend(["/home/simon/Documents/NAIVI/"])
-print(sys.path)
+sys.path.extend(["/home/simfont/Documents/NAIVI/"])
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
 
+seed = sys.argv[1]
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 env = Environment(
@@ -23,8 +23,8 @@ traj.f_explore(cartesian_product({
     "data.dataset": ["synthetic"],
     "data.n_nodes": [100, 1000],
     "data.p_cts": [0],
-    "data.p_bin": [5, 10, 20, 50, 100, 200, 500, 1000],
-    "data.seed": np.arange(0, 30).tolist(),
+    "data.p_bin": [0, 5, 10, 20, 50, 100, 200, 500, 1000],
+    "data.seed": [seed],
     "data.latent_dim": [5],
     "data.latent_variance": [1.],
     "data.latent_mean": [0.],
