@@ -1,7 +1,7 @@
 import numpy as np
 import torch
-import os
-os.path.extend(["~/Documents/NAIVI/"])
+import sys
+sys.path.extend(["~/Documents/NAIVI/"])
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
