@@ -23,7 +23,7 @@ traj.f_explore(cartesian_product({
     "data.dataset": ["synthetic"],
     "data.n_nodes": [100, 1000],
     "data.p_cts": [0],
-    "data.p_bin": [0, 5, 10, 20, 50, 100, 200, 500, 1000],
+    "data.p_bin": [0, 5, 10, 20, 50, 100, 200, 500, 1000, 2000],
     "data.seed": [int(seed)],
     "data.latent_dim": [5],
     "data.latent_variance": [1.],
