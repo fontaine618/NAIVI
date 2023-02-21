@@ -8,7 +8,7 @@ import pandas as pd
 
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
-name = "n_covariates_binary"
+name = "missing_proportion_continuous"
 
 res_list = []
 for i in range(30):
@@ -27,13 +27,12 @@ results = pd.concat(res_list)
 
 
 x_axis = "data.missing_covariate_rate"
-rows = ["testing.X_bin_missing_auroc", "estimation.latent_Proj_fro_rel"]
-row_labels = ["AuROC", r"$d(Z,\widehat{Z})$"]
+rows = ["testing.X_cts_missing_mse", "estimation.latent_Proj_fro_rel"]
+row_labels = ["MSE", r"$d(Z,\widehat{Z})$"]
 hue = "method"
-subset = results["data.p_bin"] > 0
+subset = results["data.p_cts"] > 0
 cols = ["data.n_nodes", "data.p_cts"]
-col_titles = ["$N=100$", "$N=1,000$"]
-title = "Experiment 3: Missingness in binary covariates\nVarying missing covariate rate"
+title = "Experiment 3: Missingness in continuous covariates\nVarying missing covariate rate"
 
 # Automatic
 df = results[subset]
@@ -41,7 +40,8 @@ df = df[[x_axis] + rows + [hue] + cols]
 df = df.melt(id_vars=[x_axis, hue, *cols], value_vars=rows, var_name="Metric", value_name="Value")
 df["Metric"] = df["Metric"].replace({x: y for x, y in zip(rows, row_labels)})
 df["data.n_nodes"] = df["data.n_nodes"].replace({"100": "$N=100$", "1000": "$N=1,000$"})
-df["data.p_cts"] = df["data.p_cts"].replace({"0": "$p=0$", "1": "$p=1$"})
+df["data.p_cts"] = df["data.p_cts"].replace({"50": "$p=50$", "500": "$p=500$"})
+df["experiment"] = df["data.n_nodes"].astype(str) + ", " + df["data.p_cts"].astype(str)
 df["method"] = df["method"].replace({
     "VMP": "NAIVI-VMP",
     "MAP": "MAP",
@@ -67,34 +67,40 @@ plt.rcParams.update({
 })
 
 
-plt.figure(figsize=(8, 8))
+plt.figure(figsize=(6, 12))
 grid = sns.relplot(
     data=df,
     x=x_axis,
     y="Value",
     hue=hue,
-    col=cols,
+    col="experiment",
     row="Metric",
     kind="line",
     estimator="median",
     errorbar=("pi", 50),
     hue_order=["NAIVI-VMP", "NAIVI-QB", "MAP"],
-    facet_kws={"sharey": "row", "sharex": True},
+    facet_kws={"sharey": "row", "sharex": True, "margin_titles": True},
     markers=True,
 )
-grid.set(xscale="log")
-grid.set_axis_labels("Number of covariates", "")
-grid.set_titles("")
+# grid.set(xscale="log")
+grid.set_axis_labels("Missing rate", "")
 grid.legend.set_title("Method")
+grid.axes[0, 0].set_ylim(1, 2)
+# grid.set_titles("")
+# for row, row_label in enumerate(row_labels):
+#     grid.axes[row, 0].set_ylabel(row_label)
+# grid.axes[0, :].set_titles(template="N, P={col_name}")
+grid.set_titles(
+    row_template="",
+    col_template="N, P = {col_name}",
+)
 for row, row_label in enumerate(row_labels):
     grid.axes[row, 0].set_ylabel(row_label)
-for col, col_label in enumerate(col_titles):
-    grid.axes[0, col].set_title(col_label)
 grid.axes[1, 0].set_yscale("log")
 grid.fig.tight_layout(w_pad=1)
-grid.fig.subplots_adjust(top=0.90)
+grid.fig.subplots_adjust(top=0.85)
 grid.fig.suptitle(title, y=0.95, x=grid.axes[0, 0].get_position().x0, horizontalalignment="left")
-plt.savefig("experiments/n_covariates_binary/figures/metrics.pdf")
+plt.savefig("experiments/missing_proportion_continuous/figures/metrics.pdf")
 
 
 

@@ -62,7 +62,6 @@ class Affine(Factor):
 			self.messages_to_parents[i].message_to_factor = post / mtp
 
 	def update_parameters(self):
-		# TODO: implement this
 		self._update_bias()
 		self._update_weights()
 
