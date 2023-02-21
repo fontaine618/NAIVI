@@ -9,13 +9,21 @@ import pandas as pd
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 name = "n_covariates_binary"
-file = "./experiments/n_covariates_binary/results.hdf5"
-traj = Trajectory(name=name)
-traj.f_load(filename=file, load_results=2, force=True)
 
-parameters = gather_parameters_to_DataFrame(traj)
-results = gather_results_to_DataFrame(traj)
-results = parameters.join(results)
+res_list = []
+for i in range(30):
+    file = f"./experiments/n_covariates_binary/results/results{i}.hdf5"
+    traj = Trajectory(name=name)
+    traj.f_load(filename=file, load_results=2, force=True)
+
+    parameters = gather_parameters_to_DataFrame(traj)
+    results = gather_results_to_DataFrame(traj)
+    results = parameters.join(results)
+    res_list.append(results)
+
+results = pd.concat(res_list)
+
+
 
 
 x_axis = "data.p_bin"
@@ -67,7 +75,8 @@ grid = sns.relplot(
     col=cols,
     row="Metric",
     kind="line",
-    errorbar="ci",
+    estimator="median",
+    errorbar=("pi", 50),
     hue_order=["NAIVI-VMP", "NAIVI-QB", "MAP"],
     # col_order=col_titles,
     # row_order=row_labels,
@@ -86,7 +95,7 @@ grid.axes[1, 0].set_yscale("log")
 grid.fig.tight_layout(w_pad=1)
 grid.fig.subplots_adjust(top=0.90)
 grid.fig.suptitle(title, y=0.95, x=grid.axes[0, 0].get_position().x0, horizontalalignment="left")
-plt.savefig("experiments/n_covariates_binary/plot.pdf")
+plt.savefig("experiments/n_covariates_binary/figures/metrics.pdf")
 
 
 
