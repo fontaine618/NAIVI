@@ -24,7 +24,7 @@ traj.f_explore(cartesian_product({
     "data.n_nodes": [100, 1000],
     "data.p_cts": [0],
     "data.p_bin": [0, 5, 10, 20, 50, 100, 200, 500, 1000],
-    "data.seed": [seed],
+    "data.seed": [int(seed)],
     "data.latent_dim": [5],
     "data.latent_variance": [1.],
     "data.latent_mean": [0.],
