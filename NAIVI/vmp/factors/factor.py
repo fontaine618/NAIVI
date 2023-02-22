@@ -30,6 +30,10 @@ class Factor:
 		self.set_parents(**kwargs)
 		Factor.instance[self.id] = self
 
+	@property
+	def deterministic(self):
+		return self._deterministic
+
 	def initialize_messages_to_parents(self):
 		pass
 
@@ -57,7 +61,6 @@ class Factor:
 		for i, parent in self.parents.items():
 			mtp = self.messages_to_parents[i].message_to_variable
 			post = parent.posterior
-			# TODO: if deterministic, this should not divide ? depends on which type of VMP
 			self.messages_to_parents[i].message_to_factor = post / mtp
 
 	def update_messages_to_children(self):

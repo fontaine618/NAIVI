@@ -102,6 +102,12 @@ class Logistic(Factor):
 		self.messages_to_children[i] = LogisticToObservationMessage(self.children[i], self)
 
 	def update_messages_to_children(self):
+		# this is not the standard VMP message,
+		# we rather send this message so that the posterior is the predictive posterior
+		# for missing values
+		# This is also fine to do, because, the message_to_factor below will
+		# be fine since it removes the message in the other direction and only return the
+		# observed/missing message
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		mfp = self.messages_to_parents[p_id].message_to_factor
@@ -141,6 +147,7 @@ class Logistic(Factor):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		mfc = self.messages_to_children[c_id].message_to_factor
+		# mfc = self.children[c_id].posterior
 		# mfp = self.messages_to_parents[p_id].message_to_factor
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
@@ -155,6 +162,8 @@ class Logistic(Factor):
 		# Nolan and Wand (2017, Eq. 6) I think it's equivalent to the above
 		# p1 = b1 * p.sqrt()
 		# mtp1 = m * p1 + x - b0
+		p1 = torch.where(x == 0.5, torch.zeros_like(p1), p1)
+		mtp1 = torch.where(x == 0.5, torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _quadratic_update(self):
@@ -162,14 +171,17 @@ class Logistic(Factor):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		mfc = self.messages_to_children[c_id].message_to_factor
-		mfp = self.messages_to_parents[p_id].message_to_factor
+		# mfc = self.children[c_id].posterior
+		# mfp = self.messages_to_parents[p_id].message_to_factor
+		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
 		s = mfc.proba - 0.5
 		t = (m.pow(2.) + v).sqrt()
 		lam = (torch.sigmoid(t) - 0.5) / t
 		p1 = lam
 		mtp1 = s
-		p1 = torch.where(s == 0., torch.zeros_like(p1), p1)  # mtp1 should be fine already
+		p1 = torch.where(x == 0.5, torch.zeros_like(p1), p1)
+		mtp1 = torch.where(x == 0.5, torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _tilted_update(self):
@@ -178,6 +190,7 @@ class Logistic(Factor):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		mfc = self.messages_to_children[c_id].message_to_factor
+		# mfc = self.children[c_id].posterior
 		# mfp = self.messages_to_parents[p_id].message_to_factor
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
@@ -185,6 +198,8 @@ class Logistic(Factor):
 		a = _tilted_fixed_point(m, v)
 		p1 = a * (1 - a)
 		mtp1 = m * p1 + x - a
+		p1 = torch.where(x == 0.5, torch.zeros_like(p1), p1)
+		mtp1 = torch.where(x == 0.5, torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def elbo_mc(self, n_samples: int = 1):

@@ -56,12 +56,14 @@ class Affine(Factor):
 		self.messages_to_parents[p].message_to_variable = MultivariateNormal(prec, mtp)
 
 	def update_messages_from_parents(self):
+		# this is a deterministic factor, so we should divide
 		for i, parent in self.parents.items():
 			mtp = self.messages_to_parents[i]._message_to_variable  # we need all messages here
 			post = parent.posterior.unsqueeze(1)  #.expand(-1, mtp.shape[1], -1)  # N x p x K
 			self.messages_to_parents[i].message_to_factor = post / mtp
 
 	def update_parameters(self):
+		# TODO: check this
 		self._update_bias()
 		self._update_weights()
 

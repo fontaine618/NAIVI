@@ -2,6 +2,7 @@ from __future__ import annotations
 import itertools
 import torch
 
+from .. import VMP_OPTIONS
 from ..distributions import Distribution, Unit
 from typing import TYPE_CHECKING, Dict
 
@@ -50,7 +51,7 @@ class Variable:
         self.posterior = post
 
     def update(self, prev_msg, new_msg):
-        # print(f"Update posterior of {self}")
+        if VMP_OPTIONS["logging"]: print(f"Update posterior of {self}")
         self.posterior = new_msg * self.posterior / prev_msg
 
     def __repr__(self):

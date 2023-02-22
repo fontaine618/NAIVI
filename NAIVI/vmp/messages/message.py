@@ -20,6 +20,7 @@ class Message:
 	instance = dict()
 
 	def __init__(self, variable: Variable, factor: Factor, damping: float = 1., **kw):
+		self._factor_is_deterministic = factor.deterministic
 		self.id = next(Message.new_id)
 		self.variable = variable
 		self.factor = factor
