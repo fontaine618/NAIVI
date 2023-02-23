@@ -7,7 +7,7 @@ sys.path.append("/home/simon/Documents/NAIVI/")
 
 plt.style.use("seaborn-v0_8-whitegrid")
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
-
+import NAIVI
 from NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.vmp import disable_logging
 from NAIVI.vmp import VMP
@@ -19,12 +19,14 @@ from NAIVI.vmp.distributions.normal import MultivariateNormal
 # to remove argument checking in distribution
 # using -O also does this since this defualts to __debug__
 Distribution.set_default_check_args(False)
+NAIVI.vmp.enable_logging()
+NAIVI.vmp.disable_logging()
+NAIVI.vmp.set_check_args(0)
 
 
-
-N = 500
-p_bin = 0
-p_cts = 0
+N = 50
+p_bin = 10
+p_cts = 10
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
@@ -67,7 +69,7 @@ true_values = {
 
 
 
-self = VMP(
+model = VMP(
 	n_nodes=N,
 	binary_covariates=X_bin,
 	continuous_covariates=X_cts,
@@ -78,8 +80,11 @@ self = VMP(
 	latent_dim=2,
 	heterogeneity_prior_mean=-1.5
 )
-self.fit(max_iter=100, rel_tol=1e-2)
-self.fit(max_iter=100, rel_tol=1e-6)
+model.fit(max_iter=1, rel_tol=1e-2)
+model.fit(max_iter=100, rel_tol=1e-6)
+
+
+self = model.factors["affine_cts"]
 
 
 self.fit_and_evaluate(
@@ -94,6 +99,35 @@ import cProfile
 cProfile.run("vmp.fit_and_evaluate(max_iter=100, true_values=true_values)")
 
 
+
+
+
+
+# plot factor graphs
+import networkx as nx
+factors = self.factors
+variables = self.variables
+messages = self.messages
+
+G = nx.DiGraph()
+for factor in factors.values():
+	G.add_node(repr(factor))
+	G.nodes[repr(factor)]["shape"] = "s"
+for variable in variables.values():
+	G.add_node(repr(variable))
+for message in messages:
+	G.add_edge(repr(message.factor), repr(message.variable), label=repr(message))
+
+
+plt.figure(figsize=(20, 20))
+layout = nx.planar_layout(G)
+nx.draw_networkx_nodes(G, node_shape="s", nodelist=[repr(factor) for factor in factors.values()],
+					   pos=layout, node_color="k")
+nx.draw_networkx_nodes(G, node_shape="o", nodelist=[repr(variable) for variable in variables.values()],
+					   pos=layout, node_color="w", edgecolors="k")
+nx.draw_networkx_edges(G, pos=layout, arrows=False)
+nx.draw_networkx_edge_labels(G, pos=layout, label_pos=0.5, edge_labels=nx.get_edge_attributes(G, "label"))
+plt.show()
 
 
 

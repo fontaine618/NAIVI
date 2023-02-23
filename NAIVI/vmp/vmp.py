@@ -2,10 +2,12 @@ from __future__ import annotations
 import itertools
 import torch
 import numpy as np
+import math
 from typing import Tuple, Dict, Optional
 from torchmetrics.functional import auroc, mean_squared_error
 from collections import defaultdict
 
+from . import VMP_OPTIONS
 from .factors.affine import Affine
 from .factors.gaussian import GaussianFactor
 from .factors.normal_prior import MultivariateNormalPrior, NormalPrior
@@ -16,9 +18,9 @@ from .factors.sum import Sum
 from .factors.factor import Factor
 from .factors.inner_product import InnerProduct
 
-from .variables.variable import Variable
+from .variables.variable import Variable, MultivariateNormalVariable, ProbabilityVariable
 from .messages.message import Message
-from .distributions.normal import MultivariateNormal, Normal
+from .distributions import MultivariateNormal, Normal, Probability
 
 
 class VMP:
@@ -80,7 +82,7 @@ class VMP:
     ):
         N = n_nodes
         K = latent_dim
-
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing model")
         # initialize factors and variables
         heterogeneity, latent = self._initialize_priors(K, N)
         self._initialize_binary_model(K, N, binary_covariates, latent)
@@ -89,8 +91,10 @@ class VMP:
         self._break_symmetry()
         self._initialize_posterior()
         self._vmp_forward()
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Model initialization completed")
 
     def _initialize_edge_model(self, K, edge_index_left, edge_index_right, edges, heterogeneity, latent):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing edge model")
         if (edges is None) or (edge_index_right is None) or (edge_index_left is None):
             return
         ne = edges.shape[0]
@@ -98,23 +102,23 @@ class VMP:
             return
         select_left_heterogeneity = Select(edge_index_left, heterogeneity, Normal)
         select_right_heterogeneity = Select(edge_index_right, heterogeneity, Normal)
-        left_heterogeneity = Variable((ne, 1))
-        right_heterogeneity = Variable((ne, 1))
+        left_heterogeneity = Variable((ne, 1), "LeftHeterogeneity")
+        right_heterogeneity = Variable((ne, 1), "RightHeterogeneity")
         select_left_latent = Select(edge_index_left, latent, MultivariateNormal)
         select_right_latent = Select(edge_index_right, latent, MultivariateNormal)
-        left_latent = Variable((ne, K))
-        right_latent = Variable((ne, K))
+        left_latent = MultivariateNormalVariable((ne, K), "LeftLatent")
+        right_latent = MultivariateNormalVariable((ne, K), "RightLatent")
         inner_product_factor = InnerProduct(left_latent, right_latent)
-        inner_product = Variable((ne, 1))
+        inner_product = Variable((ne, 1), "InnerProduct")
         edge_sum = Sum(
             inner_product=inner_product,
             left_heterogeneity=left_heterogeneity,
             right_heterogeneity=right_heterogeneity
         )
-        edge_logit = Variable((ne, 1))
+        edge_logit = Variable((ne, 1), "EdgeLogit")
         edge_model = Logistic(1, parent=edge_logit, method="quadratic")
-        edge = Variable((ne, 1))
-        edge_observed = ObservedFactor(edges, parent=edge)
+        edge = ProbabilityVariable((ne, 1), "Edge")
+        edge_observed = ObservedFactor(edges, parent=edge, dist=Probability)
         # attach children
         select_left_heterogeneity.set_children(child=left_heterogeneity)
         select_right_heterogeneity.set_children(child=right_heterogeneity)
@@ -153,17 +157,19 @@ class VMP:
             "edge_observed"
         ])
         self._m_step_factors.extend([])
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Edge model initialization completed")
 
     def _initialize_continuous_model(self, K, N, continuous_covariates, latent):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing continuous model")
         if continuous_covariates is None:
             return
         p_cts = continuous_covariates.shape[1]
         if p_cts == 0:
             return
         affine_cts = Affine(K, p_cts, latent)
-        mean_cts = Variable((N, p_cts))
+        mean_cts = Variable((N, p_cts), "CovariateMean")
         cts_model = GaussianFactor(p_cts, parent=mean_cts)
-        cts_obs = Variable((N, p_cts))
+        cts_obs = Variable((N, p_cts), "ContinuousCovariate")
         cts_observed = ObservedFactor(continuous_covariates, parent=cts_obs)
         affine_cts.set_children(child=mean_cts)
         cts_model.set_children(child=cts_obs)
@@ -185,18 +191,20 @@ class VMP:
             "affine_cts",
             "cts_model",
         ])
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Continuous model initialization completed")
 
     def _initialize_binary_model(self, K, N, binary_covariates, latent):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing binary model")
         if binary_covariates is None:
             return
         p_bin = binary_covariates.shape[1]
         if p_bin == 0:
             return
         affine_bin = Affine(K, p_bin, latent)
-        logit_bin = Variable((N, p_bin))
+        logit_bin = Variable((N, p_bin), "CovariateLogit")
         bin_model = Logistic(p_bin, parent=logit_bin, method="quadratic")
-        bin_obs = Variable((N, p_bin))
-        bin_observed = ObservedFactor(binary_covariates, parent=bin_obs)
+        bin_obs = ProbabilityVariable((N, p_bin), "BinaryCovariate")
+        bin_observed = ObservedFactor(binary_covariates, parent=bin_obs, dist=Probability)
         affine_bin.set_children(child=logit_bin)
         bin_model.set_children(child=bin_obs)
         self.factors.update({
@@ -216,19 +224,21 @@ class VMP:
         self._m_step_factors.extend([
             "affine_bin",
         ])
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Binary model initialization completed")
 
     def _initialize_priors(self, K, N):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing priors")
         latent_prior = MultivariateNormalPrior(
             dim=K,
             mean=self.hyperparameters["latent_prior_mean"],
             variance=self.hyperparameters["latent_prior_variance"]
         )
-        latent = Variable((N, K))
+        latent = MultivariateNormalVariable((N, K), "Latent")
         heterogeneity_prior = NormalPrior(
             mean=self.hyperparameters["heterogeneity_prior_mean"],
             variance=self.hyperparameters["heterogeneity_prior_variance"]
         )
-        heterogeneity = Variable((N, 1))
+        heterogeneity = Variable((N, 1), "Heterogeneity")
         latent_prior.set_children(child=latent)
         heterogeneity_prior.set_children(child=heterogeneity)
         self.factors.update({
@@ -244,11 +254,15 @@ class VMP:
             "heterogeneity_prior"
         ])
         self._m_step_factors.extend([])
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Prior initialization completed")
         return heterogeneity, latent
 
     def _initialize_posterior(self):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing posteriors")
         for variable in self.variables.values():
+            if VMP_OPTIONS["logging"]: print(f"Initializing posterior of {repr(variable)}")
             variable.compute_posterior()
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Posterior initialization completed")
 
     def _break_symmetry(self):
         """Break the rotational symmetry in the latent variables.
@@ -263,6 +277,7 @@ class VMP:
         The posterior should be updated after this step to ensure consistency of
         the messages with the posterior. (I am not sure if this is true,
         since setting the messages should automatically update the posterior.)"""
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Breaking symmetry")
         if "select_left_latent" in self.factors:
             p_id = self.variables["latent"].id
             dim = self.variables["left_latent"].shape
@@ -271,23 +286,36 @@ class VMP:
             mean_times_precision = torch.randn(dim)
             msg = MultivariateNormal(precision, mean_times_precision)
             self.factors["select_left_latent"].messages_to_parents[p_id].message_to_variable = msg
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Symmetry broken")
 
     def _vmp_backward(self):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Backward pass")
         for fname in self._vmp_sequence[::-1]:
             self.factors[fname].update_messages_from_children()
             self.factors[fname].update_messages_to_parents()
+            elbo = self.elbo()
+            if math.isnan(elbo):
+                print(f"ELBO is nan! Factor: {fname}")
+                raise RuntimeError("ELBO is nan!")
 
     def _vmp_forward(self):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] Forward pass")
         for fname in self._vmp_sequence:
             self.factors[fname].update_messages_from_parents()
             self.factors[fname].update_messages_to_children()
+            elbo = self.elbo()
+            if math.isnan(elbo):
+                print(f"ELBO is nan! Factor: {fname}")
+                raise RuntimeError("ELBO is nan!")
 
     def _e_step(self, n_iter: int = 1):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] E-step")
         for _ in range(n_iter):
             self._vmp_backward()
             self._vmp_forward()
 
     def _m_step(self):
+        if VMP_OPTIONS["logging"]: print(f"[VMP] M-step")
         for fname in self._m_step_factors:
             self.factors[fname].update_parameters()
 
@@ -358,8 +386,10 @@ class VMP:
             rel_tol: float = 1e-6,
             verbose: bool = True,
             mc_samples: int = 0,
-            true_values: dict[str: torch.Tensor] = dict(),
+            true_values: dict | None = None,
     ):
+        if true_values is None:
+            true_values = dict()
         elbo = self.elbo()
         for i in range(max_iter):
             self._e_step()
@@ -553,3 +583,13 @@ class VMP:
             pass
         # update history
         return metrics
+
+    @property
+    def messages(self):
+        msg = []
+        for factor in self.factors.values():
+            for m in factor.messages_to_children.values():
+                msg.append(m)
+            for m in factor.messages_to_parents.values():
+                msg.append(m)
+        return msg

@@ -46,7 +46,6 @@ def _tilted_fixed_point(mean, variance, max_iter=20):
 def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
 	n = len(mean.shape)
 	mean = mean.unsqueeze(-1)
-	sd = variance.sqrt()
 	variance = variance.unsqueeze(-1)
 	p = _p
 	s = _s
@@ -62,7 +61,7 @@ def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
 	elif degree == 1:
 		f1 = p * s / sqrt
 		f2 = _std_normal.log_prob(arg).exp()
-		return (f1 * f2).sum(-1) * sd
+		return (f1 * f2).sum(-1) * variance.sqrt()
 	else:
 		raise NotImplementedError("only degree 0 or 1 implemented")
 
@@ -112,7 +111,7 @@ class Logistic(Factor):
 		c_id = self._name_to_id["child"]
 		mfp = self.messages_to_parents[p_id].message_to_factor
 		m, v = mfp.mean_and_variance
-		proba = _ms_expit_moment(0, m, v)
+		proba = _ms_expit_moment(0, m, v.abs())
 		self.messages_to_children[c_id].message_to_variable = Probability(proba)
 
 	def update_messages_to_parents(self):
@@ -180,8 +179,8 @@ class Logistic(Factor):
 		lam = (torch.sigmoid(t) - 0.5) / t
 		p1 = lam
 		mtp1 = s
-		p1 = torch.where(x == 0.5, torch.zeros_like(p1), p1)
-		mtp1 = torch.where(x == 0.5, torch.zeros_like(mtp1), mtp1)
+		p1 = torch.where(s == 0., torch.zeros_like(p1), p1)
+		mtp1 = torch.where(s == 0., torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _tilted_update(self):
@@ -232,5 +231,5 @@ class LogisticToObservationMessage(Message):
 
 	def __init__(self, variable: Variable, factor: Logistic):
 		super(LogisticToObservationMessage, self).__init__(variable, factor)
-		self._message_to_factor = Probability.unit_from_dimension(variable.shape)
+		self._message_to_factor = Normal.unit_from_dimension(variable.shape)
 		self._message_to_variable = Probability.unit_from_dimension(variable.shape)

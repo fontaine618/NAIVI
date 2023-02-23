@@ -3,7 +3,7 @@ import itertools
 import torch
 
 from .. import VMP_OPTIONS
-from ..distributions.point_mass import Unit
+from ..distributions import Unit, Normal
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -25,17 +25,22 @@ class Message:
 		self.variable = variable
 		self.factor = factor
 		self._dim = variable.shape
-		self._message_to_factor: Distribution = Unit(self._dim)
-		self._message_to_variable: Distribution = Unit(self._dim)
+		self._message_to_factor: Distribution = Normal.unit_from_dimension(self._dim)
+		self._message_to_variable: Distribution = Normal.unit_from_dimension(self._dim)
 		self.damping = damping
 		Message.instance[self.id] = self
+		if VMP_OPTIONS["logging"]: print(f"Initialized {repr(self)}")
+
+	@property
+	def name(self):
+		return self._name
 
 	def __repr__(self):
 		return f"[m{self.id}] {self._name}"
 
 	def _set_message_to_variable(self, msg: Distribution):
 		"""Stores the new message and updates the posterior of the variable."""
-		if VMP_OPTIONS["logging"]: print(f"Update message from {repr(self.factor)} to {self.variable}")
+		if VMP_OPTIONS["logging"]: print(f"Update message from {repr(self.factor)} to {self.variable} ({repr(self)})")
 		prev_msg = self._message_to_variable
 		self._message_to_variable = msg
 		# for damping, we store the full message, but the posterior update is only partial

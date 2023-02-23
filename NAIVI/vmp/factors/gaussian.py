@@ -57,10 +57,11 @@ class GaussianFactor(Factor):
 		m, v = mfc.mean_and_variance # N x p, N x p
 		var = self.parameters["log_variance"].data.exp() # p
 		# v = v + var.reshape((1, -1))
-		var = var.unsqueeze(0).expand(m.shape(0), -1)
+		var = var.unsqueeze(0).expand(m.shape[0], -1)
+		# when unobserved, we need to send an empty message
 		var = torch.where(v.isinf(), torch.full_like(var, torch.inf), var)
 		m = torch.where(v.isinf(), torch.zeros_like(var), m)
-		self.messages_to_parents[p].message_to_variable = Normal.from_mean_and_variance(m, v)
+		self.messages_to_parents[p].message_to_variable = Normal.from_mean_and_variance(m, var)
 
 	def update_parameters(self):
 		# TODO: check this
@@ -84,7 +85,7 @@ class GaussianFactor(Factor):
 		c = self._name_to_id["child"]
 		m, v = self.parents[p].posterior.mean_and_variance
 		x = self.children[c].posterior.mean
-		observed = self.children[c].posterior.precision > 0.
+		observed = self.children[c].posterior.precision.isinf()
 		s2 = self.parameters["log_variance"].exp()
 		elbo = (v + m.pow(2.) - 2. * m * x + x.pow(2.)) / s2
 		elbo += torch.log(s2).reshape(1, -1) + math.log(2. * math.pi)

@@ -54,7 +54,7 @@ class NormalPriorToChildMessage(Message):
 		dim = variable.shape
 		mean = torch.full(dim, factor.get("mean").item())
 		variance = torch.full(dim, factor.get("variance").item())
-		self.message_to_variable = Normal.from_mean_and_variance(mean, variance)
+		self._message_to_variable = Normal.from_mean_and_variance(mean, variance)
 
 
 class MultivariateNormalPrior(Factor):

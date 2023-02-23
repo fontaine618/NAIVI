@@ -1,5 +1,6 @@
 import torch
 from .distribution import Distribution
+
 from .. import VMP_OPTIONS
 
 
@@ -33,12 +34,16 @@ class PointMass(Distribution):
 		return torch.where(self._value.isnan(), 0., self._value)
 
 	def __truediv__(self, other):
+		from .normal import Normal  # circular import fix
 		if isinstance(other, PointMass):
 			if (torch.nan_to_num(self._value, nan=-1.) != torch.nan_to_num(other._value, nan=-1.)).any():
 				raise ValueError("cannot dive PointMass if not exactly equal")
 			return Unit(self._dim)
-		# all(?) other cases
-		return self
+		elif isinstance(other, Normal):
+			precision = torch.where(self._value.isnan(), other.precision, float("Inf"))
+			mean_times_precision = torch.where(self._value.isnan(), other.mean_times_precision, self._value)
+			return Normal(mean_times_precision=mean_times_precision, precision=precision)
+		raise NotImplementedError("Cannot divide PointMass by {}".format(type(other)))
 
 	def sample(self, n_samples: int = 1):
 		return self._value.expand(n_samples, *self._dim)

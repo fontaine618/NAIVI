@@ -16,6 +16,8 @@ def _batch_mahalanobis(bP, bx):
 class Normal(Distribution):
 	"""
 	An array of independent Gaussian distributions.
+
+	NB: when precision=inf, mean_times_precision stores the point mass
 	"""
 
 	_name = "Normal"
@@ -24,7 +26,7 @@ class Normal(Distribution):
 	             mean=None, variance=None, check_args=None, **kw):
 		dim = mean_times_precision.shape
 		super(Normal, self).__init__(dim=dim, check_args=check_args)
-		self._check_args(precision, mean_times_precision)
+		precision, mean_times_precision, self._check_args(precision, mean_times_precision)
 		self.precision = precision
 		self.mean_times_precision = mean_times_precision
 		self._mean = mean
@@ -42,11 +44,18 @@ class Normal(Distribution):
 				raise AttributeError(
 					f"precision must be nonnegative"
 				)
+		# mean_times_precision = torch.where(
+		# 	precision.isinf(),
+		# 	torch.zeros_like(mean_times_precision),
+		# 	mean_times_precision
+		# )
+		return precision, mean_times_precision
 
 	@property
 	def mean(self):
 		if self._mean is None:
 			self._mean = torch.where(self.precision == 0., 0., self.mean_times_precision / self.precision)
+			self._mean = torch.where(self.precision.isinf(), self.mean_times_precision, self._mean)
 		return self._mean
 
 	@property
@@ -82,15 +91,36 @@ class Normal(Distribution):
 		return Normal(precision, mean_times_precision, check_args=check_args)
 
 	@classmethod
+	def point_mass(cls, point, check_args=None):
+		# we allow a mix of point masses and unit
+		precision = torch.full_like(point, float("inf"))
+		precision = torch.where(point.isnan(), 0., precision)
+		mean_times_precision = point
+		mean_times_precision = torch.where(point.isnan(), 0., mean_times_precision)
+		return Normal(precision, mean_times_precision, check_args=check_args)
+
+	@classmethod
 	def from_mean_and_variance(cls, mean, variance, check_args=None):
 		precision = torch.where(mean.isnan(), 0., 1. / variance)
 		mean_times_precision = torch.where(mean.isnan(), 0., mean * precision)
+		# store point mass in mtp
+		mean_times_precision = torch.where(precision.isinf(), mean, mean_times_precision)
 		return Normal(precision, mean_times_precision, mean=mean, variance=variance, check_args=check_args)
 
 	def __mul__(self, other):
 		if type(other) is Normal:
 			precision = self.precision + other.precision
 			mean_times_precision = self.mean_times_precision + other.mean_times_precision
+			mean_times_precision = torch.where(
+				self.precision.isinf(),
+				self.mean_times_precision,
+				mean_times_precision
+			)
+			mean_times_precision = torch.where(
+				other.precision.isinf(),
+				other.mean_times_precision,
+				mean_times_precision
+			)
 			return Normal(precision, mean_times_precision)
 		elif type(other) is Unit:
 			return self
@@ -112,6 +142,12 @@ class Normal(Distribution):
 		if type(other) is Normal:
 			precision = self.precision - other.precision
 			mean_times_precision = self.mean_times_precision - other.mean_times_precision
+			# deal with the case PointMass/Gaussian=PointMass
+			mean_times_precision = torch.where(self.precision.isinf(), self.mean_times_precision, mean_times_precision)
+			# deal with the case PointMass/PointMass (we assume they have the same value)
+			pm_pm = self.precision.isinf() * other.precision.isinf()
+			precision = torch.where(pm_pm, 0., precision)
+			mean_times_precision = torch.where(pm_pm, 0., mean_times_precision)
 			return Normal(precision, mean_times_precision)
 		elif type(other) is Unit:
 			return self
@@ -193,6 +229,12 @@ class MultivariateNormal(Normal):
 				print(
 					f"precision must be positive semi-definite"
 				)
+		# mean_times_precision = torch.where(
+		# 	precision.isinf().any(-1),
+		# 	torch.zeros_like(mean_times_precision),
+		# 	mean_times_precision
+		# )
+		return precision, mean_times_precision
 
 	@property
 	def mean(self):
@@ -223,6 +265,20 @@ class MultivariateNormal(Normal):
 		precision = torch.zeros(*dim, d)
 		mean_times_precision = torch.zeros(dim)
 		return MultivariateNormal(precision, mean_times_precision, check_args=check_args)
+
+	@classmethod
+	def point_mass(cls, point, check_args=None):
+		d = point.shape[-1]
+		# we allow a mix of point masses and unit
+		precision = torch.full_like((*point.shape, d), float("inf"))
+		precision = torch.where(point.isnan(), 0., precision)
+		mean_times_precision = point
+		mean_times_precision = torch.where(point.isnan(), 0., mean_times_precision)
+		# make precision diagonal
+		precision = torch.stack([torch.diag(p).unsqueeze(0) for p in precision], dim=0)
+
+		return MultivariateNormal(precision, mean_times_precision, check_args=check_args)
+
 
 	@classmethod
 	def from_mean_and_variance(cls, mean, variance, check_args=None):

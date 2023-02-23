@@ -17,6 +17,10 @@ class Probability(Distribution):
 	def unit_from_dimension(cls, dim, check_args=None):
 		return Probability(torch.full(dim, 0.5), check_args=check_args)
 
+	@classmethod
+	def point_mass(cls, value, check_args=None):
+		return Probability(torch.where(value.isnan(), 0.5, value), check_args=check_args)
+
 	def __mul__(self, other):
 		if type(other) is Unit:
 			return self

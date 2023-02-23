@@ -2,6 +2,7 @@ from __future__ import annotations
 import torch.nn
 import itertools
 
+from .. import VMP_OPTIONS
 from typing import TYPE_CHECKING, Dict
 if TYPE_CHECKING:
 	from ..variables import Variable
@@ -29,6 +30,11 @@ class Factor:
 		self._id_to_name: Dict[int, str] = {}
 		self.set_parents(**kwargs)
 		Factor.instance[self.id] = self
+		if VMP_OPTIONS["logging"]: print(f"Initialized {repr(self)}")
+
+	@property
+	def name(self):
+		return self._name
 
 	@property
 	def deterministic(self):
