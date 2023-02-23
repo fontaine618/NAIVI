@@ -80,7 +80,6 @@ model = VMP(
 	latent_dim=2,
 	heterogeneity_prior_mean=-1.5
 )
-model.fit(max_iter=1, rel_tol=1e-2)
 model.fit(max_iter=100, rel_tol=1e-6)
 
 
