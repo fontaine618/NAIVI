@@ -134,11 +134,11 @@ class Logistic(Factor):
 
 	def _mk_elbo(self):
 		# TODO: implement this
-		pass
+		return self._quadratic_elbo()
 
 	def _tilted_elbo(self):
 		# TODO: implement this
-		pass
+		return self._quadratic_elbo()
 
 	def _mk_update(self):
 		# TODO seems incorrect: maybe use the posterior as the message?
