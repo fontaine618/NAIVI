@@ -293,20 +293,20 @@ class VMP:
         for fname in self._vmp_sequence[::-1]:
             self.factors[fname].update_messages_from_children()
             self.factors[fname].update_messages_to_parents()
-            elbo = self.elbo()
-            if math.isnan(elbo):
-                print(f"ELBO is nan! Factor: {fname}")
-                raise RuntimeError("ELBO is nan!")
+            # elbo = self.elbo()
+            # if math.isnan(elbo):
+            #     print(f"ELBO is nan! Factor: {fname}")
+            #     raise RuntimeError("ELBO is nan!")
 
     def _vmp_forward(self):
         if VMP_OPTIONS["logging"]: print(f"[VMP] Forward pass")
         for fname in self._vmp_sequence:
             self.factors[fname].update_messages_from_parents()
             self.factors[fname].update_messages_to_children()
-            elbo = self.elbo()
-            if math.isnan(elbo):
-                print(f"ELBO is nan! Factor: {fname}")
-                raise RuntimeError("ELBO is nan!")
+            # elbo = self.elbo()
+            # if math.isnan(elbo):
+            #     print(f"ELBO is nan! Factor: {fname}")
+            #     raise RuntimeError("ELBO is nan!")
 
     def _e_step(self, n_iter: int = 1):
         if VMP_OPTIONS["logging"]: print(f"[VMP] E-step")

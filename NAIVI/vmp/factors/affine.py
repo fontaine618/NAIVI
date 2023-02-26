@@ -78,6 +78,14 @@ class Affine(Factor):
 		B = self.parameters["weights"]  # K x p
 		WR = mtpc.sum(0) - torch.einsum("ijk, kj, ij -> j", mp, B, pc)
 		W = pc.sum(0) # N x p x K
+
+		# check that it is exactly equivalent for Gaussian model
+		# mean_c = mfc.mean
+		# Btmean_p = torch.einsum("ijk, kj -> ij", mp, B)
+		# diff = mean_c - Btmean_p
+		# diff = torch.where(pc < 1e-10, torch.full_like(diff, float("nan")), diff)
+		# diff.nanmean(0)
+
 		self.parameters["bias"].data = WR / W
 
 	def _update_weights(self):

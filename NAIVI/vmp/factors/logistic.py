@@ -2,6 +2,7 @@ from __future__ import annotations
 import torch
 import torch.distributions
 from .factor import Factor
+from .logistic_utls import _gh_quadrature, _log1p_exp, _tilted_fixed_point, _ms_expit_moment
 from ..distributions.normal import Normal
 from ..distributions.probability import Probability
 from ..messages import Message
@@ -10,60 +11,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
 	from ..variables import Variable
 	from ..messages import Message
-
-_p = torch.tensor([
-	0.003246343272134,
-	0.051517477033972,
-	0.195077912673858,
-	0.315569823632818,
-	0.274149576158423,
-	0.131076880695470,
-	0.027912418727972,
-	0.001449567805354
-])
-
-_s = torch.tensor([
-	1.365340806296348,
-	1.059523971016916,
-	0.830791313765644,
-	0.650732166639391,
-	0.508135425366489,
-	0.396313345166341,
-	0.308904252267995,
-	0.238212616409306
-])
-
-_std_normal = torch.distributions.normal.Normal(0., 1.)
-
-
-def _tilted_fixed_point(mean, variance, max_iter=20):
-	a = torch.full_like(mean, 0.5)
-	for _ in range(max_iter):
-		a = torch.sigmoid(mean - (1 - 2 * a) * variance / 2)
-	return a
-
-
-def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
-	n = len(mean.shape)
-	mean = mean.unsqueeze(-1)
-	variance = variance.unsqueeze(-1)
-	p = _p
-	s = _s
-	for _ in range(n):
-		p = p.unsqueeze(0)
-		s = s.unsqueeze(0)
-	sqrt = (1 + variance * s.pow(2)).sqrt()
-	arg = mean * s / sqrt
-	if degree == 0:
-		f1 = p
-		f2 = _std_normal.cdf(arg)
-		return (f1 * f2).sum(-1)
-	elif degree == 1:
-		f1 = p * s / sqrt
-		f2 = _std_normal.log_prob(arg).exp()
-		return (f1 * f2).sum(-1) * variance.sqrt()
-	else:
-		raise NotImplementedError("only degree 0 or 1 implemented")
 
 
 class Logistic(Factor):
@@ -78,17 +25,17 @@ class Logistic(Factor):
 		# self.parameters["variance"] = torch.nn.Parameter(torch.ones(dim))
 		if method == "quadratic":
 			self._update = self._quadratic_update
-			self._elbo = self._quadratic_elbo
+			self._elbo = self._quadrature_elbo
 		elif method == "tilted":
 			self._update = self._tilted_update
 			i = self._name_to_id["parent"]
-			self.messages_to_parents[i].damping = 0.2
-			self._elbo = self._tilted_elbo
+			self.messages_to_parents[i].damping = 0.5
+			self._elbo = self._quadrature_elbo
 		elif method == "mk":  # default
 			self._update = self._mk_update
 			i = self._name_to_id["parent"]
 			self.messages_to_parents[i].damping = 0.2
-			self._elbo = self._mk_elbo
+			self._elbo = self._quadrature_elbo
 		else:
 			raise ValueError(f"cannot recognize method {method}")
 
@@ -133,15 +80,50 @@ class Logistic(Factor):
 		return elbo.sum()
 
 	def _mk_elbo(self):
-		# TODO: implement this
-		return self._quadratic_elbo()
+		# They don't really provide a way to compute the elbo, but
+		# it seems this is what they are doing
+		return self._quadrature_elbo()
 
 	def _tilted_elbo(self):
-		# TODO: implement this
-		return self._quadratic_elbo()
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfc = self.children[c_id].posterior
+		mfp = self.parents[p_id].posterior
+		m, v = mfp.mean_and_variance
+		s = 2*mfc.proba - 1
+		sm = s*m
+		a = _tilted_fixed_point(sm, v)
+		elbo = sm - 0.5*a.pow(2.)*v - _log1p_exp(sm+0.5*v*(1-2*a))
+		elbo = torch.where(s.abs()==1., elbo, torch.zeros_like(elbo))
+		return elbo.sum()
+
+	def _quadrature_elbo(self):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfc = self.children[c_id].posterior
+		mfp = self.parents[p_id].posterior
+		m, v = mfp.mean_and_variance
+		s = 2*mfc.proba - 1
+		sm = s*m
+		elbo = sm - _gh_quadrature(sm, v, _log1p_exp)
+		elbo = torch.where(s.abs()==1., elbo, torch.zeros_like(elbo))
+		return elbo.sum()
+
+	def elbo_mc(self, n_samples: int = 1):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		sp = self.parents[p_id].sample(n_samples)  # B x ...
+		sc = self.children[c_id].sample(n_samples)  # B x ...
+		# sc has no missing values, need to fetch them back
+		proba = self.messages_to_children[c_id].message_to_factor.proba
+		# proba should only contain 0., 0.5 or 1.
+		obs = torch.logical_or(proba.lt(1.e-10), proba.gt(1.-1.e-10))
+		sc = torch.where(obs, sc, torch.full_like(sc, float("nan")))
+		elbo = torch.sigmoid((2. * sc -1.) * sp).log()
+		return elbo.nansum(dim=(-1, -2)).nanmean(0)
+
 
 	def _mk_update(self):
-		# TODO seems incorrect: maybe use the posterior as the message?
 		"""Uses Knowles & Minka (2011)"""
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
@@ -185,7 +167,6 @@ class Logistic(Factor):
 
 	def _tilted_update(self):
 		"""Uses the tilted bound of Saul and Jordan (1999)"""
-		# TODO seems incorrect: maybe use the posterior as the message?
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		mfc = self.messages_to_children[c_id].message_to_factor
@@ -200,19 +181,6 @@ class Logistic(Factor):
 		p1 = torch.where(x == 0.5, torch.zeros_like(p1), p1)
 		mtp1 = torch.where(x == 0.5, torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
-
-	def elbo_mc(self, n_samples: int = 1):
-		p_id = self._name_to_id["parent"]
-		c_id = self._name_to_id["child"]
-		sp = self.parents[p_id].sample(n_samples)  # B x ...
-		sc = self.children[c_id].sample(n_samples)  # B x ...
-		# sc has no missing values, need to fetch them back
-		proba = self.messages_to_children[c_id].message_to_factor.proba
-		# proba should only contain 0., 0.5 or 1.
-		obs = torch.logical_or(proba.lt(1.e-10), proba.gt(1.-1.e-10))
-		sc = torch.where(obs, sc, torch.full_like(sc, float("nan")))
-		elbo = torch.sigmoid((2. * sc -1.) * sp).log()
-		return elbo.nansum(dim=(-1, -2)).nanmean(0)
 
 
 class LogisticToLogitMessage(Message):
