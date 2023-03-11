@@ -1,5 +1,7 @@
 import numpy as np
 import torch
+import sys
+sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
