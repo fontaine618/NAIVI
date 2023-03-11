@@ -9,13 +9,18 @@ import pandas as pd
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 name = "test"
-file = "./experiments/n_nodes/results.hdf5"
-traj = Trajectory(name=name)
-traj.f_load(filename=file, load_results=2, force=True)
+res_list = []
+for i in range(30):
+    file = f"./experiments/n_nodes/results/seed{i}.hdf5"
+    traj = Trajectory(name=name)
+    traj.f_load(filename=file, load_results=2, force=True)
 
-parameters = gather_parameters_to_DataFrame(traj)
-results = gather_results_to_DataFrame(traj)
-results = parameters.join(results)
+    parameters = gather_parameters_to_DataFrame(traj)
+    results = gather_results_to_DataFrame(traj)
+    results = parameters.join(results)
+    res_list.append(results)
+
+results = pd.concat(res_list)
 
 
 x_axis = "data.n_nodes"
