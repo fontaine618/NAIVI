@@ -12,8 +12,8 @@ env = Environment(
     trajectory="test",
     filename="./results.hdf5",
     overwrite_file=True,
-    multiproc=True,
-    ncores=4,
+    multiproc=False,
+    ncores=1,
 )
 traj = env.trajectory
 add_parameters(traj)
