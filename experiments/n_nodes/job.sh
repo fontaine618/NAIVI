@@ -4,8 +4,8 @@
 #SBATCH --job-name=naivi_n_nodes
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=1:00:00
-#SBATCH --array=0-30
+#SBATCH --time=0:10:00
+#SBATCH --array=0-3
 #SBATCH --account=stats_dept1
 #SBATCH --partition=gpu
 #SBATCH --nodes=1
