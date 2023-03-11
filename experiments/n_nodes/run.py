@@ -23,7 +23,7 @@ add_parameters(traj)
 
 traj.f_explore(cartesian_product({
     "data.dataset": ["synthetic"],
-    "data.n_nodes": [50, 100, 200, 500, 1000, 2000, 5000],
+    "data.n_nodes": [50, 100, 200, 500, 1000, 2000, ],
     "data.p_cts": [0],
     "data.p_bin": [0, 100],
     "data.seed": [int(seed)],
