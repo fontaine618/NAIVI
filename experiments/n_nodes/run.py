@@ -1,18 +1,21 @@
 import numpy as np
 import torch
 import sys
+import os
 sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
 
+seed = sys.argv[1]
+os.makedirs(f"./results/", exist_ok=True)
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 env = Environment(
     trajectory="test",
-    filename="./results.hdf5",
+    filename=f"./results/seed{seed}.hdf5",
     overwrite_file=True,
-    multiproc=False,
+    multiproc=True,
     ncores=1,
 )
 traj = env.trajectory
@@ -20,10 +23,10 @@ add_parameters(traj)
 
 traj.f_explore(cartesian_product({
     "data.dataset": ["synthetic"],
-    "data.n_nodes": [50, 100, 200, 500, 1000, 2000],
+    "data.n_nodes": [50, 100, 200, 500, 1000, 2000, 5000],
     "data.p_cts": [0],
     "data.p_bin": [0, 100],
-    "data.seed": np.arange(0, 30).tolist(),
+    "data.seed": [int(seed)],
     "data.latent_dim": [5],
     "data.latent_variance": [1.],
     "data.latent_mean": [0.],

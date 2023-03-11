@@ -9,8 +9,8 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 ## To do list
 
 [ ] Check why it is slow slow for large network (hypthesis: condition is too stringent)
-[ ] Remove grad computation
-[ ] Check M Step with new VMP
+    - need to redo n_nodes on server
+    - need to make it more like the others
 [ ] Initialization
     [ ] Use ADVI first? VMP is then just a refinement?
     [x] I think just breaking symmetry should be fine ...
@@ -28,6 +28,8 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 [ ] Multinomial model
 [ ] Implement AIC, BIC
 
+
+scp simfont@greatlakes-xfer.arc-ts.umich.edu:./Documents/NAIVI/experiments/n_nodes/results.hdf5
 
 ## Changelog
 
