@@ -24,9 +24,9 @@ NAIVI.vmp.disable_logging()
 NAIVI.vmp.set_check_args(0)
 
 
-N = 100
-p_bin = 5
-p_cts = 0
+N = 1000
+p_bin = 0
+p_cts = 100
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
@@ -88,42 +88,13 @@ model.fit_and_evaluate(
 	true_values=true_values
 )
 
-Best = model.factors["affine_bin"].parameters["weights"]
-B.T @ B
-Best.T @ Best
-
-print(model.metrics_history["X_bin_missing_auroc"][-1])
-print(max(model.metrics_history["X_bin_missing_auroc"]))
-
-
-import cProfile
-cProfile.run("model.fit(max_iter=100)")
-
-
-self = model.factors["bin_model"]
-self._quadratic_elbo()
-self._quadrature_elbo()
-self._mk_elbo()
-self._tilted_elbo()
-self.elbo_mc(100)
-
-from NAIVI.vmp.factors.logistic_utls import *
-
-m = torch.linspace(-5, 5, 11).unsqueeze(-1).expand(11, -1)
-
-elbo[elbo!=0.]
-elbo = elbo.mean(0)
-elbo[~elbo.isnan()]
-s[s.abs()==0.5]
-
-fn = lambda x: x * torch.sigmoid(x)
-_gh_quadrature(m, v, fn)[:10, 0]
-m1[:10, 0]
-_ms_expit_moment(1, m, v)[:10, 0]
 
 
 
-self = model.factors["cts_model"]
+# import cProfile
+# cProfile.run("model.fit(max_iter=100)")
+
+
 #
 #
 # # plot factor graphs
@@ -151,72 +122,3 @@ self = model.factors["cts_model"]
 # nx.draw_networkx_edges(G, pos=layout, arrows=False)
 # nx.draw_networkx_edge_labels(G, pos=layout, label_pos=0.5, edge_labels=nx.get_edge_attributes(G, "label"))
 # plt.show()
-
-
-
-
-
-
-#
-# # ELBO History plot
-# df = pd.DataFrame(vmp.elbo_history)
-# df = df.loc[:, df.var() > 0.]
-# df.plot()
-# plt.xscale("log")
-# plt.title("ELBOs")
-# plt.show()
-#
-# # ELBO MC History plot
-# df = pd.DataFrame(vmp.elbo_mc_history)
-# df = df.loc[:, df.var() > 0.]
-# df.plot()
-# plt.xscale("log")
-# plt.title("ELBOs (MC)")
-# plt.show()
-#
-# # Metric plot
-# df = pd.DataFrame(vmp.metrics_history["X_bin_missing_auroc"])
-# df = df.loc[:, df.var() > 0.]
-# df.plot()
-# plt.xscale("log")
-# plt.show()
-
-
-
-#
-#
-# # For experiment
-#
-# N = 200
-# K = 3
-# p_cts = 50
-# p_bin = 50
-# p = p_cts + p_bin
-# var_cov = 1.
-# missing_mean = 0.
-# seed = 0
-# alpha_mean_gen = -1.85
-# mnar_sparsity = 0.
-# adjacency_noise = 0.
-# constant_components = True
-# K_model = 3
-# mnar = False
-# alpha_mean_model = 0.
-# reg = 0.
-# network_weight = 1.
-# estimate_components = False
-# algo = "VMP"
-# max_iter = 100
-# n_samples = 0
-# eps = 1e-5
-# keep_logs = True
-# power = 1.
-# init_method = ""
-# optimizer = "RProp"
-# lr = 0.01
-# mcmc_n_sample = 0
-# mcmc_n_chains = 0
-# mcmc_n_warmup = 0
-# mcmc_n_thin = 0
-#
-#

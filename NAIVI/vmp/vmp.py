@@ -388,32 +388,33 @@ class VMP:
             mc_samples: int = 0,
             true_values: dict | None = None,
     ):
-        if true_values is None:
-            true_values = dict()
-        elbo = self.elbo()
-        for i in range(max_iter):
-            self._e_step()
-            self._m_step()
+        with torch.no_grad():
+            if true_values is None:
+                true_values = dict()
+            elbo = self.elbo()
+            for i in range(max_iter):
+                self._e_step()
+                self._m_step()
 
-            new_elbo = self.elbo()
-            elbos = self._elbo()
-            elbos["sum"] = new_elbo
-            self._update_elbo_history(elbos)
+                new_elbo = self.elbo()
+                elbos = self._elbo()
+                elbos["sum"] = new_elbo
+                self._update_elbo_history(elbos)
 
-            if mc_samples > 0:
-                new_elbo_mc = self.elbo_mc(mc_samples)
-                elbos_mc = self._elbo_mc(mc_samples)
-                elbos_mc["sum"] = new_elbo_mc
-                self._update_elbo_mc_history(elbos_mc)
+                if mc_samples > 0:
+                    new_elbo_mc = self.elbo_mc(mc_samples)
+                    elbos_mc = self._elbo_mc(mc_samples)
+                    elbos_mc["sum"] = new_elbo_mc
+                    self._update_elbo_mc_history(elbos_mc)
 
-            self.evaluate(true_values)
-            increased = new_elbo >= elbo
-            if verbose and (i % 1) == 0:
-                print(f"[VMP] Iteration {i:<4} "
-                      f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
-            if abs(new_elbo - elbo) < rel_tol * abs(elbo):
-                break
-            elbo = new_elbo
+                self.evaluate(true_values)
+                increased = new_elbo >= elbo
+                if verbose and (i % 1) == 0:
+                    print(f"[VMP] Iteration {i:<4} "
+                          f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
+                if abs(new_elbo - elbo) < rel_tol * abs(elbo):
+                    break
+                elbo = new_elbo
 
     def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6, verbose: bool = True):
         self.fit_and_evaluate(max_iter, rel_tol, verbose)
