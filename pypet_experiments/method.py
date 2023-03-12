@@ -394,7 +394,9 @@ class Method:
                     A_auroc=results["A_auroc"],
                     cpu_time=dt,
                     edge_density=data.edge_density,
-                    X_missing_prop=data.covariate_missing_prop
+                    X_missing_prop=data.covariate_missing_prop,
+                    AIC=vmp.AIC(),
+                    BIC=vmp.BIC()
                 ),
                 testing_metrics=dict(
                     X_cts_missing_mse=results["X_cts_missing_mse"],

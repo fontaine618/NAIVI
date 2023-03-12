@@ -350,6 +350,45 @@ class VMP:
             for fname, factor in self.factors.items()
         }
 
+    def AIC(self):
+        K, p = self.weights.shape
+        elbo = self.elbo_history["latent_prior"][-1]
+        elbo += self.elbo_history["cts_model"][-1]
+        elbo += self.elbo_history["bin_model"][-1]
+        return -2 * elbo + 2 * K * p
+
+    def BIC(self):
+        K, _ = self.weights.shape
+        elbo = self.elbo_history["latent_prior"][-1]
+        elbo += self.elbo_history["cts_model"][-1]
+        elbo += self.elbo_history["bin_model"][-1]
+        bic = -2 * elbo
+        if "cts_observed" in self.factors:
+            X = self.factors["cts_observed"].values.values
+            logn_per_covariate = (~X.isnan()).float().sum(0).log()
+            bic += K * logn_per_covariate.sum()
+        if "bin_observed" in self.factors:
+            X = self.factors["bin_observed"].values.values
+            logn_per_covariate = (~X.isnan()).float().sum(0).log()
+            bic += K * logn_per_covariate.sum()
+        return bic.item()
+
+    def GIC(self):
+        K, _ = self.weights.shape
+        elbo = self.elbo_history["latent_prior"][-1]
+        elbo += self.elbo_history["cts_model"][-1]
+        elbo += self.elbo_history["bin_model"][-1]
+        gic = -2 * elbo
+        if "cts_observed" in self.factors:
+            X = self.factors["cts_observed"].values.values
+            logn_per_covariate = (~X.isnan()).float().sum(0).log().log()
+            gic += K * math.log(K) * logn_per_covariate.sum()
+        if "bin_observed" in self.factors:
+            X = self.factors["bin_observed"].values.values
+            logn_per_covariate = (~X.isnan()).float().sum(0).log().log()
+            gic += K * math.log(K) * logn_per_covariate.sum()
+        return gic.item()
+
     def sample(self, n_samples: int = 1):
         for var in self.variables.values():
             var.sample(n_samples)

@@ -24,15 +24,16 @@ NAIVI.vmp.disable_logging()
 NAIVI.vmp.set_check_args(0)
 
 
-N = 1000
-p_bin = 0
-p_cts = 100
+N = 300
+p_bin = 20
+p_cts = 30
+K = 3
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
 	generate_dataset(
 		N=N,
-		K=3,
+		K=K,
 		p_cts=p_cts,
 		p_bin=p_bin,
 		var_cov=1.,
@@ -67,28 +68,34 @@ true_values = {
 	"A": A,
 }
 
+out = {}
+
+for K_model in range(1, 11):
+
+	model = VMP(
+		n_nodes=N,
+		binary_covariates=X_bin,
+		continuous_covariates=X_cts,
+		edges=A,
+		# edges=None,
+		edge_index_left=i0,
+		edge_index_right=i1,
+		latent_dim=K_model,
+		heterogeneity_prior_mean=-1.5
+	)
+	# model.fit(max_iter=100, rel_tol=1e-7)
 
 
-model = VMP(
-	n_nodes=N,
-	binary_covariates=X_bin,
-	continuous_covariates=X_cts,
-	edges=A,
-	# edges=None,
-	edge_index_left=i0,
-	edge_index_right=i1,
-	latent_dim=3,
-	heterogeneity_prior_mean=-1.5
-)
-# model.fit(max_iter=100, rel_tol=1e-7)
+	model.fit_and_evaluate(
+		max_iter=200,
+		true_values=true_values
+	)
+
+	out[K_model] = model.elbo(), model.AIC(), model.BIC(), model.GIC()
 
 
-model.fit_and_evaluate(
-	max_iter=100,
-	true_values=true_values
-)
-
-
+for k, (elbo, aic, bic, gic) in out.items():
+	print(f"{k:2d}  {elbo:.2f}  {aic:.2f}  {bic:.2f}  {gic:.2f}")
 
 
 # import cProfile
