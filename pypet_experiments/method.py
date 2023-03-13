@@ -395,8 +395,9 @@ class Method:
                     cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
-                    AIC=vmp.AIC(),
-                    BIC=vmp.BIC()
+                    aic=vmp.aic,
+                    bic=vmp.bic,
+                    gic=vmp.gic,
                 ),
                 testing_metrics=dict(
                     X_cts_missing_mse=results["X_cts_missing_mse"],

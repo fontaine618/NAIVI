@@ -373,50 +373,30 @@ class VMP:
         K, p = self.weights.shape
         return K * p
 
-    def AIC(self):
-        K, p = self.weights.shape
-        elbo = self.elbo_history["latent_prior"][-1]
-        elbo += self.elbo_history["cts_model"][-1]
-        elbo += self.elbo_history["bin_model"][-1]
-        return -2 * elbo + 2 * K * p
+    @property
+    def bic_penalty(self):
+        return self.df * math.log(self.n)
 
-    def BIC(self):
-        K, p = self.weights.shape
-        elbo = self.elbo_history["latent_prior"][-1]
-        elbo += self.elbo_history["cts_model"][-1]
-        elbo += self.elbo_history["bin_model"][-1]
-        bic = -2 * elbo
-        n = 0
-        if "cts_observed" in self.factors:
-            X = self.factors["cts_observed"].values.values
-            n += (~X.isnan()).float().sum()
-            # logn_per_covariate = (~X.isnan()).float().sum(0).log()
-            # bic += K * logn_per_covariate.sum()
-        if "bin_observed" in self.factors:
-            X = self.factors["bin_observed"].values.values
-            n += (~X.isnan()).float().sum()
-            # logn_per_covariate = (~X.isnan()).float().sum(0).log()
-            # bic += K * logn_per_covariate.sum()
-        return bic + math.log(n) * K * p
+    @property
+    def aic_penalty(self):
+        return 2 * self.df
 
-    def GIC(self):
-        K, p = self.weights.shape
-        elbo = self.elbo_history["latent_prior"][-1]
-        elbo += self.elbo_history["cts_model"][-1]
-        elbo += self.elbo_history["bin_model"][-1]
-        gic = -2 * elbo
-        n = 0
-        if "cts_observed" in self.factors:
-            X = self.factors["cts_observed"].values.values
-            n += (~X.isnan()).float().sum()
-            # logn_per_covariate = (~X.isnan()).float().sum(0).log().log()
-            # gic += K * math.log(K) * logn_per_covariate.sum()
-        if "bin_observed" in self.factors:
-            X = self.factors["bin_observed"].values.values
-            n += (~X.isnan()).float().sum()
-            # logn_per_covariate = (~X.isnan()).float().sum(0).log().log()
-            # gic += K * math.log(K) * logn_per_covariate.sum()
-        return gic + (K * p) * math.log(math.log(n)) * math.log(K * p) * n
+    @property
+    def gic_penalty(self):
+        n = self.n
+        return self.df * math.log(n) * math.log(math.log(n))
+
+    @property
+    def aic(self):
+        return -2 * self.elbo_covariates + self.aic_penalty
+
+    @property
+    def bic(self):
+        return -2 * self.elbo_covariates + self.bic_penalty
+
+    @property
+    def gic(self):
+        return -2 * self.elbo_covariates + self.gic_penalty
 
     def sample(self, n_samples: int = 1):
         for var in self.variables.values():
