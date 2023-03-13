@@ -8,10 +8,10 @@ import pandas as pd
 
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
-name = "test"
+name = "model_selection"
 res_list = []
 for i in range(30):
-    file = f"./experiments/n_nodes/results/seed{i}.hdf5"
+    file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
 
@@ -23,7 +23,7 @@ for i in range(30):
 results = pd.concat(res_list)
 
 
-x_axis = "data.n_nodes"
+x_axis = "model.latent_dim"
 y_axes = ["testing.X_bin_missing_auroc", "estimation.latent_Proj_fro_rel", "training.cpu_time"]
 y_labels = ["AuROC", r"$d(Z,\widehat{Z})$", "CPU Time"]
 hue = "method"

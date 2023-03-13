@@ -364,8 +364,10 @@ class VMP:
     @property
     def elbo_covariates(self):
         elbo = self.elbo_history["latent_prior"][-1]
-        elbo += self.elbo_history["cts_model"][-1]
-        elbo += self.elbo_history["bin_model"][-1]
+        if "cts_model" in self.factors:
+            elbo += self.elbo_history["cts_model"][-1]
+        if "bin_model" in self.factors:
+            elbo += self.elbo_history["bin_model"][-1]
         return elbo
 
     @property
