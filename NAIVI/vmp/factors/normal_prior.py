@@ -33,8 +33,9 @@ class NormalPrior(Factor):
 		m0, v0 = self.parameters["mean"].data, self.parameters["variance"].data
 		i = self._name_to_id["child"]
 		mq, vq = self.children[i].posterior.mean_and_variance
-		elbo = (vq/v0).log() + 1. - (mq.pow(2.) + vq - 2. * m0*mq + m0**2) / v0
-		return elbo.sum() * 0.5
+		# kl = (vq/v0).log() + 1. - (mq.pow(2.) + vq - 2. * m0*mq + m0**2) / v0
+		kl = (v0/vq).log() - 1. + (mq - m0).pow(2.) / v0 + vq / v0
+		return - kl.sum() * 0.5
 
 	# def forward(self, n_samples: int = 1):
 	# 	c_id = self._name_to_id["child"]
@@ -87,8 +88,8 @@ class MultivariateNormalPrior(Factor):
 		trace = (p0.unsqueeze(0) * vq).sum((-1, -2))
 		diff = m0 - mq
 		quad = torch.einsum("ik, kj, ij->i", diff, p0, diff)
-		elbo = trace + quad - logdetq + logdet0 - self.dim
-		return 0.5 * elbo.sum()  # NB we take positive because this is the -KL term
+		kl = trace + quad - logdetq + logdet0 - self.dim
+		return - 0.5 * kl.sum()
 
 	# def elbo_mc(self):
 	# 	return self.elbo()
