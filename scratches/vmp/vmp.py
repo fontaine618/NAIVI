@@ -1,5 +1,6 @@
 import torch
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
@@ -91,11 +92,19 @@ for K_model in range(1, 11):
 		true_values=true_values
 	)
 
-	out[K_model] = model.elbo(), model.AIC(), model.BIC(), model.GIC()
+	out[K_model] = model.elbo_covariates, model.df, model.n
 
 
-for k, (elbo, aic, bic, gic) in out.items():
-	print(f"{k:2d}  {elbo:.2f}  {aic:.2f}  {bic:.2f}  {gic:.2f}")
+outdf = pd.DataFrame(out.values())
+outdf.index = out.keys()
+outdf.columns = ["elbo", "df", "n"]
+outdf["bic"] = -2*outdf["elbo"] + outdf["df"] * np.log(outdf["n"])
+outdf["aic"] = -2*outdf["elbo"] + 2*outdf["df"]
+outdf["gic"] = -2*outdf["elbo"] + outdf["df"] * np.log(np.log(outdf["n"]))
+outdf["gic2"] = -2*outdf["elbo"] + outdf["df"] * np.log(np.log(outdf["n"])) * np.log(outdf["n"])
+
+
+print(outdf)
 
 
 # import cProfile
