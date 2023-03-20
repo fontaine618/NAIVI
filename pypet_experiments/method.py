@@ -395,9 +395,11 @@ class Method:
                     cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
+                    elbo_covariates=vmp.elbo_covariates,
                     aic=vmp.aic,
                     bic=vmp.bic,
                     gic=vmp.gic,
+                    weights_entropy=vmp.weights_entropy
                 ),
                 testing_metrics=dict(
                     X_cts_missing_mse=results["X_cts_missing_mse"],
@@ -433,3 +435,38 @@ class Method:
             )
 
         return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
+    def from_Mean_parameters(cls, model_parameters: ParameterGroup):
+        def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
+            from NAIVI import Mean
+            t0 = time.time()
+            mean = Mean(
+                K=self.model_parameters.latent_dim,
+                N=data.n_nodes,
+                p_bin=data.p_bin,
+                p_cts=data.p_cts,
+            )
+            results = mean.fit(train=train, test=test)
+            dt = time.time() - t0
+            return Results(
+                training_metrics=dict(
+                    X_cts_mse=results["X_cts_mse"],
+                    X_bin_auroc=results["X_bin_auroc"],
+                    A_auroc=results["A_auroc"],
+                    cpu_time=dt,
+                    edge_density=data.edge_density,
+                    X_missing_prop=data.covariate_missing_prop,
+                ),
+                testing_metrics=dict(
+                    X_cts_missing_mse=results["X_cts_missing_mse"],
+                    X_bin_missing_auroc=results["X_bin_missing_auroc"],
+                    A_missing_auroc=results["A_missing_auroc"],
+                    edge_density=data.missing_edge_density,
+                ),
+                estimation_metrics=dict(),
+                logs=dict()
+            )
+
+        return cls(model_parameters=model_parameters, fit_function=fit_function)
+

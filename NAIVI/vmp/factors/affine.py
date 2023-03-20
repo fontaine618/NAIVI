@@ -115,6 +115,23 @@ class Affine(Factor):
 		sc += b.reshape((1, 1, -1))  # 1 x 1 x p
 		self.children[c_id].samples = sc
 
+	def weights_entropy(self):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		mfc = self.messages_to_children[c_id].message_to_factor
+		mfp = self.messages_to_parents[p_id].message_to_factor
+		mp, vp = mfp.mean_and_variance  # N x p x K, N x p x K x K
+		pc, mtpc = mfc.precision_and_mean_times_precision  # N x p, N x p
+		B0 = self.parameters["bias"].data
+		# compute message parameters
+		mtpc_mB0 = mtpc - B0.reshape((1, -1)) * pc # N x p
+		mtp = torch.einsum("ij, ik->jk", mtpc_mB0, pc) # K x p
+		var_p_mmt = vp + mp.unsqueeze(-1) * mp.unsqueeze(-2) # N x p x K x K
+		p = torch.einsum("ij, ijkl->jkl", pc, var_p_mmt) # K x p
+		# compute entropy
+		entropy = 0.5 * (torch.logdet(p * 2 * torch.pi) + p.shape[-1])
+		return entropy.sum()
+
 
 class AffineToParentMessage(Message):
 

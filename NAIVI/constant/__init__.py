@@ -1,1 +1,1 @@
-from .model import Mean
+from .model import Mean, Median

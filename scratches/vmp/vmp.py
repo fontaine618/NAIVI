@@ -9,7 +9,7 @@ sys.path.append("/home/simon/Documents/NAIVI/")
 plt.style.use("seaborn-v0_8-whitegrid")
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 import NAIVI
-from NAIVI_experiments.gen_data_mnar import generate_dataset
+from old_stuff.NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.vmp import disable_logging
 from NAIVI.vmp import VMP
 from NAIVI.vmp.distributions import Distribution
@@ -25,10 +25,10 @@ NAIVI.vmp.disable_logging()
 NAIVI.vmp.set_check_args(0)
 
 
-N = 300
-p_bin = 20
-p_cts = 30
-K = 3
+N = 200
+p_bin = 0
+p_cts = 300
+K = 5
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
@@ -92,17 +92,18 @@ for K_model in range(1, 11):
 		true_values=true_values
 	)
 
-	out[K_model] = model.elbo_covariates, model.df, model.n
+	out[K_model] = model.elbo(), model.df, model.n, model.weights_entropy
 
 
 outdf = pd.DataFrame(out.values())
 outdf.index = out.keys()
-outdf.columns = ["elbo", "df", "n"]
+outdf.columns = ["elbo", "df", "n", "entropy"]
 outdf["bic"] = -2*outdf["elbo"] + outdf["df"] * np.log(outdf["n"])
 outdf["aic"] = -2*outdf["elbo"] + 2*outdf["df"]
-outdf["gic"] = -2*outdf["elbo"] + outdf["df"] * np.log(np.log(outdf["n"]))
-outdf["gic2"] = -2*outdf["elbo"] + outdf["df"] * np.log(np.log(outdf["n"])) * np.log(outdf["n"])
-
+# outdf["gic"] = -2*outdf["elbo"] + outdf["df"] * np.log(np.log(outdf["n"]))
+# outdf["gic2"] = -2*outdf["elbo"] + outdf["df"] * np.log(np.log(outdf["n"])) * np.log(outdf["n"])
+outdf["elbo2"] = -2*outdf["elbo"] + outdf["entropy"] * 2
+outdf["ebic1"] = -2*outdf["elbo"] + outdf["df"] * np.log(outdf["n"]) + np.log(outdf["n"] * outdf["df"])
 
 print(outdf)
 

@@ -38,11 +38,6 @@ _default_fit_parameters = {
     "advi.max_iter": 1000,
     "advi.eps": 1e-4,
     "advi.optimizer": "Rprop",
-    "vimc.lr": 0.1,
-    "vimc.max_iter": 1000,
-    "vimc.eps": 1e-4,
-    "vimc.optimizer": "Adam",
-    "vimc.n_samples": 0,
 }
 
 

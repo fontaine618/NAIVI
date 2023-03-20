@@ -400,6 +400,15 @@ class VMP:
     def gic(self):
         return -2 * self.elbo_covariates + self.gic_penalty
 
+    @property
+    def weights_entropy(self):
+        entropy = 0.
+        if "affine_cts" in self.factors:
+            entropy += self.factors["affine_cts"].weights_entropy()
+        if "affine_bin" in self.factors:
+            entropy += self.factors["affine_bin"].weights_entropy()
+        return entropy.item()
+
     def sample(self, n_samples: int = 1):
         for var in self.variables.values():
             var.sample(n_samples)

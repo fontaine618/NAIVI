@@ -2,6 +2,7 @@ import torch
 import os
 import math
 from pypet import ParameterGroup
+from NAIVI.utils.data import JointDataset
 
 T = torch.Tensor
 
@@ -167,6 +168,30 @@ class Dataset:
         if denum == 0:
             return float("nan")
         return (X_cts_missing_n + X_bin_missing_n) / denum
+
+    def to_JointDataset_train(self, cuda: bool = True) -> JointDataset:
+        return JointDataset(
+            i0=self.edge_index_left,
+            i1=self.edge_index_right,
+            A=self.edges,
+            X_cts=self.continuous_covariates,
+            X_bin=self.binary_covariates,
+            cuda=cuda,
+            return_missingness=False,
+            test=False
+        )
+
+    def to_JointDataset_test(self, cuda: bool = True) -> JointDataset:
+        return JointDataset(
+            i0=self.edge_index_left,
+            i1=self.edge_index_right,
+            A=self.edges_missing,
+            X_cts=self.continuous_covariates_missing,
+            X_bin=self.binary_covariates_missing,
+            cuda=cuda,
+            return_missingness=False,
+            test=True
+        )
 
 
 
