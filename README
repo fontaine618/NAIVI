@@ -15,9 +15,6 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     [ ] Use ADVI first? VMP is then just a refinement?
     [x] I think just breaking symmetry should be fine ...
 [ ] JIT?
-[ ] ELBO MC probably better for early stopping & model selection:
-    - Indeed, I note that the MC one seems to increase with iteration
-      (up to noise), while the LB one decreaases at some point.
 [ ] MNAR model
     - should be fairly easy
     - add an argument mnar: bool
@@ -26,7 +23,11 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     - create a binary model just like the binary covariates
     - parameter update will need a proximal step
 [ ] Multinomial model
-[ ] Implement AIC, BIC
+[ ] Implement CV
+    [ ] Implement subsetting dataset
+    [ ] CV wrapper
+    [ ] get oob llk
+[ ] Implement all former models within pypet
 
 
 scp simfont@greatlakes-xfer.arc-ts.umich.edu:./Documents/NAIVI/experiments/n_nodes/results.hdf5

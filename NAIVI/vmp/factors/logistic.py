@@ -64,8 +64,8 @@ class Logistic(Factor):
 	def update_messages_to_parents(self):
 		self._update()
 
-	def elbo(self):
-		return self._elbo()
+	def elbo(self, x: torch.Tensor | None = None):
+		return self._elbo(x)
 
 	def _quadratic_elbo(self):
 		p_id = self._name_to_id["parent"]
@@ -79,35 +79,49 @@ class Logistic(Factor):
 		elbo = torch.where(s.abs()==0.5, elbo, torch.zeros_like(elbo))
 		return elbo.sum()
 
-	def _mk_elbo(self):
+	def _mk_elbo(self, x: torch.Tensor | None = None):
 		# They don't really provide a way to compute the elbo, but
 		# it seems this is what they are doing
-		return self._quadrature_elbo()
+		return self._quadrature_elbo(x)
 
-	def _tilted_elbo(self):
+	def _tilted_elbo(self, x: torch.Tensor | None = None):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
-		mfc = self.children[c_id].posterior
+		if x is None:
+			x = self.children[c_id].posterior.proba
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
-		s = 2*mfc.proba - 1
+		s = 2*x - 1
 		sm = s*m
 		a = _tilted_fixed_point(sm, v)
 		elbo = sm - 0.5*a.pow(2.)*v - _log1p_exp(sm+0.5*v*(1-2*a))
 		elbo = torch.where(s.abs()==1., elbo, torch.zeros_like(elbo))
 		return elbo.sum()
 
-	def _quadrature_elbo(self):
+	def _quadrature_elbo(self, x: torch.Tensor | None = None):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
-		mfc = self.children[c_id].posterior
+		if x is None:
+			x = self.children[c_id].posterior.proba
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
-		s = 2*mfc.proba - 1
+		s = 2*x - 1
 		sm = s*m
 		elbo = sm - _gh_quadrature(sm, v, _log1p_exp)
 		elbo = torch.where(s.abs()==1., elbo, torch.zeros_like(elbo))
 		return elbo.sum()
+
+	def log_likelihood(self, x: torch.Tensor | None = None):
+		p_id = self._name_to_id["parent"]
+		c_id = self._name_to_id["child"]
+		if x is None:
+			x = self.children[c_id].posterior.proba
+		mfp = self.parents[p_id].posterior
+		m = mfp.mean
+		s = 2*x - 1
+		llk = s*m - _log1p_exp(m)
+		llk = torch.where(s.abs()==1., llk, torch.zeros_like(llk))
+		return llk.sum()
 
 	def elbo_mc(self, n_samples: int = 1):
 		p_id = self._name_to_id["parent"]

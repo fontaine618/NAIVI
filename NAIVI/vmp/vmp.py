@@ -22,6 +22,8 @@ from .variables.variable import Variable, MultivariateNormalVariable, Probabilit
 from .messages.message import Message
 from .distributions import MultivariateNormal, Normal, Probability
 
+prefix = "[VMP] "
+
 
 class VMP:
     """
@@ -82,7 +84,7 @@ class VMP:
     ):
         N = n_nodes
         K = latent_dim
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing model")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing model")
         # initialize factors and variables
         heterogeneity, latent = self._initialize_priors(K, N)
         self._initialize_binary_model(K, N, binary_covariates, latent)
@@ -91,10 +93,10 @@ class VMP:
         self._break_symmetry()
         self._initialize_posterior()
         self._vmp_forward()
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Model initialization completed")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Model initialization completed")
 
     def _initialize_edge_model(self, K, edge_index_left, edge_index_right, edges, heterogeneity, latent):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing edge model")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing edge model")
         if (edges is None) or (edge_index_right is None) or (edge_index_left is None):
             return
         ne = edges.shape[0]
@@ -157,10 +159,10 @@ class VMP:
             "edge_observed"
         ])
         self._m_step_factors.extend([])
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Edge model initialization completed")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Edge model initialization completed")
 
     def _initialize_continuous_model(self, K, N, continuous_covariates, latent):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing continuous model")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing continuous model")
         if continuous_covariates is None:
             return
         p_cts = continuous_covariates.shape[1]
@@ -191,10 +193,10 @@ class VMP:
             "affine_cts",
             "cts_model",
         ])
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Continuous model initialization completed")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Continuous model initialization completed")
 
     def _initialize_binary_model(self, K, N, binary_covariates, latent):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing binary model")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing binary model")
         if binary_covariates is None:
             return
         p_bin = binary_covariates.shape[1]
@@ -224,10 +226,10 @@ class VMP:
         self._m_step_factors.extend([
             "affine_bin",
         ])
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Binary model initialization completed")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Binary model initialization completed")
 
     def _initialize_priors(self, K, N):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing priors")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing priors")
         latent_prior = MultivariateNormalPrior(
             dim=K,
             mean=self.hyperparameters["latent_prior_mean"],
@@ -254,15 +256,15 @@ class VMP:
             "heterogeneity_prior"
         ])
         self._m_step_factors.extend([])
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Prior initialization completed")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Prior initialization completed")
         return heterogeneity, latent
 
     def _initialize_posterior(self):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Started initializing posteriors")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing posteriors")
         for variable in self.variables.values():
             if VMP_OPTIONS["logging"]: print(f"Initializing posterior of {repr(variable)}")
             variable.compute_posterior()
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Posterior initialization completed")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Posterior initialization completed")
 
     def _break_symmetry(self):
         """Break the rotational symmetry in the latent variables.
@@ -277,7 +279,7 @@ class VMP:
         The posterior should be updated after this step to ensure consistency of
         the messages with the posterior. (I am not sure if this is true,
         since setting the messages should automatically update the posterior.)"""
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Breaking symmetry")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Breaking symmetry")
         if "select_left_latent" in self.factors:
             p_id = self.variables["latent"].id
             dim = self.variables["left_latent"].shape
@@ -286,10 +288,10 @@ class VMP:
             mean_times_precision = torch.randn(dim)
             msg = MultivariateNormal(precision, mean_times_precision)
             self.factors["select_left_latent"].messages_to_parents[p_id].message_to_variable = msg
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Symmetry broken")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Symmetry broken")
 
     def _vmp_backward(self):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Backward pass")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Backward pass")
         for fname in self._vmp_sequence[::-1]:
             self.factors[fname].update_messages_from_children()
             self.factors[fname].update_messages_to_parents()
@@ -299,7 +301,7 @@ class VMP:
             #     raise RuntimeError("ELBO is nan!")
 
     def _vmp_forward(self):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] Forward pass")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}Forward pass")
         for fname in self._vmp_sequence:
             self.factors[fname].update_messages_from_parents()
             self.factors[fname].update_messages_to_children()
@@ -309,13 +311,13 @@ class VMP:
             #     raise RuntimeError("ELBO is nan!")
 
     def _e_step(self, n_iter: int = 1):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] E-step")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}E-step")
         for _ in range(n_iter):
             self._vmp_backward()
             self._vmp_forward()
 
     def _m_step(self):
-        if VMP_OPTIONS["logging"]: print(f"[VMP] M-step")
+        if VMP_OPTIONS["logging"]: print(f"{prefix}M-step")
         for fname in self._m_step_factors:
             self.factors[fname].update_parameters()
 
@@ -439,11 +441,34 @@ class VMP:
                 self.metrics_history[k] = [v]
             self.metrics_history[k].append(v)
 
+    def covariate_elbo(
+            self,
+            binary_covariates: torch.Tensor | None = None,
+            continuous_covariates: torch.Tensor | None = None
+    ):
+        elbo = 0.
+        if "cts_model" in self.factors:
+            elbo += self.factors["cts_model"].elbo(continuous_covariates)
+        if "bin_model" in self.factors:
+            elbo += self.factors["bin_model"].elbo(binary_covariates)
+        return elbo.item()
+
+    def covariate_log_likelihood(
+            self,
+            binary_covariates: torch.Tensor | None = None,
+            continuous_covariates: torch.Tensor | None = None
+    ):
+        llk = 0.
+        if "cts_model" in self.factors:
+            llk += self.factors["cts_model"].log_likelihood(continuous_covariates)
+        if "bin_model" in self.factors:
+            llk += self.factors["bin_model"].log_likelihood(binary_covariates)
+        return llk.item()
+
     def fit_and_evaluate(
             self,
             max_iter: int = 1000,
             rel_tol: float = 1e-6,
-            verbose: bool = True,
             mc_samples: int = 0,
             true_values: dict | None = None,
     ):
@@ -468,15 +493,15 @@ class VMP:
 
                 self.evaluate(true_values)
                 increased = new_elbo >= elbo
-                if verbose and (i % 1) == 0:
-                    print(f"[VMP] Iteration {i:<4} "
+                if (i % 1) == 0:
+                    print(f"{prefix}Iteration {i:<4} "
                           f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
                 if abs(new_elbo - elbo) < rel_tol * abs(elbo):
                     break
                 elbo = new_elbo
 
-    def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6, verbose: bool = True):
-        self.fit_and_evaluate(max_iter, rel_tol, verbose)
+    def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6):
+        self.fit_and_evaluate(max_iter, rel_tol)
 
     def evaluate(self, true_values: Dict[str, torch.Tensor] | None = None, store: bool = True):
         if true_values is None:

@@ -30,6 +30,7 @@ _default_model_parameters = {
 _default_fit_parameters = {
     "vmp.max_iter": 1000,
     "vmp.rel_tol": 1e-4,
+    "vmp.cv_folds": 0,
     "map.lr": 0.01,
     "map.max_iter": 1000,
     "map.eps": 1e-4,

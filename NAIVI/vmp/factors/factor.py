@@ -46,7 +46,7 @@ class Factor:
 	def initialize_messages_to_children(self):
 		pass
 
-	def elbo(self):
+	def elbo(self, **kwargs):
 		"""If not reimplemented, we assume there is no elbo contribution from this factor."""
 		return torch.Tensor([0.])
 

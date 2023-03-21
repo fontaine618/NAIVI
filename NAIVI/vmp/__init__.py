@@ -4,6 +4,7 @@ VMP_OPTIONS = {
 }
 
 from .vmp import VMP
+from .cross_validation import CVVMP
 
 
 def disable_logging():

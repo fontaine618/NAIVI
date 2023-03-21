@@ -11,7 +11,7 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 import NAIVI
 from old_stuff.NAIVI_experiments.gen_data_mnar import generate_dataset
 from NAIVI.vmp import disable_logging
-from NAIVI.vmp import VMP
+from NAIVI.vmp import VMP, CVVMP
 from NAIVI.vmp.distributions import Distribution
 
 # for debugging
@@ -25,9 +25,9 @@ NAIVI.vmp.disable_logging()
 NAIVI.vmp.set_check_args(0)
 
 
-N = 200
-p_bin = 0
-p_cts = 300
+N = 100
+p_bin = 20
+p_cts = 0
 K = 5
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
@@ -68,10 +68,30 @@ true_values = {
 	"X_bin_missing": X_bin_missing,
 	"A": A,
 }
-
+K_model = 5
 out = {}
 
+
+
 for K_model in range(1, 11):
+
+	torch.manual_seed(0)
+	cv = CVVMP(
+		n_nodes=N,
+		binary_covariates=X_bin,
+		continuous_covariates=X_cts,
+		edges=A,
+		# edges=None,
+		edge_index_left=i0,
+		edge_index_right=i1,
+		latent_dim=K_model,
+		heterogeneity_prior_mean=-1.5,
+		folds=5
+	)
+	cv.fit(max_iter=200)
+	cov_elbo = cv.covariate_elbo
+	cov_llk = cv.covariate_log_likelihood
+	del cv
 
 	model = VMP(
 		n_nodes=N,
@@ -84,20 +104,23 @@ for K_model in range(1, 11):
 		latent_dim=K_model,
 		heterogeneity_prior_mean=-1.5
 	)
-	# model.fit(max_iter=100, rel_tol=1e-7)
 
+	model.fit(max_iter=200)
+	metrics = model.evaluate(true_values)
 
-	model.fit_and_evaluate(
-		max_iter=200,
-		true_values=true_values
-	)
+	out[K_model] = model.elbo(), model.df, model.n, model.weights_entropy, \
+		model.covariate_elbo(X_bin_missing, X_cts_missing), \
+	   		model.covariate_elbo(X_bin, X_cts), cov_elbo, cov_llk, \
+	   		metrics["X_bin_missing_auroc"], metrics["X_cts_missing_mse"], \
+	   		metrics["X_bin_auroc"], metrics["X_cts_mse"]
 
-	out[K_model] = model.elbo(), model.df, model.n, model.weights_entropy
 
 
 outdf = pd.DataFrame(out.values())
 outdf.index = out.keys()
-outdf.columns = ["elbo", "df", "n", "entropy"]
+outdf.columns = ["elbo", "df", "n", "entropy", "cov_elbo_missing",
+				 "cov_elbo_obs", "cv_elbo", "cv_llk",
+				 "auroc_missing", "mse_missing", "auroc_obs", "mse_obs"]
 outdf["bic"] = -2*outdf["elbo"] + outdf["df"] * np.log(outdf["n"])
 outdf["aic"] = -2*outdf["elbo"] + 2*outdf["df"]
 # outdf["gic"] = -2*outdf["elbo"] + outdf["df"] * np.log(np.log(outdf["n"]))
@@ -106,6 +129,8 @@ outdf["elbo2"] = -2*outdf["elbo"] + outdf["entropy"] * 2
 outdf["ebic1"] = -2*outdf["elbo"] + outdf["df"] * np.log(outdf["n"]) + np.log(outdf["n"] * outdf["df"])
 
 print(outdf)
+
+
 
 
 # import cProfile

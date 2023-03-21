@@ -80,39 +80,36 @@ class GaussianFactor(Factor):
 		n = observed.sum(dim=0)
 		self.parameters["log_variance"].data = torch.log(s2sum / n)
 
-	def elbo(self):
-		p = self._name_to_id["parent"]
-		c = self._name_to_id["child"]
-		m, v = self.parents[p].posterior.mean_and_variance
-		x = self.children[c].posterior.mean
-		observed = self.children[c].posterior.precision.isinf()
+	def forward(self, **kwargs):
+		pass
+
+	def elbo(self, x: torch.Tensor | None = None):
+		c_id = self._name_to_id["child"]
+		p_id = self._name_to_id["parent"]
+		if x is None:
+			x = self.children[c_id].posterior.mean
+			observed = self.children[c_id].posterior.precision.isinf()
+			x = torch.where(observed, x, torch.full_like(x, torch.nan))
+		m, v = self.parents[p_id].posterior.mean_and_variance
 		s2 = self.parameters["log_variance"].exp()
 		elbo = (v + m.pow(2.) - 2. * m * x + x.pow(2.)) / s2
 		elbo += torch.log(s2).reshape(1, -1) + math.log(2. * math.pi)
-		elbo = torch.where(observed, elbo, torch.zeros_like(elbo)).sum(dim=0)
+		elbo = torch.where(x.isnan(), torch.zeros_like(elbo), elbo)
 		return - 0.5 * elbo.sum()
 
-	def forward(self, **kwargs):
-		pass
-		# This should be the update, but here the child is observed, so we don't update it
-		# p_id = self._name_to_id["parent"]
-		# c_id = self._name_to_id["child"]
-		# sp = self.parents[p_id].sample
-		# s2 = self.parameters["log_variance"].exp()
-		# sc = sp + torch.randn_like(sp) * s2.sqrt()
-		# self.children[c_id].sample = sc
-
-	# exact elbo, so we do not need this
-	# def elbo_mc(self):
-	# 	p_id = self._name_to_id["parent"]
-	# 	c_id = self._name_to_id["child"]
-	# 	sp = self.parents[p_id].samples
-	# 	s2 = self.parameters["log_variance"].exp()
-	# 	sc = self.children[c_id].samples
-	# 	d = (sc - sp).pow(2.) / s2
-	# 	d += torch.log(s2).reshape(1, 1, -1) + math.log(2. * math.pi)
-	# 	return - 0.5 * d.nansum(dim=(-1, -2)).nanmean(dim=0)
-
+	def log_likelihood(self, x: torch.Tensor | None = None):
+		c_id = self._name_to_id["child"]
+		p_id = self._name_to_id["parent"]
+		if x is None:
+			x = self.children[c_id].posterior.mean
+			observed = self.children[c_id].posterior.precision.isinf()
+			x = torch.where(observed, x, torch.full_like(x, torch.nan))
+		m = self.parents[p_id].posterior.mean
+		s2 = self.parameters["log_variance"].exp()
+		llk = (m - x).pow(2.) / s2
+		llk += torch.log(s2).reshape(1, -1) + math.log(2. * math.pi)
+		llk = torch.where(x.isnan(), torch.zeros_like(llk), llk)
+		return - 0.5 * llk.sum()
 
 
 class GaussianFactorToParentMessage(Message):
