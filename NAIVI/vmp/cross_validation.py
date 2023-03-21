@@ -51,13 +51,6 @@ class CVVMP:
             **self.model_args
         )
         model.fit_and_evaluate(**fit_args)
-        # free memory
-        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
-        del model
-        gc.collect()
-        with torch.no_grad():
-            torch.cuda.empty_cache()
-        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
 
         self.covariate_elbo += model.covariate_elbo(X_bin_missing, X_cts_missing)
         self.covariate_log_likelihood += model.covariate_log_likelihood(X_bin_missing, X_cts_missing)
