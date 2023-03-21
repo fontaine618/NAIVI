@@ -31,7 +31,6 @@ INV_SQRT_PI = 1. / math.sqrt(math.pi)
 _gh_nodes, _gh_weights = np.polynomial.hermite.hermgauss(101)
 _gh_nodes = torch.Tensor(_gh_nodes)
 _gh_weights = torch.Tensor(_gh_weights)
-_std_normal = torch.distributions.normal.Normal(0., 1.)
 
 
 def _gh_quadrature(
@@ -43,8 +42,9 @@ def _gh_quadrature(
 
 	Inspired from GPyTorch (https://docs.gpytorch.ai/en/stable/_modules/gpytorch/utils/quadrature.html)"""
 	n_dims_to_pad = len(mean.shape)
-	locations = _gh_nodes.view(*([1] * n_dims_to_pad), -1)
-	weights = _gh_weights.view(*([1] * n_dims_to_pad), -1) * INV_SQRT_PI
+	device = mean.device
+	locations = _gh_nodes.to(device).view(*([1] * n_dims_to_pad), -1)
+	weights = _gh_weights.to(device).view(*([1] * n_dims_to_pad), -1) * INV_SQRT_PI
 	shifted_nodes = mean.unsqueeze(-1) + locations * (variance * 2.).sqrt().unsqueeze(-1)
 	func_evals = function(shifted_nodes)
 	return (func_evals * weights).sum(-1)
@@ -65,8 +65,9 @@ def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
 	n = len(mean.shape)
 	mean = mean.unsqueeze(-1)
 	variance = variance.unsqueeze(-1)
-	p = _p
-	s = _s
+	device = mean.device
+	p = _p.to(device)
+	s = _s.to(device)
 	for _ in range(n):
 		p = p.unsqueeze(0)
 		s = s.unsqueeze(0)
@@ -74,11 +75,11 @@ def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
 	arg = mean * s / sqrt
 	if degree == 0:
 		f1 = p
-		f2 = _std_normal.cdf(arg)
+		f2 = torch.distributions.normal.Normal(0., 1.).cdf(arg)
 		return (f1 * f2).sum(-1)
 	elif degree == 1:
 		f1 = p * s / sqrt
-		f2 = _std_normal.log_prob(arg).exp()
+		f2 = torch.distributions.normal.Normal(0., 1.).log_prob(arg).exp()
 		return (f1 * f2).sum(-1) * variance.sqrt().squeeze(-1)
 	else:
 		raise NotImplementedError("only degree 0 or 1 implemented")
