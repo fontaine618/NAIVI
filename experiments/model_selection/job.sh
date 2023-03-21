@@ -12,7 +12,7 @@
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
 #SBATCH --gpus-per-node=1
-#SBATCH --mem-per-gpu=20g
+#SBATCH --mem-per-gpu=30g
 #SBATCH --output=/home/%u/logs/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
 module load python/3.10.4

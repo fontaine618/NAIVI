@@ -369,24 +369,6 @@ class Method:
             )
             cv_folds = fit_parameters.vmp.cv_folds
             t0 = time.time()
-            vmp = VMP(
-                # dimension and model parameters
-                latent_dim=self.model_parameters.latent_dim,
-                n_nodes=data.n_nodes,
-                heterogeneity_prior_mean=self.model_parameters.heterogeneity_prior_mean,
-                heterogeneity_prior_variance=self.model_parameters.heterogeneity_prior_variance,
-                latent_prior_mean=self.model_parameters.latent_prior_mean,
-                latent_prior_variance=self.model_parameters.latent_prior_variance,
-                # data
-                binary_covariates=data.binary_covariates,
-                continuous_covariates=data.continuous_covariates,
-                edges=data.edges,
-                edge_index_left=data.edge_index_left,
-                edge_index_right=data.edge_index_right,
-            )
-            vmp.fit(**fit_parameters_dict)
-            dt = time.time() - t0
-            results = vmp.evaluate(data.true_values)
             if cv_folds > 1:
                 from NAIVI.vmp import CVVMP
                 cv_vmp = CVVMP(
@@ -405,6 +387,27 @@ class Method:
                     folds=cv_folds,
                 )
                 cv_vmp.fit(**fit_parameters_dict)
+                covariate_elbo = cv_vmp.covariate_elbo
+                covariate_log_likelihood = cv_vmp.covariate_log_likelihood
+                del cv_vmp
+            vmp = VMP(
+                # dimension and model parameters
+                latent_dim=self.model_parameters.latent_dim,
+                n_nodes=data.n_nodes,
+                heterogeneity_prior_mean=self.model_parameters.heterogeneity_prior_mean,
+                heterogeneity_prior_variance=self.model_parameters.heterogeneity_prior_variance,
+                latent_prior_mean=self.model_parameters.latent_prior_mean,
+                latent_prior_variance=self.model_parameters.latent_prior_variance,
+                # data
+                binary_covariates=data.binary_covariates,
+                continuous_covariates=data.continuous_covariates,
+                edges=data.edges,
+                edge_index_left=data.edge_index_left,
+                edge_index_right=data.edge_index_right,
+            )
+            vmp.fit(**fit_parameters_dict)
+            dt = time.time() - t0
+            results = vmp.evaluate(data.true_values)
             return Results(
                 training_metrics=dict(
                     elbo=vmp.elbo_history["sum"][-1],
@@ -418,8 +421,8 @@ class Method:
                     aic=vmp.aic,
                     bic=vmp.bic,
                     weights_entropy=vmp.weights_entropy,
-                    cv_covariate_elbo=cv_vmp.covariate_elbo if cv_folds > 1 else 0.,
-                    cv_covariate_log_likelihood=cv_vmp.covariate_log_likelihood if cv_folds > 1 else 0.,
+                    cv_covariate_elbo=covariate_elbo if cv_folds > 1 else 0.,
+                    cv_covariate_log_likelihood=covariate_log_likelihood if cv_folds > 1 else 0.,
                 ),
                 testing_metrics=dict(
                     X_cts_missing_mse=results["X_cts_missing_mse"],
