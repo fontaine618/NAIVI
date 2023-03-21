@@ -17,6 +17,7 @@ env = Environment(
     overwrite_file=True,
     multiproc=True,
     ncores=1,
+    use_pool=False
 )
 traj = env.trajectory
 add_parameters(traj)
