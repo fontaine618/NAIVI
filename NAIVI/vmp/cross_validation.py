@@ -21,6 +21,7 @@ class CVVMP:
             folds: int = 5,
             **model_args
     ):
+        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
         self.binary_covariates = binary_covariates
         self.continuous_covariates = continuous_covariates
         if binary_covariates is not None:
@@ -36,9 +37,11 @@ class CVVMP:
         self.edge_index_right = edge_index_right
         self.folds = folds
         self.model_args = model_args
+        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
 
     def fit_fold(self, fold: int, **fit_args):
         print(f"{prefix}Fitting fold {fold + 1}/{self.folds}")
+        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
         X_bin, X_bin_missing, X_cts, X_cts_missing = self._prepare_fold(fold)
         model = VMP(
             n_nodes=self.n_nodes,
@@ -50,10 +53,19 @@ class CVVMP:
             edge_index_right=self.edge_index_right,
             **self.model_args
         )
+        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
         model.fit_and_evaluate(**fit_args)
 
         self.covariate_elbo += model.covariate_elbo(X_bin_missing, X_cts_missing)
         self.covariate_log_likelihood += model.covariate_log_likelihood(X_bin_missing, X_cts_missing)
+
+        # free memory
+        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
+        del model
+        gc.collect()
+        with torch.no_grad():
+            torch.cuda.empty_cache()
+        print(f"{prefix}Allocated memory: {torch.cuda.memory_allocated() / 1e9} GB")
 
     def _prepare_fold(self, fold):
         X_bin_missing = None
