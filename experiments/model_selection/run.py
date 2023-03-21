@@ -43,6 +43,7 @@ traj.f_explore(cartesian_product({
     "method": ["VMP"],
     "fit.vmp.max_iter": [1000],
     "fit.vmp.rel_tol": [1e-5],
+    "fit.vmp.cv_folds": [5],
 }))
 
 env.run(run)
