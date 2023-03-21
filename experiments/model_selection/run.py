@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-torch.set_default_tensor_type(torch.cuda.FloatTensor)
+# torch.set_default_tensor_type(torch.cuda.FloatTensor)
 import sys
 import os
 sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
@@ -9,7 +9,7 @@ from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
 
 if __name__ == "__main__":
-    # torch.multiprocessing.set_start_method('spawn')
+    torch.multiprocessing.set_start_method('spawn')
     seed = sys.argv[1]
     os.makedirs(f"./results/", exist_ok=True)
 
@@ -17,8 +17,9 @@ if __name__ == "__main__":
         trajectory="model_selection",
         filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
-        multiproc=False,
+        multiproc=True,
         ncores=1,
+        use_pool=False,
     )
     traj = env.trajectory
     add_parameters(traj)

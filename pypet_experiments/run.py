@@ -1,5 +1,4 @@
 import gc
-
 import torch
 from pypet import Environment, cartesian_product, Trajectory, Parameter, ParameterGroup
 from .data import Dataset
@@ -8,6 +7,7 @@ from .results import Results
 
 
 def run(traj: Trajectory):
+    torch.set_default_tensor_type(torch.cuda.FloatTensor)
     # do some GC here since pypet won't do it well for torch.
     gc.collect()
     with torch.no_grad():
