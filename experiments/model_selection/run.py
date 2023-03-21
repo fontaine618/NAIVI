@@ -35,7 +35,7 @@ traj.f_explore(cartesian_product({
     "data.cts_noise": [1.],
     "data.missing_covariate_rate": [0.5],
     "data.missing_edge_rate": [0.],
-    "model.latent_dim": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+    "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9, 10],
     "model.heterogeneity_prior_mean": [-2.],
     "model.heterogeneity_prior_variance": [1.],
     "model.latent_prior_mean": [0.],
