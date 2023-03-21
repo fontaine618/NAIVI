@@ -5,6 +5,7 @@ from typing import Callable, Any
 import types
 import time
 import torch
+import gc
 
 
 class Method:
@@ -389,7 +390,11 @@ class Method:
                 cv_vmp.fit(**fit_parameters_dict)
                 covariate_elbo = cv_vmp.covariate_elbo
                 covariate_log_likelihood = cv_vmp.covariate_log_likelihood
+                # free memory
                 del cv_vmp
+                gc.collect()
+                with torch.no_grad():
+                    torch.cuda.empty_cache()
             vmp = VMP(
                 # dimension and model parameters
                 latent_dim=self.model_parameters.latent_dim,
