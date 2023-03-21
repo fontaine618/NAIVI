@@ -15,7 +15,7 @@ env = Environment(
     trajectory="model_selection",
     filename=f"./results/seed{seed}.hdf5",
     overwrite_file=True,
-    multiproc=True,
+    multiproc=False,
     ncores=1,
 )
 traj = env.trajectory
