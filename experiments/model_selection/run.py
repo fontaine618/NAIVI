@@ -41,7 +41,7 @@ traj.f_explore(cartesian_product({
     "model.latent_prior_mean": [0.],
     "model.latent_prior_variance": [1.],
     "method": ["VMP"],
-    "fit.vmp.max_iter": [1000],
+    "fit.vmp.max_iter": [200],
     "fit.vmp.rel_tol": [1e-5],
     "fit.vmp.cv_folds": [5],
 }))

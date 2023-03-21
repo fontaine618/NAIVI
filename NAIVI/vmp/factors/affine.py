@@ -100,6 +100,7 @@ class Affine(Factor):
 		# X'X
 		Vpmmt = vp + torch.einsum("ijk, ijl -> ijkl", mp, mp)
 		SpVpmmt = torch.einsum("ij, ijkl -> jkl", pc, Vpmmt)
+		SpVpmmt += torch.eye(SpVpmmt.shape[0]) * 0.01
 		# X'Y
 		pr = mtpc - B0.reshape((1, -1)) * pc
 		Sprm = torch.einsum("ij, ijk -> kj", pr, mp)
