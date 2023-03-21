@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+torch.set_default_tensor_type(torch.cuda.FloatTensor)
 import sys
 import os
 sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
@@ -10,7 +11,6 @@ from pypet_experiments.utils import add_parameters
 seed = sys.argv[1]
 os.makedirs(f"./results/", exist_ok=True)
 
-torch.set_default_tensor_type(torch.cuda.FloatTensor)
 env = Environment(
     trajectory="model_selection",
     filename=f"./results/seed{seed}.hdf5",
