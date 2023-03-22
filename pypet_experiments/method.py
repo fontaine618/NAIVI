@@ -358,7 +358,7 @@ class Method:
 
 
     @classmethod
-    def from_VMP_parameters(cls, model_parameters: ParameterGroup):
+    def from_VMP_parameters(cls, model_parameters: ParameterGroup, covariates_only: bool = False):
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import VMP
             from NAIVI.vmp.distributions import Distribution
@@ -382,7 +382,7 @@ class Method:
                     # data
                     binary_covariates=data.binary_covariates,
                     continuous_covariates=data.continuous_covariates,
-                    edges=data.edges,
+                    edges=data.edges if not covariates_only else None,
                     edge_index_left=data.edge_index_left,
                     edge_index_right=data.edge_index_right,
                     folds=cv_folds,
@@ -401,7 +401,7 @@ class Method:
                 # data
                 binary_covariates=data.binary_covariates,
                 continuous_covariates=data.continuous_covariates,
-                edges=data.edges,
+                edges=data.edges if not covariates_only else None,
                 edge_index_left=data.edge_index_left,
                 edge_index_right=data.edge_index_right,
             )
@@ -465,26 +465,29 @@ class Method:
             from NAIVI import Mean
             t0 = time.time()
             mean = Mean(
-                K=self.model_parameters.latent_dim,
-                N=data.n_nodes,
-                p_bin=data.p_bin,
-                p_cts=data.p_cts,
+                binary_covariates=data.binary_covariates,
+                continuous_covariates=data.continuous_covariates,
             )
-            results = mean.fit(train=train, test=test)
+            train_results = mean.evaluate(
+                binary_covariates=data.binary_covariates,
+                continuous_covariates=data.continuous_covariates,
+            )
+            test_results = mean.evaluate(
+                binary_covariates=data.binary_covariates_missing,
+                continuous_covariates=data.continuous_covariates_missing,
+            )
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
-                    X_cts_mse=results["X_cts_mse"],
-                    X_bin_auroc=results["X_bin_auroc"],
-                    A_auroc=results["A_auroc"],
+                    X_cts_mse=train_results["X_cts_mse"],
+                    X_bin_auroc=train_results["X_bin_auroc"],
                     cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=results["X_cts_missing_mse"],
-                    X_bin_missing_auroc=results["X_bin_missing_auroc"],
-                    A_missing_auroc=results["A_missing_auroc"],
+                    X_cts_missing_mse=test_results["X_cts_mse"],
+                    X_bin_missing_auroc=test_results["X_bin_auroc"],
                     edge_density=data.missing_edge_density,
                 ),
                 estimation_metrics=dict(),
@@ -492,4 +495,102 @@ class Method:
             )
 
         return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
+    def from_NetworkSmoothing_parameters(cls, model_parameters: ParameterGroup):
+        def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
+            from NAIVI import NetworkSmoothing
+            t0 = time.time()
+            test_results = NetworkSmoothing().fit_and_evaluate(
+                binary_covariates=data.binary_covariates,
+                continuous_covariates=data.continuous_covariates,
+                edges=data.edges,
+                edge_index_left=data.edge_index_left,
+                edge_index_right=data.edge_index_right,
+                binary_covariates_missing=data.binary_covariates_missing,
+                continuous_covariates_missing=data.continuous_covariates_missing,
+            )
+            dt = time.time() - t0
+            return Results(
+                training_metrics=dict(
+                    cpu_time=dt,
+                    edge_density=data.edge_density,
+                    X_missing_prop=data.covariate_missing_prop,
+                ),
+                testing_metrics=dict(
+                    X_cts_missing_mse=test_results["X_cts_mse"],
+                    X_bin_missing_auroc=test_results["X_bin_auroc"],
+                    edge_density=data.missing_edge_density,
+                ),
+                estimation_metrics=dict(),
+                logs=dict()
+            )
+
+        return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
+    def from_MICE_parameters(cls, model_parameters: ParameterGroup):
+        def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
+            from NAIVI import MICE
+            t0 = time.time()
+            mice = MICE(
+                binary_covariates=data.binary_covariates,
+                continuous_covariates=data.continuous_covariates
+            )
+            test_results = mice.fit_and_evaluate(
+                binary_covariates=data.binary_covariates_missing,
+                continuous_covariates=data.continuous_covariates_missing
+            )
+            dt = time.time() - t0
+            return Results(
+                training_metrics=dict(
+                    cpu_time=dt,
+                    edge_density=data.edge_density,
+                    X_missing_prop=data.covariate_missing_prop,
+                ),
+                testing_metrics=dict(
+                    X_cts_missing_mse=test_results["X_cts_mse"],
+                    X_bin_missing_auroc=test_results["X_bin_auroc"],
+                    edge_density=data.missing_edge_density,
+                ),
+                estimation_metrics=dict(),
+                logs=dict()
+            )
+
+        return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
+    def from_KNN_parameters(cls, model_parameters: ParameterGroup):
+        def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
+            from NAIVI import KNN
+            t0 = time.time()
+            mice = KNN(
+                binary_covariates=data.binary_covariates,
+                continuous_covariates=data.continuous_covariates
+            )
+            test_results = mice.fit_and_evaluate(
+                binary_covariates=data.binary_covariates_missing,
+                continuous_covariates=data.continuous_covariates_missing
+            )
+            dt = time.time() - t0
+            return Results(
+                training_metrics=dict(
+                    cpu_time=dt,
+                    edge_density=data.edge_density,
+                    X_missing_prop=data.covariate_missing_prop,
+                ),
+                testing_metrics=dict(
+                    X_cts_missing_mse=test_results["X_cts_mse"],
+                    X_bin_missing_auroc=test_results["X_bin_auroc"],
+                    edge_density=data.missing_edge_density,
+                ),
+                estimation_metrics=dict(),
+                logs=dict()
+            )
+
+        return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
+    def from_FA_parameters(cls, model_parameters: ParameterGroup):
+        return cls.from_VMP_parameters(model_parameters, True)
 

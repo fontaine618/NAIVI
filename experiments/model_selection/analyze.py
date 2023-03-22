@@ -45,13 +45,7 @@ groupby = ["data.p_bin", "data.n_nodes"]
 # compute new variables
 gr2 = groupby + ["data.seed", "data.latent_dim"]
 
-# results["model.df"] = results["model.latent_dim"] * results["data.p_bin"]
-# results["data.log_n_nodes"] = np.log(results["data.n_nodes"].values.astype(float))
-# results["data.loglog_n_nodes"] = np.log(np.log(results["data.n_nodes"].values.astype(float)))
-# results["training.aic"] = -2*results["training.elbo"] + 2 * results["model.df"]
-# results["training.bic"] = -2*results["training.elbo"] + results["model.df"] * results["data.log_n_nodes"]
-# results["training.gic"] = -2*results["training.elbo"] + results["model.df"] * \
-#     results["data.log_n_nodes"] * results["data.loglog_n_nodes"]
+results["training.elbo_plus_entropy"] = results["training.elbo"] - results["training.weights_entropy"]
 
 results["training.aic.rel_best"] = \
     results.groupby(gr2).apply(
@@ -61,23 +55,34 @@ results["training.bic.rel_best"] = \
     results.groupby(gr2).apply(
         lambda x: x["training.bic"] / x["training.bic"].min()
     ).reset_index().drop(columns=gr2).set_index("level_4")
-results["training.gic.rel_best"] = \
+
+results["training.cv_covariate_log_likelihood.rel_best"] = \
     results.groupby(gr2).apply(
-        lambda x: x["training.gic"] / x["training.gic"].min()
+        lambda x: x["training.cv_covariate_log_likelihood"] / x["training.cv_covariate_log_likelihood"].max()
     ).reset_index().drop(columns=gr2).set_index("level_4")
+results["training.cv_covariate_elbo.rel_best"] = \
+    results.groupby(gr2).apply(
+        lambda x: x["training.cv_covariate_elbo"] / x["training.cv_covariate_elbo"].max()
+    ).reset_index().drop(columns=gr2).set_index("level_4")
+
 results["training.elbo.rel_best"] = \
     results.groupby(gr2).apply(
         lambda x: x["training.elbo"] / x["training.elbo"].max()
+    ).reset_index().drop(columns=gr2).set_index("level_4")
+results["training.elbo_plus_entropy.rel_best"] = \
+    results.groupby(gr2).apply(
+        lambda x: x["training.elbo_plus_entropy"] / x["training.elbo_plus_entropy"].max()
     ).reset_index().drop(columns=gr2).set_index("level_4")
 
 K = 5
 subset = results["data.latent_dim"]==K
 rows = {
     "training.elbo.rel_best": "ELBO",
+    "training.elbo_plus_entropy.rel_best": "ELBO + Entropy(B)",
     "training.aic.rel_best": "AIC",
     "training.bic.rel_best": "BIC",
-    "training.gic.rel_best": "GIC",
-    "estimation.latent_Proj_fro_rel": r"$d(Z,\widehat{Z})$",
+    "training.cv_covariate_elbo.rel_best": "CV Covariate ELBO",
+    "training.cv_covariate_log_likelihood.rel_best": "CV Covariate LLK",
     "testing.X_bin_missing_auroc": "AuROC (missing)",
 }
 xvar = "model.latent_dim"
@@ -90,7 +95,7 @@ df = results[subset]
 df = df[[xvar] + list(rows.keys()) + cols + ["data.seed"]]
 df = df.melt(id_vars=[xvar, *cols, "data.seed"], value_vars=rows.keys(), var_name="Metric", value_name="Value")
 df["Metric"] = df["Metric"].replace(rows)
-df["data.n_nodes"] = df["data.n_nodes"].replace({"100": "$N=100$", "1000": "$N=1,000$"})
+df["data.n_nodes"] = df["data.n_nodes"].replace({"100": "$N=100$", "500": "$N=500$"})
 df["data.p_bin"] = df["data.p_bin"].replace({"50": "$p=50$", "200": "$p=200"})
 df["experiment"] = df["data.n_nodes"].astype(str) + ", " + df["data.p_bin"].astype(str)
 
@@ -127,7 +132,6 @@ grid.set_titles(
 for row, row_label in enumerate(rows.values()):
     grid.axes[row, 0].set_ylabel(row_label)
 grid.refline(x=K, linestyle="dashed", color="black")
-grid.axes[4, 0].set_yscale("log")
 grid.fig.tight_layout(w_pad=1)
 grid.fig.subplots_adjust(top=0.95)
 grid.fig.suptitle(title, y=0.98, x=grid.axes[0, 0].get_position().x0, horizontalalignment="left")

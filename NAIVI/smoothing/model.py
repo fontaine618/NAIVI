@@ -1,58 +1,88 @@
 import torch
-import numpy as np
-from NAIVI import MICE
+from collections import defaultdict
+from torchmetrics.functional import auroc, mean_squared_error
 
 
-class NetworkSmoothing(MICE):
+class NetworkSmoothing:
 
-    def __init__(self, K, N, p_cts, p_bin):
-        self.p_cts = p_cts
-        self.p_bin = p_bin
-        self.N = N
+    def __init__(self):
+        pass
 
-    def fit(self, train, test=None, max_iter=100, **kwargs):
-        # get train data
-        i0, i1, A, _, X_cts, X_bin = train[:]
-        if X_cts is None:
-            X_cts = torch.zeros((self.N, 0))
-        if X_bin is None:
-            X_bin = torch.zeros((self.N, 0))
-        # concatenate
-        X = torch.cat([X_cts, X_bin], 1).cuda()
-        missing = X.isnan()
-        X_pred = None
-        A_mat = torch.zeros((self.N, self.N), device=A.device)
-        A_mat.index_put_((i0, i1), A.flatten())
-        A_mat.index_put_((i1, i0), A.flatten())
-        n_neighbors = A_mat.sum(0).reshape((-1, 1))
-        n_neighbors = torch.where(n_neighbors==0., 1., n_neighbors)
+    def fit_and_evaluate(
+            self,
+            binary_covariates: torch.Tensor | None,
+            continuous_covariates: torch.Tensor | None,
+            binary_covariates_missing: torch.Tensor | None,
+            continuous_covariates_missing: torch.Tensor | None,
+            edges: torch.Tensor | None,
+            edge_index_left: torch.Tensor | None,
+            edge_index_right: torch.Tensor | None,
+            max_iter=100,
+            **kwargs
+    ) -> defaultdict[str, float]:
+        N = self._get_n_nodes(binary_covariates, continuous_covariates, edge_index_left, edge_index_right)
+        adj_matrix = self._compute_adj_matrix(N, edge_index_left, edge_index_right, edges)
+        n_neighbors = self._compute_n_neighbors(adj_matrix)
+        binary_proba, continuous_mean = self.fit(
+            binary_covariates=binary_covariates,
+            continuous_covariates=continuous_covariates,
+            adj_matrix=adj_matrix,
+            n_neighbors=n_neighbors,
+            max_iter=max_iter,
+        )
 
-        # predict
+        metrics = defaultdict(lambda: float("nan"))
+        if binary_covariates_missing is not None:
+            obs = binary_covariates_missing[~torch.isnan(binary_covariates_missing)].int()
+            proba = binary_proba[~torch.isnan(binary_covariates_missing)]
+            metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+        if continuous_covariates_missing is not None:
+            mean_cts = continuous_mean[~continuous_covariates_missing.isnan()]
+            value = continuous_covariates_missing[~continuous_covariates_missing.isnan()]
+            metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item() if value.numel() else float("nan")
+        return metrics
+
+    def fit(
+            self,
+            binary_covariates: torch.Tensor | None,
+            continuous_covariates: torch.Tensor | None,
+            adj_matrix: torch.Tensor,
+            n_neighbors: torch.Tensor,
+            max_iter=100,
+    ) -> tuple[torch.Tensor, torch.Tensor]:
+        binary_proba = None
+        continuous_mean = None
+        if binary_covariates is not None:
+            binary_proba = self._fit(binary_covariates, adj_matrix, n_neighbors, max_iter)
+        if continuous_covariates is not None:
+            continuous_mean = self._fit(continuous_covariates, adj_matrix, n_neighbors, max_iter)
+        return binary_proba, continuous_mean
+
+    def _fit(self, covariates, adj_matrix, n_neighbors, max_iter):
+        # start by imputing mean
+        colmeans = covariates.nanmean(0).unsqueeze(0).repeat(covariates.shape[0], 1)
+        fitted = torch.where(covariates.isnan(), colmeans, covariates)
         for epoch in range(max_iter):
-            if X_pred is None:  # initialize to mean
-                X_mean = X.nansum(0) / (~missing).sum(0)
-                X_mean = torch.vstack([X_mean for _ in range(self.N)])
-                X_pred = torch.where(missing, X_mean, X)
-            else:
-                smooth = torch.matmul(A_mat, X_pred) / n_neighbors
-                X_pred = torch.where(missing, smooth, X)
-            # split
-            X_cts_pred, X_bin_pred, _ = np.split(
-                X_pred.cpu(), indices_or_sections=[self.p_cts, self.p_cts + self.p_bin], axis=1
-            )
+            smoothed = torch.matmul(adj_matrix, fitted) / n_neighbors
+            # put true values back in
+            fitted = torch.where(covariates.isnan(), smoothed, covariates)
+        return fitted
 
-            # get test data
-            _, _, _, _, X_test_cts, X_test_bin = test[:]
-            if self.p_cts > 0:
-                X_cts_pred[np.isnan(X_test_cts) == 1.0] = np.nan
-                X_cts_pred = X_cts_pred.clone().detach()
-            if self.p_bin > 0:
-                X_bin_pred[np.isnan(X_test_bin) == 1.0] = np.nan
-                X_bin_pred = X_bin_pred.clip(0.0, 1.0)
-                X_bin_pred = X_bin_pred.clone().detach()
+    def _compute_n_neighbors(self, A_mat):
+        n_neighbors = A_mat.sum(0).reshape((-1, 1))
+        n_neighbors = torch.where(n_neighbors == 0., 1., n_neighbors)  # to avoid division by 0
+        return n_neighbors
 
-            out = self.metrics(X_test_bin, X_test_cts, X_cts_pred, X_bin_pred, epoch)
-            print(f"Iteration {epoch:<3} "
-                  f"Test MSE {out[('test', 'mse')]:<6.4f} "
-                  f"Test AUC {out[('test', 'auc')]:<6.4f}")
-        return out
+    def _compute_adj_matrix(self, N, edge_index_left, edge_index_right, edges):
+        A_mat = torch.zeros((N, N), device=edges.device)
+        A_mat.index_put_((edge_index_left, edge_index_right), edges.flatten())
+        A_mat.index_put_((edge_index_right, edge_index_left), edges.flatten())
+        return A_mat
+
+    def _get_n_nodes(self, binary_covariates, continuous_covariates, edge_index_left, edge_index_right):
+        n_nodes = max(edge_index_left.max(), edge_index_right.max()) + 1
+        if binary_covariates is not None:
+            n_nodes = max(n_nodes, binary_covariates.shape[0])
+        if continuous_covariates is not None:
+            n_nodes = max(n_nodes, continuous_covariates.shape[0])
+        return n_nodes

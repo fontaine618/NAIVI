@@ -8,13 +8,9 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 
 ## To do list
 
-[ ] Check why it is slow slow for large network (hypthesis: condition is too stringent)
-    - need to redo n_nodes on server
-    - need to make it more like the others
-[ ] Initialization
-    [ ] Use ADVI first? VMP is then just a refinement?
-    [x] I think just breaking symmetry should be fine ...
-[ ] JIT?
+[ ] Implement all former models within pypet
+
+## Backlog
 [ ] MNAR model
     - should be fairly easy
     - add an argument mnar: bool
@@ -23,11 +19,7 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     - create a binary model just like the binary covariates
     - parameter update will need a proximal step
 [ ] Multinomial model
-[ ] Implement CV
-    [ ] Implement subsetting dataset
-    [ ] CV wrapper
-    [ ] get oob llk
-[ ] Implement all former models within pypet
+
 
 
 scp simfont@greatlakes-xfer.arc-ts.umich.edu:./Documents/NAIVI/experiments/n_nodes/results.hdf5

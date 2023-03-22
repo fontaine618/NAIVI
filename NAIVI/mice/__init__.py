@@ -1,1 +1,1 @@
-from .model import MICE
+from .model import MICE, KNN

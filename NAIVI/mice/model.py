@@ -1,66 +1,75 @@
 import torch
+from collections import defaultdict
 import numpy as np
 from torchmetrics.functional import auroc, mean_squared_error
 from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
+from sklearn.impute import IterativeImputer, KNNImputer
 from sklearn.linear_model import BayesianRidge
 
 
 class MICE:
 
-    def __init__(self, K, N, p_cts, p_bin):
-        estimator = BayesianRidge()
-        self.model = IterativeImputer(
-            random_state=0, estimator=estimator, imputation_order="random", max_iter=100,
-            verbose=2, skip_complete=True, tol=0.001
-        )
+    def __init__(
+        self,
+        binary_covariates: torch.Tensor | None = None,
+        continuous_covariates: torch.Tensor | None = None,
+    ):
+        p_cts, p_bin, X = self._process_input(binary_covariates, continuous_covariates)
         self.p_cts = p_cts
         self.p_bin = p_bin
-        self.N = N
+        self.X = X
+        self.estimator = BayesianRidge()
+        self.model = IterativeImputer(
+            random_state=0, estimator=self.estimator, imputation_order="random", max_iter=100,
+            verbose=2, skip_complete=True, tol=0.001
+        )
 
-    def fit(self, train, test=None, **kwargs):
-        # get train data
-        _, _, _, _, X_cts, X_bin = train[:]
-        if X_cts is None:
-            X_cts = torch.zeros((self.N, 0))
-        if X_bin is None:
-            X_bin = torch.zeros((self.N, 0))
-        # concatenate
-        X = torch.cat([X_cts, X_bin], 1)
+    def _process_input(self, binary_covariates, continuous_covariates):
+        # n_nodes = 0
+        p_cts = 0
+        p_bin = 0
+        X = None
+        if continuous_covariates is not None:
+            # n_nodes = max(n_nodes, continuous_covariates.shape[0])
+            p_cts = continuous_covariates.shape[1]
+            if X is None:
+                X = torch.zeros((continuous_covariates.shape[0], 0))
+            X = torch.cat([X, continuous_covariates], 1)
+        if binary_covariates is not None:
+            # n_nodes = max(n_nodes, binary_covariates.shape[0])
+            p_bin = binary_covariates.shape[1]
+            if X is None:
+                X = torch.zeros((binary_covariates.shape[0], 0))
+            X = torch.cat([X, binary_covariates], 1)
+        return p_cts, p_bin, X
 
-        # predict
-        X_pred = self.model.fit_transform(X.cpu())
+    def fit_and_evaluate(
+        self,
+        binary_covariates: torch.Tensor | None = None,
+        continuous_covariates: torch.Tensor | None = None,
+    ) -> defaultdict[str, float]:
+        X_pred = self.model.fit_transform(self.X.cpu())
         X_cts_pred, X_bin_pred, _ = np.split(
             X_pred, indices_or_sections=[self.p_cts, self.p_cts + self.p_bin], axis=1
         )
+        metrics = defaultdict(lambda: float("nan"))
+        if binary_covariates is not None:
+            obs = binary_covariates[~torch.isnan(binary_covariates)].int()
+            proba = torch.Tensor(X_bin_pred)[~torch.isnan(binary_covariates)]
+            metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+        if continuous_covariates is not None:
+            mean_cts = torch.Tensor(X_cts_pred)[~continuous_covariates.isnan()]
+            value = continuous_covariates[~continuous_covariates.isnan()]
+            metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item() if value.numel() else float("nan")
+        return metrics
 
-        # get test data
-        _, _, _, _, X_test_cts, X_test_bin = test[:]
-        if self.p_cts > 0:
-            X_cts_pred[np.isnan(X_test_cts) == 1.0] = np.nan
-            X_cts_pred = torch.tensor(X_cts_pred)
-        if self.p_bin > 0:
-            X_bin_pred[np.isnan(X_test_bin) == 1.0] = np.nan
-            X_bin_pred = X_bin_pred.clip(0.0, 1.0)
-            X_bin_pred = torch.tensor(X_bin_pred)
 
-        out = self.metrics(X_test_bin, X_test_cts, X_cts_pred, X_bin_pred)
-        return out
+class KNN(MICE):
 
-    def metrics(self, X_bin, X_cts, mean_cts, proba_bin, epoch=None):
-        auroc_test, mse_test = self.prediction_metrics(
-            X_bin, X_cts, mean_cts, proba_bin
-        )
-        out = {("test", "mse"): mse_test, ("test", "auc"): auroc_test}
-        return out
-
-    def prediction_metrics(self, X_bin, X_cts, mean_cts, proba_bin):
-        mse = 0.0
-        auc = 0.0
-        if X_cts is not None:
-            which_cts = ~X_cts.isnan()
-            mse = mean_squared_error(mean_cts[which_cts], X_cts[which_cts]).item()
-        if X_bin is not None:
-            which_bin = ~X_bin.isnan()
-            auc = auroc(proba_bin[which_bin], X_bin[which_bin].int()).item()
-        return auc, mse
+    def __init__(
+        self,
+        binary_covariates: torch.Tensor | None = None,
+        continuous_covariates: torch.Tensor | None = None,
+    ):
+        super().__init__(binary_covariates, continuous_covariates)
+        self.model = KNNImputer(n_neighbors=5, weights="uniform", metric="nan_euclidean")

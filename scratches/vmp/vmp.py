@@ -26,9 +26,9 @@ NAIVI.vmp.set_check_args(0)
 
 
 N = 100
-p_bin = 20
+p_bin = 50
 p_cts = 0
-K = 5
+K = 3
 
 Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 	i0, i1, A, B, B0, C, C0, W = \
@@ -39,7 +39,7 @@ Z, alpha, X_cts, X_cts_missing, X_bin, X_bin_missing, \
 		p_bin=p_bin,
 		var_cov=1.,
 		missing_mean=0.,
-		alpha_mean=-1.5,
+		alpha_mean=-2.0,
 		seed=0,
 		mnar_sparsity=0.,
 		adjacency_noise=0.,
@@ -68,7 +68,7 @@ true_values = {
 	"X_bin_missing": X_bin_missing,
 	"A": A,
 }
-K_model = 5
+K_model = 1
 out = {}
 
 
