@@ -628,9 +628,16 @@ class VMP:
                 return metrics
             c_id = self.variables["bin_obs"].id
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
+            proba_multiclass = proba / proba.sum(dim=1, keepdim=True)
+            obs_multiclass = (value==1.).int().argmax(dim=1)
             obs = value[~torch.isnan(value)].int()
             proba = proba[~torch.isnan(value)]
             metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+            obs_rows = ~torch.isnan(value).any(dim=1)
+            metrics["X_bin_auroc_multiclass"] = auroc(
+                proba_multiclass[obs_rows, :], obs_multiclass[obs_rows].int(),
+                task="multiclass", average="weighted", num_classes=value.shape[1]
+            ).item() if obs_rows.int().sum() else float("nan")
         elif name == "X_cts_missing":
             if "cts_obs" not in self.variables:
                 return metrics
@@ -644,9 +651,16 @@ class VMP:
                 return metrics
             c_id = self.variables["bin_obs"].id
             proba = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
+            proba_multiclass = proba / proba.sum(dim=1, keepdim=True)
+            obs_multiclass = (value==1.).int().argmax(dim=1)
             obs = value[~torch.isnan(value)].int()
             proba = proba[~torch.isnan(value)]
             metrics["X_bin_missing_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+            obs_rows = ~torch.isnan(value).any(dim=1)
+            metrics["X_bin_missing_auroc_multiclass"] = auroc(
+                proba_multiclass[obs_rows, :], obs_multiclass[obs_rows].int(),
+                task="multiclass", average="weighted", num_classes=value.shape[1]
+            ).item() if obs_rows.int().sum() else float("nan")
         elif name == "A":
             if "edge" not in self.variables:
                 return metrics
@@ -666,7 +680,6 @@ class VMP:
         else:
             # could print a warning message, but that would appear every iteration ...
             pass
-        # update history
         return metrics
 
     @property

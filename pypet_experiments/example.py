@@ -39,7 +39,7 @@ traj.f_explore(cartesian_product({
     "model.heterogeneity_prior_variance": [1.],
     "model.latent_prior_mean": [0.],
     "model.latent_prior_variance": [1.],
-    "method": ["MLE"],
+    "method": ["MLE", "FA"],
     "fit.vmp.max_iter": [1000],
     "fit.vmp.rel_tol": [1e-5],
     "fit.map.lr": [0.01],
@@ -50,11 +50,6 @@ traj.f_explore(cartesian_product({
     "fit.advi.max_iter": [1000],
     "fit.advi.eps": [1e-4],
     "fit.advi.optimizer": ["Rprop"],
-    "fit.vimc.lr": [0.1],
-    "fit.vimc.max_iter": [1000],
-    "fit.vimc.eps": [1e-5],
-    "fit.vimc.optimizer": ["Adam"],
-    "fit.vimc.n_samples": [0],
 }))
 
 env.run(run)

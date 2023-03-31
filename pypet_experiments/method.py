@@ -5,6 +5,7 @@ from typing import Callable, Any
 import types
 import time
 import torch
+from torchmetrics.functional import auroc, mean_squared_error
 import gc
 
 
@@ -413,6 +414,7 @@ class Method:
                     elbo=vmp.elbo_history["sum"][-1],
                     X_cts_mse=results["X_cts_mse"],
                     X_bin_auroc=results["X_bin_auroc"],
+                    X_bin_auroc_multiclass=results["X_bin_auroc_multiclass"],
                     A_auroc=results["A_auroc"],
                     cpu_time=dt,
                     edge_density=data.edge_density,
@@ -427,6 +429,7 @@ class Method:
                 testing_metrics=dict(
                     X_cts_missing_mse=results["X_cts_missing_mse"],
                     X_bin_missing_auroc=results["X_bin_missing_auroc"],
+                    X_bin_missing_auroc_multiclass=results["X_bin_missing_auroc_multiclass"],
                     A_missing_auroc=results["A_missing_auroc"],
                     edge_density=data.missing_edge_density,
                 ),
@@ -458,6 +461,42 @@ class Method:
             )
 
         return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
+    def from_Oracle_parameters(cls, model_parameters: ParameterGroup):
+        def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
+            if "Theta_X" not in data.true_values:
+                raise ValueError("Oracle method requires true values for Theta_X")
+            theta_X = data.true_values["Theta_X"]
+            p_cts = data.continuous_covariates.shape[1]
+            p_bin = data.binary_covariates.shape[1]
+            mean_cts, logit_bin = theta_X[:, :p_cts], theta_X[:, p_cts:]
+
+            value = data.continuous_covariates_missing
+            mean_cts = mean_cts[~value.isnan()]
+            value = value[~value.isnan()]
+            X_cts_mse = mean_squared_error(mean_cts, value).item() if value.numel() else float("nan")
+
+            value = data.binary_covariates_missing
+            obs = value[~torch.isnan(value)].int()
+            proba = torch.sigmoid(logit_bin[~torch.isnan(value)])
+            X_bin_auroc = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+
+            return Results(
+                training_metrics=dict(
+                    edge_density=data.edge_density,
+                    X_missing_prop=data.covariate_missing_prop,
+                ),
+                testing_metrics=dict(
+                    X_cts_missing_mse=X_cts_mse,
+                    X_bin_missing_auroc=X_bin_auroc,
+                    edge_density=data.missing_edge_density,
+                ),
+                estimation_metrics=dict(),
+                logs=dict()
+            )
+        return cls(model_parameters=model_parameters, fit_function=fit_function)
+
 
     @classmethod
     def from_Mean_parameters(cls, model_parameters: ParameterGroup):

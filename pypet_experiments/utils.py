@@ -3,6 +3,8 @@ from pypet import Trajectory
 
 _default_data_parameters = {
     "dataset": "synthetic",
+    "facebook_center": 0,
+    "path": "",
     "n_nodes": 100,
     "p_cts": 0,
     "p_bin": 100,
@@ -15,6 +17,7 @@ _default_data_parameters = {
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
+    "missing_mechanism": "uniform",
 }
 
 _default_model_parameters = {

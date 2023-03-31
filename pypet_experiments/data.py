@@ -82,8 +82,8 @@ class Dataset:
     def from_parameters(cls, par: ParameterGroup):
         if par.dataset == "synthetic":
             return cls.synthetic(par)
-        elif par.dataset == "real":
-            return cls.real(par)
+        elif par.dataset == "facebook":
+            return cls.facebook(par)
         else:
             raise ValueError("Unknown dataset type: " + par.dataset)
 
@@ -102,8 +102,9 @@ class Dataset:
         X_cts = torch.randn(par.n_nodes, par.p_cts) * math.sqrt(par.cts_noise) + mean_cts
         X_bin = torch.sigmoid(logit_bin)
         X_bin = torch.bernoulli(X_bin)
-        M_cts = torch.rand(par.n_nodes, par.p_cts) < par.missing_covariate_rate
-        M_bin = torch.rand(par.n_nodes, par.p_bin) < par.missing_covariate_rate
+        M_bin, M_cts = _create_mask_matrices(
+            par.p_cts, par.p_bin, par.missing_covariate_rate, par.n_nodes, par.missing_mechanism
+        )
         X_cts_missing = torch.where(~M_cts, torch.full_like(X_cts, torch.nan), X_cts)
         X_bin_missing = torch.where(~M_bin, torch.full_like(X_bin, torch.nan), X_bin)
         X_cts[M_cts] = torch.nan
@@ -142,13 +143,56 @@ class Dataset:
                 X_bin_missing=X_bin_missing,
                 A=A,
                 A_missing=A_missing,
-                cts_noise=torch.full((par.p_cts, ), par.cts_noise)
+                cts_noise=torch.full((par.p_cts, ), par.cts_noise),
+                latnet_dim=par.latent_dim,
             )
         )
 
     @classmethod
-    def real(cls, par: ParameterGroup):
-        raise NotImplementedError("Real data not yet supported")
+    def facebook(cls, par: ParameterGroup):
+        from .datasets.facebook import get_data
+        center = par.facebook_center
+        path = par.path
+        i0, i1, A, X_cts, X_bin = get_data(path, center)
+        M_A = torch.rand_like(A) < par.missing_edge_rate
+        A_missing = torch.where(~M_A, torch.full_like(A, torch.nan), A)
+        A[M_A] = torch.nan
+        p_cts = X_cts.shape[1] if X_cts is not None else 0
+        p_bin = X_bin.shape[1] if X_bin is not None else 0
+        n_nodes = max(i0.max().item(), i1.max().item()) + 1
+        if X_cts is not None:
+            n_nodes = max(n_nodes, X_cts.shape[0])
+        else:
+            X_cts = torch.empty((n_nodes, 0))
+        if X_bin is not None:
+            n_nodes = max(n_nodes, X_bin.shape[0])
+        else:
+            X_bin = torch.empty((n_nodes, 0))
+        M_bin, M_cts = _create_mask_matrices(
+            p_cts, p_bin, par.missing_covariate_rate, n_nodes, par.missing_mechanism
+        )
+        X_cts_missing = torch.where(~M_cts, torch.full_like(X_cts, torch.nan), X_cts)
+        X_cts[M_cts] = torch.nan
+        X_bin_missing = torch.where(~M_bin, torch.full_like(X_bin, torch.nan), X_bin)
+        X_bin[M_bin] = torch.nan
+        return cls(
+            edge_index_left=i0,
+            edge_index_right=i1,
+            edges=A,
+            binary_covariates=X_bin,
+            continuous_covariates=X_cts,
+            edges_missing=A_missing,
+            binary_covariates_missing=X_bin_missing,
+            continuous_covariates_missing=X_cts_missing,
+            true_values=dict(
+                A=A,
+                A_missing=A_missing,
+                X_cts=X_cts,
+                X_bin=X_bin,
+                X_cts_missing=X_cts_missing,
+                X_bin_missing=X_bin_missing,
+            )
+        )
 
     @property
     def edge_density(self) -> float:
@@ -194,5 +238,30 @@ class Dataset:
         )
 
 
-
+def _create_mask_matrices(p_cts, p_bin, missing_covariate_rate, n_nodes, missing_mechanism):
+    p = p_cts + p_bin
+    if missing_mechanism == "uniform":
+        M_cts = torch.rand(n_nodes, p_cts) < missing_covariate_rate
+        M_bin = torch.rand(n_nodes, p_bin) < missing_covariate_rate
+    elif missing_mechanism == "row_deletion":
+        M_cts = torch.rand(n_nodes, 1) < missing_covariate_rate
+        M_bin = torch.rand(n_nodes, 1) < missing_covariate_rate
+        M_cts = M_cts.repeat(1, p_cts)
+        M_bin = M_bin.repeat(1, p_bin)
+    elif missing_mechanism == "block":
+        sqrt_rate = math.sqrt(missing_covariate_rate)
+        rows = torch.rand(n_nodes, 1) < sqrt_rate
+        cols_cts = torch.rand(1, p_cts) < sqrt_rate
+        cols_bin = torch.rand(1, p_bin) < sqrt_rate
+        M_cts = rows.repeat(1, p_cts) & cols_cts.repeat(n_nodes, 1)
+        M_bin = rows.repeat(1, p_bin) & cols_bin.repeat(n_nodes, 1)
+    elif missing_mechanism == "triangle":
+        missing_props = torch.linspace(p / 3, p + p / 3, p)
+        missing_props = p * missing_covariate_rate * missing_props / missing_props.sum()
+        missing_props = missing_props[torch.randperm(p)].reshape(1, p).repeat(n_nodes, 1)
+        M_cts = torch.rand(n_nodes, p_cts) < missing_props[:, :p_cts]
+        M_bin = torch.rand(n_nodes, p_bin) < missing_props[:, p_cts:]
+    else:
+        raise ValueError("Unknown missing mechanism: " + missing_mechanism)
+    return M_bin, M_cts
 
