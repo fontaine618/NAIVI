@@ -8,7 +8,12 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 
 ## To do list
 
-[ ] Implement all former models within pypet
+[x] Implement all former models within pypet
+[x] multiclass metrics
+[ ] fix multicalss metrics
+[ ] implement new missing vales using seed nodes for multiclass
+[ ] make sure all methods work (MICE)
+[ ] run experiments
 
 ## Backlog
 [ ] MNAR model

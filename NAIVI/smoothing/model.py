@@ -34,8 +34,15 @@ class NetworkSmoothing:
         metrics = defaultdict(lambda: float("nan"))
         if binary_covariates_missing is not None:
             obs = binary_covariates_missing[~torch.isnan(binary_covariates_missing)].int()
-            proba = binary_proba[~torch.isnan(binary_covariates_missing)]
-            metrics["X_bin_auroc"] = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+            proba_obs = binary_proba[~torch.isnan(binary_covariates_missing)]
+            metrics["X_bin_auroc"] = auroc(proba_obs, obs, "binary").item() if obs.numel() else float("nan")
+            proba_multiclass = binary_proba / binary_proba.sum(1, keepdim=True)
+            obs_multiclass = (binary_covariates_missing==1.).int().argmax(dim=1)
+            obs_rows = ~torch.isnan(binary_covariates_missing).any(dim=1)
+            metrics["X_bin_auroc_multiclass"] = auroc(
+                proba_multiclass[obs_rows, :], obs_multiclass[obs_rows].int(),
+                task="multiclass", average="weighted", num_classes=binary_covariates.shape[1]
+            ).item() if obs_rows.int().sum() else float("nan")
         if continuous_covariates_missing is not None:
             mean_cts = continuous_mean[~continuous_covariates_missing.isnan()]
             value = continuous_covariates_missing[~continuous_covariates_missing.isnan()]

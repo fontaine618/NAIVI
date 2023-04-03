@@ -1,5 +1,6 @@
 from .results import Results
 from .data import Dataset
+from .method_output import MethodOutput
 from pypet import ParameterGroup
 from typing import Callable, Any
 import types
@@ -108,6 +109,7 @@ class Method:
                     log_likelihood=-out[("train", "loss")],
                     X_cts_mse=out[("train", "mse")],
                     X_bin_auroc=out[("train", "auc")],
+                    X_bin_auroc_multiclass=out[("train", "auc_multiclass")],
                     A_auroc=out[("train", "auc_A")],
                     cpu_time=dt,
                     edge_density=data.edge_density,
@@ -116,6 +118,7 @@ class Method:
                 testing_metrics=dict(
                     X_cts_missing_mse=out[("test", "mse")],
                     X_bin_missing_auroc=out[("test", "auc")],
+                    X_bin_missing_auroc_multiclass=out[("test", "auc_multiclass")],
                     A_missing_auroc=out[("test", "auc_A")],
                     edge_density=data.missing_edge_density,
                 ),
@@ -213,6 +216,7 @@ class Method:
                     log_likelihood=-out[("train", "loss")],
                     X_cts_mse=out[("train", "mse")],
                     X_bin_auroc=out[("train", "auc")],
+                    X_bin_auroc_multiclass=out[("train", "auc_multiclass")],
                     A_auroc=out[("train", "auc_A")],
                     cpu_time=dt,
                     edge_density=data.edge_density,
@@ -221,6 +225,7 @@ class Method:
                 testing_metrics=dict(
                     X_cts_missing_mse=out[("test", "mse")],
                     X_bin_missing_auroc=out[("test", "auc")],
+                    X_bin_missing_auroc_multiclass=out[("test", "auc_multiclass")],
                     A_missing_auroc=out[("test", "auc_A")],
                     edge_density=data.missing_edge_density,
                 ),
@@ -318,6 +323,7 @@ class Method:
                     log_likelihood=-out[("train", "loss")],
                     X_cts_mse=out[("train", "mse")],
                     X_bin_auroc=out[("train", "auc")],
+                    X_bin_auroc_multiclass=out[("train", "auc_multiclass")],
                     A_auroc=out[("train", "auc_A")],
                     cpu_time=dt,
                     edge_density=data.edge_density,
@@ -326,6 +332,7 @@ class Method:
                 testing_metrics=dict(
                     X_cts_missing_mse=out[("test", "mse")],
                     X_bin_missing_auroc=out[("test", "auc")],
+                    X_bin_missing_auroc_multiclass=out[("test", "auc_multiclass")],
                     A_missing_auroc=out[("test", "auc_A")],
                     edge_density=data.missing_edge_density,
                 ),
@@ -520,6 +527,7 @@ class Method:
                 training_metrics=dict(
                     X_cts_mse=train_results["X_cts_mse"],
                     X_bin_auroc=train_results["X_bin_auroc"],
+                    X_bin_auroc_multiclass=train_results["X_bin_auroc_multiclass"],
                     cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
@@ -527,6 +535,7 @@ class Method:
                 testing_metrics=dict(
                     X_cts_missing_mse=test_results["X_cts_mse"],
                     X_bin_missing_auroc=test_results["X_bin_auroc"],
+                    X_bin_missing_auroc_multiclass=test_results["X_bin_auroc_multiclass"],
                     edge_density=data.missing_edge_density,
                 ),
                 estimation_metrics=dict(),
@@ -559,6 +568,7 @@ class Method:
                 testing_metrics=dict(
                     X_cts_missing_mse=test_results["X_cts_mse"],
                     X_bin_missing_auroc=test_results["X_bin_auroc"],
+                    X_bin_missing_auroc_multiclass=test_results["X_bin_auroc_multiclass"],
                     edge_density=data.missing_edge_density,
                 ),
                 estimation_metrics=dict(),

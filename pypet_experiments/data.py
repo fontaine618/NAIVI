@@ -1,3 +1,5 @@
+import pandas as pd
+import numpy as np
 import torch
 import os
 import math
@@ -84,6 +86,10 @@ class Dataset:
             return cls.synthetic(par)
         elif par.dataset == "facebook":
             return cls.facebook(par)
+        elif par.dataset == "email":
+            return cls.email(par)
+        elif par.dataset == "cora":
+            return cls.cora(par)
         else:
             raise ValueError("Unknown dataset type: " + par.dataset)
 
@@ -149,11 +155,128 @@ class Dataset:
         )
 
     @classmethod
+    def cora(cls, par: ParameterGroup):
+        path_edges = par.path + "/cora.cites"
+        path_attributes = par.path + "/cora.content"
+        edges = pd.read_table(path_edges, header=None, sep="\t")
+        attributes = pd.read_table(path_attributes, header=None, sep="\t")
+        attributes.set_index(0, inplace=True)
+        word_pa = attributes.iloc[:, :-1]
+        labels = attributes.iloc[:, -1]
+        label_subset = labels.value_counts().index[-4:]
+        which = labels.isin(label_subset)
+        word_pa = word_pa[which]
+        labels = labels[which]
+        labels = pd.get_dummies(labels)
+        articles = word_pa.index
+        # subset edges
+        edges = edges[edges[0].isin(articles) & edges[1].isin(articles)]
+        # create node index
+        node_index = pd.Series(np.arange(len(articles)), index=articles)
+        edges = edges.replace(node_index)
+        edges = edges.values
+        labels.index = node_index
+        n_nodes = labels.shape[0]
+        i0, i1 = torch.tril_indices(n_nodes, n_nodes, offset=-1)
+        A = torch.zeros(n_nodes, n_nodes)
+        A[edges[:, 0], edges[:, 1]] = 1
+        A[edges[:, 1], edges[:, 0]] = 1
+        A = A[i0, i1].reshape(-1, 1)
+        X = torch.tensor(word_pa.values, dtype=torch.float)
+        keep = X.sum(0).gt(5.)
+        X = X[:, keep]
+        y = torch.tensor(labels.values, dtype=torch.float)
+        torch.manual_seed(par.seed)
+        M_A = torch.rand_like(A) < par.missing_edge_rate
+        A_missing = torch.where(~M_A, torch.full_like(A, torch.nan), A)
+        A[M_A] = torch.nan
+        M_labels = torch.rand(n_nodes) < par.missing_covariate_rate
+        M_labels_wide = M_labels.unsqueeze(1).repeat(1, y.shape[1])
+        y_missing = torch.where(~M_labels_wide, torch.full_like(y, torch.nan), y)
+        y[M_labels, :] = torch.nan
+        X_bin = torch.cat([X, y], dim=1)
+        X_bin_missing = torch.cat([X * torch.nan, y_missing], dim=1)
+        X_cts = torch.empty(n_nodes, 0)
+        X_cts_missing = torch.empty(n_nodes, 0)
+        return cls(
+            edge_index_left=i0,
+            edge_index_right=i1,
+            edges=A,
+            binary_covariates=X_bin,
+            continuous_covariates=X_cts,
+            edges_missing=A_missing,
+            binary_covariates_missing=X_bin_missing,
+            continuous_covariates_missing=X_cts_missing,
+            true_values=dict(
+                P=torch.sigmoid(A),
+                X_bin=X_bin,
+                X_cts=X_cts,
+                X_bin_missing=X_bin_missing,
+                X_cts_missing=X_cts_missing,
+                A=A,
+                A_missing=A_missing,
+            )
+        )
+
+
+
+
+
+
+    @classmethod
+    def email(cls, par: ParameterGroup):
+        path_edges = par.path + "/edges.txt"
+        path_labels = par.path + "/dpt_labels.txt"
+        edges = pd.read_table(path_edges, header=None, sep=" ").values
+        labels = pd.read_table(path_labels, header=None, sep=" ").values
+        n_nodes = labels[:, 0].max() + 1
+        n_nodes = max(n_nodes, edges.max() + 1)
+        i0, i1 = torch.tril_indices(n_nodes, n_nodes, offset=-1)
+        A = torch.zeros(n_nodes, n_nodes)
+        A[edges[:, 0], edges[:, 1]] = 1
+        A[edges[:, 1], edges[:, 0]] = 1
+        A = A[i0, i1].reshape(-1, 1)
+        torch.manual_seed(par.seed)
+        M_A = torch.rand_like(A) < par.missing_edge_rate
+        A_missing = torch.where(~M_A, torch.full_like(A, torch.nan), A)
+        A[M_A] = torch.nan
+        p_bin = labels[:, 1].max() + 1
+        X_bin = torch.zeros(n_nodes, p_bin)
+        X_bin[labels[:, 0], labels[:, 1]] = 1
+        M_bin, M_cts = _create_mask_matrices(
+            0, p_bin, par.missing_covariate_rate, n_nodes, par.missing_mechanism
+        )
+        X_bin_missing = torch.where(~M_bin, torch.full_like(X_bin, torch.nan), X_bin)
+        X_bin[M_bin] = torch.nan
+        X_cts = torch.zeros(n_nodes, 0)
+        X_cts_missing = torch.zeros(n_nodes, 0)
+        return cls(
+            edge_index_left=i0,
+            edge_index_right=i1,
+            edges=A,
+            edges_missing=A_missing,
+            binary_covariates=X_bin,
+            binary_covariates_missing=X_bin_missing,
+            continuous_covariates=X_cts,
+            continuous_covariates_missing=X_cts_missing,
+            true_values=dict(
+                A=A,
+                A_missing=A_missing,
+                X_bin=X_bin,
+                X_bin_missing=X_bin_missing,
+                X_cts=X_cts,
+                X_cts_missing=X_cts_missing
+            )
+        )
+
+
+    @classmethod
     def facebook(cls, par: ParameterGroup):
         from .datasets.facebook import get_data
         center = par.facebook_center
         path = par.path
         i0, i1, A, X_cts, X_bin = get_data(path, center)
+        torch.manual_seed(par.seed)
         M_A = torch.rand_like(A) < par.missing_edge_rate
         A_missing = torch.where(~M_A, torch.full_like(A, torch.nan), A)
         A[M_A] = torch.nan
@@ -178,19 +301,19 @@ class Dataset:
         return cls(
             edge_index_left=i0,
             edge_index_right=i1,
-            edges=A,
-            binary_covariates=X_bin,
-            continuous_covariates=X_cts,
-            edges_missing=A_missing,
-            binary_covariates_missing=X_bin_missing,
-            continuous_covariates_missing=X_cts_missing,
+            edges=A.float(),
+            binary_covariates=X_bin.float(),
+            continuous_covariates=X_cts.float(),
+            edges_missing=A_missing.float(),
+            binary_covariates_missing=X_bin_missing.float(),
+            continuous_covariates_missing=X_cts_missing.float(),
             true_values=dict(
-                A=A,
-                A_missing=A_missing,
-                X_cts=X_cts,
-                X_bin=X_bin,
-                X_cts_missing=X_cts_missing,
-                X_bin_missing=X_bin_missing,
+                A=A.float(),
+                A_missing=A_missing.float(),
+                X_cts=X_cts.float(),
+                X_bin=X_bin.float(),
+                X_cts_missing=X_cts_missing.float(),
+                X_bin_missing=X_bin_missing.float(),
             )
         )
 

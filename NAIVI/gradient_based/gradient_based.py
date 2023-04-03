@@ -45,10 +45,15 @@ class GradientBased:
         n_char = verbose_init() if verbose else 0
         epoch, out = 0, None
         outcols = [("train", "grad_Linfty"), ("train", "grad_L2"), ("train", "grad_L1"),
-                   ("train", "loss"), ("train", "mse"), ("train", "auc"), ("train", "auc_A"),
+                   ("train", "loss"), ("train", "mse"),
+                   ("train", "auc"), ("train", "auc_multiclass"),
+                   ("train", "auc_A"),
                    ("ic", "aic"), ("ic", "bic")]
         if test is not None:
-            outcols += [("test", "loss"), ("test", "mse"), ("test", "auc"), ("test", "auc_A")]
+            outcols += [
+                ("test", "loss"), ("test", "mse"),
+                ("test", "auc"), ("test", "auc_multiclass"), ("test", "auc_A")
+            ]
         if return_log:
             outcols += [("error", k) for k in true_values.keys()]
             logs = {k: [] for k in outcols}
@@ -122,15 +127,16 @@ class GradientBased:
             out[("train", "grad_L2")] = grad_norms["L2"]
             # training metrics
             out[("train", "loss")], out[("train", "mse")], \
-            out[("train", "auc")], out[("train", "auc_A")] = \
+            out[("train", "auc")], out[("train", "auc_multiclass")], out[("train", "auc_A")] = \
                 self.evaluate(train)
             # testing metrics
             if test is not None:
                 out[("test", "loss")], out[("test", "mse")], \
-                out[("test", "auc")], out[("test", "auc_A")] = self.evaluate(test)
+                out[("test", "auc")],  out[("test", "auc_multiclass")], out[("test", "auc_A")] = self.evaluate(test)
             else:
                 out[("test", "loss")], out[("test", "mse")], \
-                out[("test", "auc")], out[("test", "auc_A")] = 0., 0., 0., 0.
+                out[("test", "auc")],  out[("test", "auc_multiclass")], \
+                    out[("test", "auc_A")] = 0., 0., 0., 0., 0.
             # estimation error
             with torch.no_grad():
                 for k, v in true_values.items():
@@ -228,6 +234,7 @@ class GradientBased:
     def prediction_metrics(X_bin=None, X_cts=None, A=None, mean_cts=None, proba_bin=None, proba_adj=None):
         mse = 0.
         auc = 0.
+        auc_mc = 0.
         auc_A = 0.
         if A is not None:
             auc_A = auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().flatten(), task="binary").item()
@@ -237,8 +244,22 @@ class GradientBased:
         if X_bin is not None:
             which_bin = ~X_bin.isnan()
             if which_bin.sum() > 0.:
-                auc = auroc(proba_bin[which_bin].clamp_(0., 1.), X_bin.int()[which_bin], task="binary").item()
-        return auc, mse, auc_A
+                auc = auroc(
+                    proba_bin[which_bin].clamp_(0., 1.),
+                    X_bin.int()[which_bin],
+                    task="binary"
+                ).item()
+            which_rows = which_bin.sum(dim=1) > 0
+            if which_rows.sum() > 0.:
+                proba_multiclass = proba_bin / proba_bin.sum(dim=1, keepdim=True)
+                obs_multiclass = (X_bin == 1.).int().argmax(dim=1)
+                auc_mc = auroc(
+                    proba_multiclass[which_rows, :],
+                    obs_multiclass[which_rows].int(),
+                    task="multiclass", average="weighted",
+                    num_classes=proba_multiclass.shape[1]
+                ).item()
+        return auc, auc_mc, mse, auc_A
 
     def batch_update(self, batch, optimizer, train, epoch):
         A, X_bin, X_cts, i0, i1, j = self.get_batch(train, batch)
@@ -292,8 +313,8 @@ class GradientBased:
             llk, mean_cts, proba_bin, proba_adj = self.model.loss_and_fitted_values(i0, i1, j, X_cts, X_bin, A)
             # llk += self.reg_B * (self.covariate_weight ** 2).nansum()
             # llk /= self.denum
-            auc, mse, auc_A = self.prediction_metrics(X_bin, X_cts, A, mean_cts, proba_bin, proba_adj)
-        return llk.item(), mse, auc, auc_A
+            auc, auc_mc, mse, auc_A = self.prediction_metrics(X_bin, X_cts, A, mean_cts, proba_bin, proba_adj)
+        return llk.item(), mse, auc, auc_mc, auc_A
 
     def check_convergence(self, tol):
         with torch.no_grad():

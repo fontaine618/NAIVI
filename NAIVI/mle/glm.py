@@ -85,8 +85,8 @@ class GLM(GradientBased):
             # get fitted values
             llk, mean_cts, proba_bin = self.model.loss_and_fitted_values(latent_positions, X_cts, X_bin)
             llk /= self.denum
-            auc, mse, _ = self.prediction_metrics(X_bin, X_cts, None, mean_cts, proba_bin, None)
-        return llk.item(), mse, auc, 0.
+            auc, auc_mc, mse, _ = self.prediction_metrics(X_bin, X_cts, None, mean_cts, proba_bin, None)
+        return llk.item(), mse, auc, auc_mc, 0.
 
     def compute_Theta_A(self, i0, i1):
         pass
