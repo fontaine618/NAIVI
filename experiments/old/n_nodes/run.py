@@ -8,7 +8,7 @@ from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
 
 seed = sys.argv[1]
-os.makedirs(f"./results/", exist_ok=True)
+os.makedirs(f"results/", exist_ok=True)
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 env = Environment(

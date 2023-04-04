@@ -1,9 +1,13 @@
+import numpy as np
+import torch
 import sys
-sys.path.insert(1, '/home/simon/Documents/NAIVI/')
+import os
+sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
 from pypet_experiments.gather import gather_results_to_DataFrame, gather_parameters_to_DataFrame
+
 
 
 env = Environment(

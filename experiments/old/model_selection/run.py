@@ -11,7 +11,7 @@ from pypet_experiments.utils import add_parameters
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn')
     seed = sys.argv[1]
-    os.makedirs(f"./results/", exist_ok=True)
+    os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
         trajectory="model_selection",
