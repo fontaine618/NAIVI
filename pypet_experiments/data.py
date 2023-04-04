@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import torch
-import os
 import math
 from pypet import ParameterGroup
 from NAIVI.utils.data import JointDataset
@@ -291,7 +290,7 @@ class Dataset:
 
     @classmethod
     def facebook(cls, par: ParameterGroup):
-        from .datasets.facebook import get_data
+        from pypet_experiments.facebook import get_data
         center = par.facebook_center
         path = par.path
         i0, i1, A, X_cts, X_bin = get_data(path, center)

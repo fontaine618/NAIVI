@@ -65,7 +65,7 @@ class Metrics:
         if self.model_output.pred_continuous_covariates is not None and \
                 self.dataset.continuous_covariates is not None:
             self._metrics["training"]["mse_continuous"] = nanmse(
-                self.model_output.pred_binary_covariates,
+                self.model_output.pred_continuous_covariates,
                 self.dataset.continuous_covariates
             )
         if self.model_output.pred_binary_covariates is not None and \
@@ -104,7 +104,7 @@ class Metrics:
         if self.model_output.pred_continuous_covariates is not None and \
                 self.dataset.continuous_covariates_missing is not None:
             self._metrics["testing"]["mse_continuous"] = nanmse(
-                self.model_output.pred_binary_covariates,
+                self.model_output.pred_continuous_covariates,
                 self.dataset.continuous_covariates_missing
             )
         if self.model_output.pred_binary_covariates is not None and \
