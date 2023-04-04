@@ -13,6 +13,7 @@ class MICE:
         self,
         binary_covariates: torch.Tensor | None = None,
         continuous_covariates: torch.Tensor | None = None,
+        max_iter: int = 100,
     ):
         p_cts, p_bin, X = self._process_input(binary_covariates, continuous_covariates)
         self.p_cts = p_cts
@@ -20,7 +21,7 @@ class MICE:
         self.X = X
         self.estimator = BayesianRidge()
         self.model = IterativeImputer(
-            random_state=0, estimator=self.estimator, imputation_order="random", max_iter=100,
+            random_state=0, estimator=self.estimator, imputation_order="random", max_iter=max_iter,
             verbose=2, skip_complete=True, tol=0.001
         )
 
@@ -63,6 +64,13 @@ class MICE:
             metrics["X_cts_mse"] = mean_squared_error(mean_cts, value).item() if value.numel() else float("nan")
         return metrics
 
+    def fit_transform(self) -> tuple[torch.Tensor, torch.Tensor]:
+        X_pred = self.model.fit_transform(self.X.cpu())
+        X_cts_pred, X_bin_pred, _ = np.split(
+            X_pred, indices_or_sections=[self.p_cts, self.p_cts + self.p_bin], axis=1
+        )
+        return torch.Tensor(X_bin_pred), torch.Tensor(X_cts_pred)
+
 
 class KNN(MICE):
 
@@ -70,6 +78,7 @@ class KNN(MICE):
         self,
         binary_covariates: torch.Tensor | None = None,
         continuous_covariates: torch.Tensor | None = None,
+        n_neighbors: int = 5,
     ):
         super().__init__(binary_covariates, continuous_covariates)
-        self.model = KNNImputer(n_neighbors=5, weights="uniform", metric="nan_euclidean")
+        self.model = KNNImputer(n_neighbors=n_neighbors, weights="uniform", metric="nan_euclidean")

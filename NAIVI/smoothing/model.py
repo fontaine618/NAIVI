@@ -53,10 +53,17 @@ class NetworkSmoothing:
             self,
             binary_covariates: torch.Tensor | None,
             continuous_covariates: torch.Tensor | None,
-            adj_matrix: torch.Tensor,
-            n_neighbors: torch.Tensor,
+            edges: torch.Tensor | None = None,
+            edge_index_left: torch.Tensor | None = None,
+            edge_index_right: torch.Tensor | None = None,
+            adj_matrix: torch.Tensor | None = None,
+            n_neighbors: torch.Tensor | None = None,
             max_iter=100,
     ) -> tuple[torch.Tensor, torch.Tensor]:
+        if edges is not None:
+            N = self._get_n_nodes(binary_covariates, continuous_covariates, edge_index_left, edge_index_right)
+            adj_matrix = self._compute_adj_matrix(N, edge_index_left, edge_index_right, edges)
+            n_neighbors = self._compute_n_neighbors(adj_matrix)
         binary_proba = None
         continuous_mean = None
         if binary_covariates is not None:

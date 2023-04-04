@@ -1,6 +1,7 @@
 from .results import Results
 from .data import Dataset
 from .method_output import MethodOutput
+from .metrics import Metrics
 from pypet import ParameterGroup
 from typing import Callable, Any
 import types
@@ -102,47 +103,23 @@ class Method:
             init = initialize(train, self.model_parameters["latent_dim"])
             model.init(**init)
             out, logs = model.fit(**fit_parameters_dict)
-            results = model.results(data.true_values)
+            model_output = MethodOutput(**model.output(train))
+            metrics = Metrics(model_output, data).metrics
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
                     log_likelihood=-out[("train", "loss")],
-                    X_cts_mse=out[("train", "mse")],
-                    X_bin_auroc=out[("train", "auc")],
-                    X_bin_auroc_multiclass=out[("train", "auc_multiclass")],
-                    A_auroc=out[("train", "auc_A")],
                     cpu_time=dt,
                     edge_density=data.edge_density,
-                    X_missing_prop=data.covariate_missing_prop
+                    X_missing_prop=data.covariate_missing_prop,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=out[("test", "mse")],
-                    X_bin_missing_auroc=out[("test", "auc")],
-                    X_bin_missing_auroc_multiclass=out[("test", "auc_multiclass")],
-                    A_missing_auroc=out[("test", "auc_A")],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(
-                    heteregeneity_l2=results["heteregeneity_l2"],
-                    heteregeneity_l2_rel=results["heterogeneity_l2_rel"],
-                    latent_ZZt_fro=results["latent_ZZt_fro"],
-                    latent_ZZt_fro_rel=results["latent_ZZt_fro_rel"],
-                    latent_Proj_fro=results["latent_Proj_fro"],
-                    latent_Proj_fro_rel=results["latent_Proj_fro_rel"],
-                    bias_l2=results["bias_l2"],
-                    bias_l2_rel=results["bias_l2_rel"],
-                    weights_BBt_fro=results["weights_BBt_fro"],
-                    weights_BBt_fro_rel=results["weights_BBt_fro_rel"],
-                    weights_Proj_fro=results["weights_Proj_fro"],
-                    weights_Proj_fro_rel=results["weights_Proj_fro_rel"],
-                    cts_noise_l2=results["cts_noise_l2"],
-                    cts_noise_sqrt_l2=results["cts_noise_sqrt_l2"],
-                    cts_noise_log_l2=results["cts_noise_log_l2"],
-                    Theta_X_l2=results["Theta_X_l2"],
-                    Theta_X_l2_rel=results["Theta_X_l2_rel"],
-                    Theta_A_l2=results["Theta_A_l2"],
-                    Theta_A_l2_rel=results["Theta_A_l2_rel"],
-                    P_l2=results["P_l2"],
+                    **metrics["estimation"]
                 ),
                 logs=dict(
                     llk_history=logs[("train", "loss")]
@@ -209,47 +186,23 @@ class Method:
             init = initialize(train, self.model_parameters["latent_dim"])
             model.init(**init)
             out, logs = model.fit(**fit_parameters_dict)
-            results = model.results(data.true_values)
+            model_output = MethodOutput(**model.output(train))
+            metrics = Metrics(model_output, data).metrics
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
                     log_likelihood=-out[("train", "loss")],
-                    X_cts_mse=out[("train", "mse")],
-                    X_bin_auroc=out[("train", "auc")],
-                    X_bin_auroc_multiclass=out[("train", "auc_multiclass")],
-                    A_auroc=out[("train", "auc_A")],
                     cpu_time=dt,
                     edge_density=data.edge_density,
-                    X_missing_prop=data.covariate_missing_prop
+                    X_missing_prop=data.covariate_missing_prop,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=out[("test", "mse")],
-                    X_bin_missing_auroc=out[("test", "auc")],
-                    X_bin_missing_auroc_multiclass=out[("test", "auc_multiclass")],
-                    A_missing_auroc=out[("test", "auc_A")],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(
-                    heteregeneity_l2=results["heteregeneity_l2"],
-                    heteregeneity_l2_rel=results["heterogeneity_l2_rel"],
-                    latent_ZZt_fro=results["latent_ZZt_fro"],
-                    latent_ZZt_fro_rel=results["latent_ZZt_fro_rel"],
-                    latent_Proj_fro=results["latent_Proj_fro"],
-                    latent_Proj_fro_rel=results["latent_Proj_fro_rel"],
-                    bias_l2=results["bias_l2"],
-                    bias_l2_rel=results["bias_l2_rel"],
-                    weights_BBt_fro=results["weights_BBt_fro"],
-                    weights_BBt_fro_rel=results["weights_BBt_fro_rel"],
-                    weights_Proj_fro=results["weights_Proj_fro"],
-                    weights_Proj_fro_rel=results["weights_Proj_fro_rel"],
-                    cts_noise_l2=results["cts_noise_l2"],
-                    cts_noise_sqrt_l2=results["cts_noise_sqrt_l2"],
-                    cts_noise_log_l2=results["cts_noise_log_l2"],
-                    Theta_X_l2=results["Theta_X_l2"],
-                    Theta_X_l2_rel=results["Theta_X_l2_rel"],
-                    Theta_A_l2=results["Theta_A_l2"],
-                    Theta_A_l2_rel=results["Theta_A_l2_rel"],
-                    P_l2=results["P_l2"],
+                    **metrics["estimation"]
                 ),
                 logs=dict(
                     llk_history=logs[("train", "loss")]
@@ -316,47 +269,23 @@ class Method:
             init = initialize(train, self.model_parameters["latent_dim"])
             model.init(**init)
             out, logs = model.fit(**fit_parameters_dict)
-            results = model.results(data.true_values)
+            model_output = MethodOutput(**model.output(train))
+            metrics = Metrics(model_output, data).metrics
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
                     log_likelihood=-out[("train", "loss")],
-                    X_cts_mse=out[("train", "mse")],
-                    X_bin_auroc=out[("train", "auc")],
-                    X_bin_auroc_multiclass=out[("train", "auc_multiclass")],
-                    A_auroc=out[("train", "auc_A")],
                     cpu_time=dt,
                     edge_density=data.edge_density,
-                    X_missing_prop=data.covariate_missing_prop
+                    X_missing_prop=data.covariate_missing_prop,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=out[("test", "mse")],
-                    X_bin_missing_auroc=out[("test", "auc")],
-                    X_bin_missing_auroc_multiclass=out[("test", "auc_multiclass")],
-                    A_missing_auroc=out[("test", "auc_A")],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(
-                    heteregeneity_l2=results["heteregeneity_l2"],
-                    heteregeneity_l2_rel=results["heterogeneity_l2_rel"],
-                    latent_ZZt_fro=results["latent_ZZt_fro"],
-                    latent_ZZt_fro_rel=results["latent_ZZt_fro_rel"],
-                    latent_Proj_fro=results["latent_Proj_fro"],
-                    latent_Proj_fro_rel=results["latent_Proj_fro_rel"],
-                    bias_l2=results["bias_l2"],
-                    bias_l2_rel=results["bias_l2_rel"],
-                    weights_BBt_fro=results["weights_BBt_fro"],
-                    weights_BBt_fro_rel=results["weights_BBt_fro_rel"],
-                    weights_Proj_fro=results["weights_Proj_fro"],
-                    weights_Proj_fro_rel=results["weights_Proj_fro_rel"],
-                    cts_noise_l2=results["cts_noise_l2"],
-                    cts_noise_sqrt_l2=results["cts_noise_sqrt_l2"],
-                    cts_noise_log_l2=results["cts_noise_log_l2"],
-                    Theta_X_l2=results["Theta_X_l2"],
-                    Theta_X_l2_rel=results["Theta_X_l2_rel"],
-                    Theta_A_l2=results["Theta_A_l2"],
-                    Theta_A_l2_rel=results["Theta_A_l2_rel"],
-                    P_l2=results["P_l2"],
+                    **metrics["estimation"]
                 ),
                 logs=dict(
                     llk_history=logs[("train", "loss")]
@@ -414,15 +343,12 @@ class Method:
                 edge_index_right=data.edge_index_right,
             )
             vmp.fit(**fit_parameters_dict)
+            model_output = MethodOutput(**vmp.output())
+            metrics = Metrics(model_output, data).metrics
             dt = time.time() - t0
-            results = vmp.evaluate(data.true_values)
             return Results(
                 training_metrics=dict(
                     elbo=vmp.elbo_history["sum"][-1],
-                    X_cts_mse=results["X_cts_mse"],
-                    X_bin_auroc=results["X_bin_auroc"],
-                    X_bin_auroc_multiclass=results["X_bin_auroc_multiclass"],
-                    A_auroc=results["A_auroc"],
                     cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
@@ -432,41 +358,19 @@ class Method:
                     weights_entropy=vmp.weights_entropy,
                     cv_covariate_elbo=covariate_elbo if cv_folds > 1 else 0.,
                     cv_covariate_log_likelihood=covariate_log_likelihood if cv_folds > 1 else 0.,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=results["X_cts_missing_mse"],
-                    X_bin_missing_auroc=results["X_bin_missing_auroc"],
-                    X_bin_missing_auroc_multiclass=results["X_bin_missing_auroc_multiclass"],
-                    A_missing_auroc=results["A_missing_auroc"],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(
-                    heteregeneity_l2=results["heteregeneity_l2"],
-                    heteregeneity_l2_rel=results["heterogeneity_l2_rel"],
-                    latent_ZZt_fro=results["latent_ZZt_fro"],
-                    latent_ZZt_fro_rel=results["latent_ZZt_fro_rel"],
-                    latent_Proj_fro=results["latent_Proj_fro"],
-                    latent_Proj_fro_rel=results["latent_Proj_fro_rel"],
-                    bias_l2=results["bias_l2"],
-                    bias_l2_rel=results["bias_l2_rel"],
-                    weights_BBt_fro=results["weights_BBt_fro"],
-                    weights_BBt_fro_rel=results["weights_BBt_fro_rel"],
-                    weights_Proj_fro=results["weights_Proj_fro"],
-                    weights_Proj_fro_rel=results["weights_Proj_fro_rel"],
-                    cts_noise_l2=results["cts_noise_l2"],
-                    cts_noise_sqrt_l2=results["cts_noise_sqrt_l2"],
-                    cts_noise_log_l2=results["cts_noise_log_l2"],
-                    Theta_X_l2=results["Theta_X_l2"],
-                    Theta_X_l2_rel=results["Theta_X_l2_rel"],
-                    Theta_A_l2=results["Theta_A_l2"],
-                    Theta_A_l2_rel=results["Theta_A_l2_rel"],
-                    P_l2=results["P_l2"],
+                    **metrics["estimation"]
                 ),
                 logs=dict(
                     elbo_history=vmp.elbo_history["sum"]
                 )
             )
-
         return cls(model_parameters=model_parameters, fit_function=fit_function)
 
     @classmethod
@@ -474,30 +378,32 @@ class Method:
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             if "Theta_X" not in data.true_values:
                 raise ValueError("Oracle method requires true values for Theta_X")
+            t0 = time.time()
             theta_X = data.true_values["Theta_X"]
+            theta_A = data.true_values["Theta_A"]
+            proba_edges = data.true_values["P"]
             p_cts = data.continuous_covariates.shape[1]
             p_bin = data.binary_covariates.shape[1]
             mean_cts, logit_bin = theta_X[:, :p_cts], theta_X[:, p_cts:]
-
-            value = data.continuous_covariates_missing
-            mean_cts = mean_cts[~value.isnan()]
-            value = value[~value.isnan()]
-            X_cts_mse = mean_squared_error(mean_cts, value).item() if value.numel() else float("nan")
-
-            value = data.binary_covariates_missing
-            obs = value[~torch.isnan(value)].int()
-            proba = torch.sigmoid(logit_bin[~torch.isnan(value)])
-            X_bin_auroc = auroc(proba, obs, "binary").item() if obs.numel() else float("nan")
+            model_output = MethodOutput(
+                pred_continuous_covariates=mean_cts,
+                pred_binary_covariates=torch.sigmoid(logit_bin),
+                pred_edges=proba_edges,
+                linear_predictor_covariates=theta_X,
+                linear_predictor_edges=theta_A
+            )
+            metrics = Metrics(model_output, data).metrics
+            dt = time.time() - t0
 
             return Results(
                 training_metrics=dict(
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=X_cts_mse,
-                    X_bin_missing_auroc=X_bin_auroc,
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(),
                 logs=dict()
@@ -514,29 +420,26 @@ class Method:
                 binary_covariates=data.binary_covariates,
                 continuous_covariates=data.continuous_covariates,
             )
-            train_results = mean.evaluate(
-                binary_covariates=data.binary_covariates,
-                continuous_covariates=data.continuous_covariates,
+            cts_mean = mean.cts_mean.repeat(data.n_nodes, 1)
+            bin_mean = mean.bin_mean.repeat(data.n_nodes, 1)
+            theta_X = torch.cat([cts_mean, torch.logit(bin_mean)], dim=1)
+            model_output = MethodOutput(
+                pred_continuous_covariates=cts_mean,
+                pred_binary_covariates=bin_mean,
+                linear_predictor_covariates=theta_X
             )
-            test_results = mean.evaluate(
-                binary_covariates=data.binary_covariates_missing,
-                continuous_covariates=data.continuous_covariates_missing,
-            )
+            metrics = Metrics(model_output, data).metrics
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
-                    X_cts_mse=train_results["X_cts_mse"],
-                    X_bin_auroc=train_results["X_bin_auroc"],
-                    X_bin_auroc_multiclass=train_results["X_bin_auroc_multiclass"],
-                    cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
+                    cpu_time=dt,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=test_results["X_cts_mse"],
-                    X_bin_missing_auroc=test_results["X_bin_auroc"],
-                    X_bin_missing_auroc_multiclass=test_results["X_bin_auroc_multiclass"],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(),
                 logs=dict()
@@ -549,27 +452,31 @@ class Method:
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import NetworkSmoothing
             t0 = time.time()
-            test_results = NetworkSmoothing().fit_and_evaluate(
+            binary_proba, continuous_mean = NetworkSmoothing().fit(
                 binary_covariates=data.binary_covariates,
                 continuous_covariates=data.continuous_covariates,
                 edges=data.edges,
                 edge_index_left=data.edge_index_left,
                 edge_index_right=data.edge_index_right,
-                binary_covariates_missing=data.binary_covariates_missing,
-                continuous_covariates_missing=data.continuous_covariates_missing,
             )
+            theta_X = torch.cat([continuous_mean, binary_proba], dim=1)
+            model_output = MethodOutput(
+                pred_continuous_covariates=continuous_mean,
+                pred_binary_covariates=binary_proba,
+                linear_predictor_covariates=theta_X
+            )
+            metrics = Metrics(model_output, data).metrics
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
-                    cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
+                    cpu_time=dt,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=test_results["X_cts_mse"],
-                    X_bin_missing_auroc=test_results["X_bin_auroc"],
-                    X_bin_missing_auroc_multiclass=test_results["X_bin_auroc_multiclass"],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(),
                 logs=dict()
@@ -584,23 +491,29 @@ class Method:
             t0 = time.time()
             mice = MICE(
                 binary_covariates=data.binary_covariates,
-                continuous_covariates=data.continuous_covariates
+                continuous_covariates=data.continuous_covariates,
+                max_iter=fit_parameters.mice.max_iter
             )
-            test_results = mice.fit_and_evaluate(
-                binary_covariates=data.binary_covariates_missing,
-                continuous_covariates=data.continuous_covariates_missing
+            binary_proba, continuous_mean = mice.fit_transform()
+            theta_X = torch.cat([continuous_mean, binary_proba], dim=1)
+            model_output = MethodOutput(
+                pred_continuous_covariates=continuous_mean,
+                pred_binary_covariates=binary_proba,
+                linear_predictor_covariates=theta_X
             )
+            metrics = Metrics(model_output, data).metrics
+
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
-                    cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
+                    cpu_time=dt,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=test_results["X_cts_mse"],
-                    X_bin_missing_auroc=test_results["X_bin_auroc"],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(),
                 logs=dict()
@@ -613,25 +526,30 @@ class Method:
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import KNN
             t0 = time.time()
-            mice = KNN(
+            knn = KNN(
                 binary_covariates=data.binary_covariates,
-                continuous_covariates=data.continuous_covariates
+                continuous_covariates=data.continuous_covariates,
+                n_neighbors=fit_parameters.knn.n_neighbors
             )
-            test_results = mice.fit_and_evaluate(
-                binary_covariates=data.binary_covariates_missing,
-                continuous_covariates=data.continuous_covariates_missing
+            binary_proba, continuous_mean = knn.fit_transform()
+            theta_X = torch.cat([continuous_mean, binary_proba], dim=1)
+            model_output = MethodOutput(
+                pred_continuous_covariates=continuous_mean,
+                pred_binary_covariates=binary_proba,
+                linear_predictor_covariates=theta_X
             )
+            metrics = Metrics(model_output, data).metrics
             dt = time.time() - t0
             return Results(
                 training_metrics=dict(
-                    cpu_time=dt,
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
+                    cpu_time=dt,
+                    **metrics["training"]
                 ),
                 testing_metrics=dict(
-                    X_cts_missing_mse=test_results["X_cts_mse"],
-                    X_bin_missing_auroc=test_results["X_bin_auroc"],
                     edge_density=data.missing_edge_density,
+                    **metrics["testing"]
                 ),
                 estimation_metrics=dict(),
                 logs=dict()

@@ -21,7 +21,8 @@ class Dataset:
             edges_missing: T | None = None,
             binary_covariates_missing: T | None = None,
             continuous_covariates_missing: T | None = None,
-            true_values: dict[str, T] | None = None
+            true_values: dict[str, T] | None = None,
+            multiclass_range: tuple[int, int] | None = None
     ):
         self.edge_index_left = edge_index_left
         self.edge_index_right = edge_index_right
@@ -34,6 +35,18 @@ class Dataset:
         if true_values is None:
             true_values = dict()
         self._true_values = true_values
+        self.multiclass_range = multiclass_range
+
+    @property
+    def multiclass_covariates(self) -> T | None:
+        return self.subset_multiclass(self.binary_covariates)
+
+    @property
+    def multiclass_covariates_missing(self) -> T | None:
+        return self.subset_multiclass(self.binary_covariates_missing)
+
+    def subset_multiclass(self, X: T) -> T:
+        return X[:, self.multiclass_range[0]:self.multiclass_range[1]]
 
     @property
     def training_set(self) -> tuple[T, T, T, T, T]:
@@ -137,7 +150,7 @@ class Dataset:
                 latent=latent,
                 heterogeneity=heterogeneity,
                 weights=weights,
-                bias=bias,
+                bias=bias.reshape(-1),
                 mean_cts=mean_cts,
                 logit_bin=logit_bin,
                 Theta_A=theta_A,
@@ -190,10 +203,19 @@ class Dataset:
         M_A = torch.rand_like(A) < par.missing_edge_rate
         A_missing = torch.where(~M_A, torch.full_like(A, torch.nan), A)
         A[M_A] = torch.nan
-        M_labels = torch.rand(n_nodes) < par.missing_covariate_rate
+
+        seeds = []
+        for i in range(y.shape[1]):
+            rows = y[:, i].nonzero().squeeze()
+            seeds.append(rows[torch.randint(0, len(rows), (1,))])
+        seeds = torch.cat(seeds)
+        M_labels = torch.ones(n_nodes, dtype=torch.bool)
+        M_labels[seeds] = False
+
         M_labels_wide = M_labels.unsqueeze(1).repeat(1, y.shape[1])
         y_missing = torch.where(~M_labels_wide, torch.full_like(y, torch.nan), y)
         y[M_labels, :] = torch.nan
+
         X_bin = torch.cat([X, y], dim=1)
         X_bin_missing = torch.cat([X * torch.nan, y_missing], dim=1)
         X_cts = torch.empty(n_nodes, 0)
@@ -215,13 +237,9 @@ class Dataset:
                 X_cts_missing=X_cts_missing,
                 A=A,
                 A_missing=A_missing,
-            )
+            ),
+            multiclass_range=(X.shape[1], X.shape[1] + y.shape[1])
         )
-
-
-
-
-
 
     @classmethod
     def email(cls, par: ParameterGroup):
@@ -266,7 +284,8 @@ class Dataset:
                 X_bin_missing=X_bin_missing,
                 X_cts=X_cts,
                 X_cts_missing=X_cts_missing
-            )
+            ),
+            multiclass_range=(0, p_bin)
         )
 
 

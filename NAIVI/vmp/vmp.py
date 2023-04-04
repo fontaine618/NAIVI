@@ -683,6 +683,43 @@ class VMP:
         return metrics
 
     @property
+    def pred_continuous_covariates(self):
+        if "cts_obs" not in self.variables:
+            return None
+        c_id = self.variables["cts_obs"].id
+        return self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean
+
+    @property
+    def pred_binary_covariates(self):
+        if "bin_obs" not in self.variables:
+            return None
+        c_id = self.variables["bin_obs"].id
+        return self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
+
+    @property
+    def pred_edges(self):
+        if "edge" not in self.variables:
+            return None
+        c_id = self.variables["edge"].id
+        return self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
+
+    @property
+    def linear_predictor_edges(self):
+        if "edge_logit" not in self.variables:
+            return None
+        return self.variables["edge_logit"].posterior.mean
+
+    @property
+    def latent_positions(self):
+        return self.variables["latent"].posterior.mean
+
+    @property
+    def latent_heterogeneity(self):
+        if "heterogeneity" not in self.variables:
+            return None
+        return self.variables["heterogeneity"].posterior.mean
+
+    @property
     def messages(self):
         msg = []
         for factor in self.factors.values():
@@ -691,3 +728,16 @@ class VMP:
             for m in factor.messages_to_parents.values():
                 msg.append(m)
         return msg
+
+    def output(self):
+        return dict(
+            pred_continuous_covariates=self.pred_continuous_covariates,
+            pred_binary_covariates=self.pred_binary_covariates,
+            pred_edges=self.pred_edges,
+            latent_positions=self.latent_positions,
+            latent_heterogeneity=self.latent_heterogeneity,
+            linear_predictor_covariates=self.theta_X,
+            linear_predictor_edges=self.linear_predictor_edges,
+            weight_covariates=self.weights.T,
+            bias_covariates=self.bias.reshape(-1),
+        )

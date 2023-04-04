@@ -18,6 +18,7 @@ _default_data_parameters = {
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
     "missing_mechanism": "uniform",
+    "n_seeds": 1,
 }
 
 _default_model_parameters = {
@@ -42,6 +43,8 @@ _default_fit_parameters = {
     "advi.max_iter": 1000,
     "advi.eps": 1e-4,
     "advi.optimizer": "Rprop",
+    "mice.max_iter": 100,
+    "knn.n_neighbors": 10,
 }
 
 

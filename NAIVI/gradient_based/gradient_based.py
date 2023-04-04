@@ -284,6 +284,10 @@ class GradientBased:
     def covariate_weight(self):
         return self.model.covariate_model.weight
 
+    @property
+    def covariate_bias(self):
+        return self.model.covariate_model.bias
+
     def proximal_step(self, lr):
         if self.covariate_weight.grad is not None:
             with torch.no_grad():
@@ -342,6 +346,23 @@ class GradientBased:
         for name, value in true_values.items():
             metrics.update(self._evaluate(name, value))
         return metrics
+
+    def output(self, data):
+        i0, i1, A, j, X_cts, X_bin = data[:]
+        _, mean_cts, proba_bin, proba_adj = self.model.loss_and_fitted_values(
+            i0, i1, j, X_cts, X_bin, A
+        )
+        return dict(
+            pred_continuous_covariates=mean_cts,
+            pred_binary_covariates=proba_bin,
+            pred_edges=proba_adj,
+            latent_positions=self.latent_positions(),
+            latent_heterogeneity=self.latent_heterogeneity(),
+            linear_predictor_covariates=self.Theta_X,
+            linear_predictor_edges=self.Theta_A,
+            weight_covariates=self.covariate_weight,
+            bias_covariates=self.covariate_bias
+        )
 
     def _evaluate(self, name: str, value: torch.Tensor | None) -> dict[str, float]:
         metrics = dict()
