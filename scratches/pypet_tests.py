@@ -19,10 +19,10 @@ traj = env.trajectory
 add_parameters(traj)
 
 traj.f_explore(cartesian_product({
-    "data.dataset": ["synthetic"],
-    # "data.dataset": ["cora"],
+    # "data.dataset": ["synthetic"],
+    "data.dataset": ["cora"],
     # "data.facebook_center": [686],
-    # "data.path": ["/home/simon/Documents/NAIVI/datasets/cora/"],
+    "data.path": ["/home/simon/Documents/NAIVI/datasets/cora/"],
     "data.seed": [3],
 
     "data.n_nodes": [100],
@@ -43,7 +43,7 @@ traj.f_explore(cartesian_product({
     "model.heterogeneity_prior_variance": [1.],
     "model.latent_prior_mean": [0.],
     "model.latent_prior_variance": [1.],
-    "method": ["Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "ADVI", "NetworkSmoothing", "MICE", "Oracle"],
+    "method": [ "MICE", "Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "ADVI", "NetworkSmoothing","Oracle"],
     "fit.vmp.max_iter": [50],
     "fit.vmp.rel_tol": [1e-5],
     "fit.vmp.cv_folds": [0],

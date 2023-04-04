@@ -175,7 +175,7 @@ class Dataset:
         attributes.set_index(0, inplace=True)
         word_pa = attributes.iloc[:, :-1]
         labels = attributes.iloc[:, -1]
-        label_subset = labels.value_counts().index[-4:]
+        label_subset = labels.value_counts().index # [-4:]
         which = labels.isin(label_subset)
         word_pa = word_pa[which]
         labels = labels[which]
@@ -206,7 +206,7 @@ class Dataset:
         seeds = []
         for i in range(y.shape[1]):
             rows = y[:, i].nonzero().squeeze()
-            seeds.append(rows[torch.randint(0, len(rows), (1,))])
+            seeds.append(rows[torch.randperm(len(rows))[:par.n_seeds]])
         seeds = torch.cat(seeds)
         M_labels = torch.ones(n_nodes, dtype=torch.bool)
         M_labels[seeds] = False
