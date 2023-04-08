@@ -32,16 +32,16 @@ _default_model_parameters = {
 }
 
 _default_fit_parameters = {
-    "vmp.max_iter": 1000,
-    "vmp.rel_tol": 1e-4,
+    "vmp.max_iter": 200,
+    "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
     "map.lr": 0.01,
-    "map.max_iter": 1000,
-    "map.eps": 1e-4,
+    "map.max_iter": 200,
+    "map.eps": 1e-5,
     "map.optimizer": "Rprop",
     "advi.lr": 0.01,
-    "advi.max_iter": 1000,
-    "advi.eps": 1e-4,
+    "advi.max_iter": 200,
+    "advi.eps": 1e-5,
     "advi.optimizer": "Rprop",
     "mice.max_iter": 100,
     "knn.n_neighbors": 10,

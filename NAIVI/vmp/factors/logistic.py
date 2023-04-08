@@ -2,7 +2,7 @@ from __future__ import annotations
 import torch
 import torch.distributions
 from .factor import Factor
-from .logistic_utls import _gh_quadrature, _log1p_exp, _tilted_fixed_point, _ms_expit_moment
+from .logistic_utils import _gh_quadrature, _log1p_exp, _tilted_fixed_point, _ms_expit_moment
 from ..distributions.normal import Normal
 from ..distributions.probability import Probability
 from ..messages import Message

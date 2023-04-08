@@ -46,6 +46,7 @@ class VMP:
             edges: torch.Tensor | None,
             edge_index_left: torch.Tensor | None,
             edge_index_right: torch.Tensor | None,
+            logistic_approximation: str = "quadratic",
             **kwargs
     ):
         self._prepare_hyperparameters(**kwargs)
@@ -63,6 +64,7 @@ class VMP:
             edge_index_left=edge_index_left,
             edge_index_right=edge_index_right,
             edges=edges,
+            logistic_approximation=logistic_approximation
         )
         self.elbo_history = dict()
         self.elbo_mc_history = dict()
@@ -81,21 +83,22 @@ class VMP:
             edge_index_left,
             edge_index_right,
             edges,
+            logistic_approximation
     ):
         N = n_nodes
         K = latent_dim
         if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing model")
         # initialize factors and variables
         heterogeneity, latent = self._initialize_priors(K, N)
-        self._initialize_binary_model(K, N, binary_covariates, latent)
+        self._initialize_binary_model(K, N, binary_covariates, latent, logistic_approximation)
         self._initialize_continuous_model(K, N, continuous_covariates, latent)
-        self._initialize_edge_model(K, edge_index_left, edge_index_right, edges, heterogeneity, latent)
+        self._initialize_edge_model(K, edge_index_left, edge_index_right, edges, heterogeneity, latent, logistic_approximation)
         self._break_symmetry()
         self._initialize_posterior()
         self._vmp_forward()
         if VMP_OPTIONS["logging"]: print(f"{prefix}Model initialization completed")
 
-    def _initialize_edge_model(self, K, edge_index_left, edge_index_right, edges, heterogeneity, latent):
+    def _initialize_edge_model(self, K, edge_index_left, edge_index_right, edges, heterogeneity, latent, logistic_approximation):
         if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing edge model")
         if (edges is None) or (edge_index_right is None) or (edge_index_left is None):
             return
@@ -118,7 +121,7 @@ class VMP:
             right_heterogeneity=right_heterogeneity
         )
         edge_logit = Variable((ne, 1), "EdgeLogit")
-        edge_model = Logistic(1, parent=edge_logit, method="quadratic")
+        edge_model = Logistic(1, parent=edge_logit, method=logistic_approximation)
         edge = ProbabilityVariable((ne, 1), "Edge")
         edge_observed = ObservedFactor(edges, parent=edge, dist=Probability)
         # attach children
@@ -195,7 +198,7 @@ class VMP:
         ])
         if VMP_OPTIONS["logging"]: print(f"{prefix}Continuous model initialization completed")
 
-    def _initialize_binary_model(self, K, N, binary_covariates, latent):
+    def _initialize_binary_model(self, K, N, binary_covariates, latent, logistic_approximation):
         if VMP_OPTIONS["logging"]: print(f"{prefix}Started initializing binary model")
         if binary_covariates is None:
             return
@@ -204,7 +207,7 @@ class VMP:
             return
         affine_bin = Affine(K, p_bin, latent)
         logit_bin = Variable((N, p_bin), "CovariateLogit")
-        bin_model = Logistic(p_bin, parent=logit_bin, method="quadratic")
+        bin_model = Logistic(p_bin, parent=logit_bin, method=logistic_approximation)
         bin_obs = ProbabilityVariable((N, p_bin), "BinaryCovariate")
         bin_observed = ObservedFactor(binary_covariates, parent=bin_obs, dist=Probability)
         affine_bin.set_children(child=logit_bin)
