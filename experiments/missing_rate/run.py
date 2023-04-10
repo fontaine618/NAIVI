@@ -26,7 +26,7 @@ if __name__ == "__main__":
     traj.f_explore(cartesian_product({
         "data.dataset": ["synthetic"],
         "data.seed": [int(seed)],
-        "data.n_nodes": [500],
+        "data.n_nodes": [200],
         "data.p_cts": [0],
         "data.p_bin": [100],
         "data.latent_dim": [5],
@@ -35,7 +35,7 @@ if __name__ == "__main__":
         "data.heterogeneity_mean": [-2.],
         "data.heterogeneity_variance": [1.],
         "data.cts_noise": [1.],
-        "data.missing_covariate_rate": [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.65, 0.70, 0.75],
+        "data.missing_covariate_rate": [0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.60, 0.65, 0.70, 0.75],
         "data.missing_edge_rate": [0.],
         "data.missing_mechanism": ["row_deletion", "uniform", "triangle"],
         "model.latent_dim": [5],

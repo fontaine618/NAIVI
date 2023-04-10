@@ -345,9 +345,9 @@ class Dataset:
 
     @property
     def covariate_missing_prop(self) -> float:
-        X_cts_missing_n = self.continuous_covariates[~torch.isnan(self.continuous_covariates)].numel()
+        X_cts_missing_n = self.continuous_covariates[torch.isnan(self.continuous_covariates)].numel()
         X_cts_n = self.continuous_covariates.numel()
-        X_bin_missing_n = self.binary_covariates[~torch.isnan(self.binary_covariates)].numel()
+        X_bin_missing_n = self.binary_covariates[torch.isnan(self.binary_covariates)].numel()
         X_bin_n = self.binary_covariates.numel()
         denum = X_cts_n + X_bin_n
         if denum == 0:
@@ -399,6 +399,7 @@ def _create_mask_matrices(p_cts, p_bin, missing_covariate_rate, n_nodes, missing
     elif missing_mechanism == "triangle":
         missing_props = torch.linspace(p / 3, p + p / 3, p)
         missing_props = p * missing_covariate_rate * missing_props / missing_props.sum()
+        missing_props = torch.where(missing_props > 0.95, torch.full_like(missing_props, 0.95), missing_props)
         missing_props = missing_props[torch.randperm(p)].reshape(1, p).repeat(n_nodes, 1)
         M_cts = torch.rand(n_nodes, p_cts) < missing_props[:, :p_cts]
         M_bin = torch.rand(n_nodes, p_bin) < missing_props[:, p_cts:]
