@@ -43,7 +43,7 @@ _default_fit_parameters = {
     "advi.max_iter": 200,
     "advi.eps": 1e-5,
     "advi.optimizer": "Rprop",
-    "mice.max_iter": 100,
+    "mice.max_iter": 20,
     "knn.n_neighbors": 10,
 }
 
