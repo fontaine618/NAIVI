@@ -14,15 +14,21 @@ class MICE:
         binary_covariates: torch.Tensor | None = None,
         continuous_covariates: torch.Tensor | None = None,
         max_iter: int = 100,
+        rel_tol: float = 1e-3,
     ):
         p_cts, p_bin, X = self._process_input(binary_covariates, continuous_covariates)
         self.p_cts = p_cts
         self.p_bin = p_bin
         self.X = X
         self.estimator = BayesianRidge()
+        Xmin = torch.where(torch.isnan(X), torch.full_like(X, float("inf")), X).min(0)[0]
+        Xmax = torch.where(torch.isnan(X), torch.full_like(X, float("-inf")), X).max(0)[0]
         self.model = IterativeImputer(
-            random_state=0, estimator=self.estimator, imputation_order="random", max_iter=max_iter,
-            verbose=2, skip_complete=True, tol=0.001
+            random_state=0, estimator=self.estimator, imputation_order="random",
+            max_iter=max_iter, tol=rel_tol,
+            verbose=2, skip_complete=True,
+            min_value=Xmin.cpu(),
+            max_value=Xmax.cpu()
         )
 
     def _process_input(self, binary_covariates, continuous_covariates):
