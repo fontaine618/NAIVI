@@ -3,6 +3,7 @@ import torch.distributions
 from torch.distributions.multivariate_normal import _batch_mv
 from .distribution import Distribution
 from .point_mass import Unit, PointMass
+import warnings
 
 
 def _batch_mahalanobis(bP, bx):
@@ -43,6 +44,14 @@ class Normal(Distribution):
 			if not torch.all(precision.ge(-1.e-10)):
 				raise AttributeError(
 					f"precision must be nonnegative"
+				)
+			if precision.isnan().any():
+				raise AttributeError(
+					f"precision contains NaNs"
+				)
+			if mean_times_precision.isnan().any():
+				raise AttributeError(
+					f"mean_times_precision contains NaNs"
 				)
 		# mean_times_precision = torch.where(
 		# 	precision.isinf(),
@@ -148,12 +157,15 @@ class Normal(Distribution):
 			pm_pm = self.precision.isinf() * other.precision.isinf()
 			precision = torch.where(pm_pm, 0., precision)
 			mean_times_precision = torch.where(pm_pm, 0., mean_times_precision)
+			# deal with the case Gaussian/Gaussian = Unit
+			precision.clamp_(min=0.)
+			mean_times_precision = torch.where(precision == 0., 0., mean_times_precision)
 			return Normal(precision, mean_times_precision)
 		elif type(other) is Unit:
 			return self
 		else:
 			raise NotImplementedError(
-				f"Product of Normal with {other._name} "
+				f"Division of Normal by {other._name} "
 			    f"not implemented yet or is not meaningful."
 			)
 
@@ -221,12 +233,15 @@ class MultivariateNormal(Normal):
 	@staticmethod
 	def _check_args(precision, mean_times_precision):
 		if Distribution._check_args:
-			if not (torch.isclose(precision, precision.transpose(-1, -2))).all():
-				raise ValueError(
-					f"precision must be symmetric"
+			if not (torch.isclose(
+					precision, precision.transpose(-1, -2),
+					rtol=1e-4, atol=1e-5)).all():
+				warnings.warn(
+					f"precision must be symmetric; symmetrize it"
 				)
+				precision = (precision + precision.transpose(-1, -2)) / 2
 			if not torch.linalg.eigvalsh(precision).ge(-1.e-6).all():
-				print(
+				warnings.warn(
 					f"precision must be positive semi-definite"
 				)
 		# mean_times_precision = torch.where(
