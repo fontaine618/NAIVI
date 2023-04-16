@@ -53,9 +53,7 @@ class Variable:
 
     def update(self, prev_msg, new_msg):
         if VMP_OPTIONS["logging"]: print(f"Update posterior of {self}")
-        post = self.posterior * (new_msg / prev_msg)
-        if post is None:
-            raise ValueError("Posterior is None")
+        post = (self.posterior * new_msg) / prev_msg
         self.posterior = post
 
     def __repr__(self):
