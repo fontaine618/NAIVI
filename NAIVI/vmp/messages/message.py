@@ -42,9 +42,18 @@ class Message:
 		"""Stores the new message and updates the posterior of the variable."""
 		if VMP_OPTIONS["logging"]: print(f"Update message from {repr(self.factor)} to {self.variable} ({repr(self)})")
 		prev_msg = self._message_to_variable
-		self._message_to_variable = msg
-		# for damping, we store the full message, but the posterior update is only partial
-		self.variable.update(prev_msg ** self.damping, self._message_to_variable ** self.damping)
+		# self._message_to_variable = msg
+		# # for damping, we store the full message, but the posterior update is only partial
+		# self.variable.update(prev_msg ** self.damping, self._message_to_variable ** self.damping)
+
+		if self.damping != 1.:
+			# This might not work for aggreagted messages, but
+			# I'm leaving it like this for now, since I only plan to use damping
+			# for the logistic fragments
+			self._message_to_variable = (msg**self.damping) * (prev_msg**(1-self.damping))
+		else:
+			self._message_to_variable = msg
+		self.variable.update(prev_msg, self._message_to_variable)
 
 	def _get_message_to_variable(self):
 		return self._message_to_variable
