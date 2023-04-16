@@ -28,7 +28,8 @@ _default_model_parameters = {
     "latent_prior_mean": 0.,
     "latent_prior_variance": 1.,
     "mnar": False,
-    "regularization": 0.
+    "regularization": 0.,
+    "vmp.logistic_approximation": "quadratic"
 }
 
 _default_fit_parameters = {
@@ -44,6 +45,7 @@ _default_fit_parameters = {
     "advi.eps": 1e-5,
     "advi.optimizer": "Rprop",
     "mice.max_iter": 20,
+    "mice.rel_tol": 1e-3,
     "knn.n_neighbors": 10,
 }
 
