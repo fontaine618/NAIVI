@@ -6,6 +6,7 @@ import math
 from typing import Tuple, Dict, Optional
 from torchmetrics.functional import auroc, mean_squared_error
 from collections import defaultdict
+import warnings
 
 from . import VMP_OPTIONS
 from .factors.affine import Affine
@@ -470,20 +471,25 @@ class VMP:
 
     def fit_and_evaluate(
             self,
-            max_iter: int = 1000,
+            max_iter: int = 100,
             rel_tol: float = 1e-6,
             mc_samples: int = 0,
             true_values: dict | None = None,
+            min_iter: int = 20,
     ):
         with torch.no_grad():
             if true_values is None:
                 true_values = dict()
             elbo = self.elbo()
+            prev_increased = True
             for i in range(max_iter):
                 self._e_step()
                 self._m_step()
 
                 new_elbo = self.elbo()
+                if math.isnan(new_elbo):
+                    warnings.warn("ELBO is nan")
+                    break
                 elbos = self._elbo()
                 elbos["sum"] = new_elbo
                 self._update_elbo_history(elbos)
@@ -499,9 +505,13 @@ class VMP:
                 if (i % 1) == 0:
                     print(f"{prefix}Iteration {i:<4} "
                           f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
-                if abs(new_elbo - elbo) < rel_tol * abs(elbo):
-                    break
+                if i > min_iter:
+                    if abs(new_elbo - elbo) < rel_tol * abs(elbo):
+                        break
+                    if not increased and not prev_increased:
+                        break
                 elbo = new_elbo
+                prev_increased = increased
 
     def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6):
         self.fit_and_evaluate(max_iter, rel_tol)
