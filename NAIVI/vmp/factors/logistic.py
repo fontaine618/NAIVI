@@ -22,20 +22,21 @@ class Logistic(Factor):
 
 	def __init__(self, dim: int, parent: Variable, method: str = "quadratic"):
 		super(Logistic, self).__init__(parent=parent)
-		# self.parameters["variance"] = torch.nn.Parameter(torch.ones(dim))
+		self._elbo = self._quadrature_elbo
+		# self._elbo = self._quadratic_elbo
+		self._n_updates = -1
+		i = self._name_to_id["parent"]
 		if method == "quadratic":
 			self._update = self._quadratic_update
-			self._elbo = self._quadrature_elbo
+			self.messages_to_parents[i].damping = 1.
+		elif method == "adaptive":
+			self._update = self._adaptive_update
 		elif method == "tilted":
 			self._update = self._tilted_update
-			i = self._name_to_id["parent"]
-			self.messages_to_parents[i].damping = 0.5
-			self._elbo = self._quadrature_elbo
-		elif method == "mk":  # default
+			self.messages_to_parents[i].damping = 0.25
+		elif method == "mk":
 			self._update = self._mk_update
-			i = self._name_to_id["parent"]
-			self.messages_to_parents[i].damping = 0.2
-			self._elbo = self._quadrature_elbo
+			self.messages_to_parents[i].damping = 0.1
 		else:
 			raise ValueError(f"cannot recognize method {method}")
 
@@ -58,7 +59,11 @@ class Logistic(Factor):
 		c_id = self._name_to_id["child"]
 		mfp = self.messages_to_parents[p_id].message_to_factor
 		m, v = mfp.mean_and_variance
-		proba = _ms_expit_moment(0, m, v.abs())
+		# if m.isnan().any():
+		# 	print(f"{self}: Mean is nan in Logistic message to child")
+		# if v.isnan().any():
+		# 	print(f"{self}: Variance is nan in Logistic message to child")
+		proba = _ms_expit_moment(0, m.nan_to_num(), v.abs())
 		self.messages_to_children[c_id].message_to_variable = Probability(proba)
 
 	def update_messages_to_parents(self):
@@ -67,9 +72,11 @@ class Logistic(Factor):
 	def elbo(self, x: torch.Tensor | None = None):
 		return self._elbo(x)
 
-	def _quadratic_elbo(self):
+	def _quadratic_elbo(self, x: torch.Tensor | None = None):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
+		if x is None:
+			x = self.children[c_id].posterior.proba
 		mfc = self.children[c_id].posterior
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
@@ -136,6 +143,14 @@ class Logistic(Factor):
 		elbo = torch.sigmoid((2. * sc -1.) * sp).log()
 		return elbo.nansum(dim=(-1, -2)).nanmean(0)
 
+	def _adaptive_update(self):
+		self._n_updates += 1
+		if self._n_updates < 10:
+			self._quadratic_update()
+		else:
+			i = self._name_to_id["parent"]
+			self.messages_to_parents[i].damping = 0.1
+			self._mk_update()
 
 	def _mk_update(self):
 		"""Uses Knowles & Minka (2011)"""
@@ -148,17 +163,18 @@ class Logistic(Factor):
 		m, v = mfp.mean_and_variance
 		p, mtp = mfp.precision_and_mean_times_precision
 		x = mfc.proba
+		x = torch.where((x-0.5).abs().lt(0.1), torch.full_like(x, 0.5), x.nan_to_num())
 		b0 = _ms_expit_moment(0, m, v)
 		b1 = _ms_expit_moment(1, m, v)
 		# Knowles and Minka (2011, Section 5.2)
-		m1 = b1 * v.sqrt() + m * b0
-		p1 = (m1 - m * b0) * p
-		mtp1 = m * p1 + x - b0
-		# Nolan and Wand (2017, Eq. 6) I think it's equivalent to the above
-		# p1 = b1 * p.sqrt()
+		# m1 = b1 * v.sqrt() + m * b0
+		# p1 = (m1 - m * b0) * p
 		# mtp1 = m * p1 + x - b0
-		p1 = torch.where(x == 0.5, torch.zeros_like(p1), p1)
-		mtp1 = torch.where(x == 0.5, torch.zeros_like(mtp1), mtp1)
+		# Nolan and Wand (2017, Eq. 6)
+		p1 = b1 * p.sqrt()
+		mtp1 = m * p1 + x - b0
+		p1 = torch.where((x-0.5).abs().lt(0.1), torch.zeros_like(p1), p1)
+		mtp1 = torch.where((x-0.5).abs().lt(0.1), torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _quadratic_update(self):
@@ -171,16 +187,20 @@ class Logistic(Factor):
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
 		s = mfc.proba - 0.5
+		# because of floating point error, sometimes 0.5-0.5 is not exactly 0.
+		s = torch.where(s.abs().lt(0.1), torch.zeros_like(s), s.nan_to_num())
 		t = (m.pow(2.) + v).sqrt()
 		lam = (torch.sigmoid(t) - 0.5) / t
 		p1 = lam
 		mtp1 = s
-		p1 = torch.where(s == 0., torch.zeros_like(p1), p1)
-		mtp1 = torch.where(s == 0., torch.zeros_like(mtp1), mtp1)
+		p1 = torch.where(s==0., torch.zeros_like(p1), p1)
+		mtp1 = torch.where(s==0., torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _tilted_update(self):
-		"""Uses the tilted bound of Saul and Jordan (1999)"""
+		"""Uses the tilted bound of Saul and Jordan (1999)
+		with NCVMP massages from Knowles and Minka (2011)
+		"""
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		mfc = self.messages_to_children[c_id].message_to_factor
@@ -192,8 +212,8 @@ class Logistic(Factor):
 		a = _tilted_fixed_point(m, v)
 		p1 = a * (1 - a)
 		mtp1 = m * p1 + x - a
-		p1 = torch.where(x == 0.5, torch.zeros_like(p1), p1)
-		mtp1 = torch.where(x == 0.5, torch.zeros_like(mtp1), mtp1)
+		p1 = torch.where((x-0.5).abs().lt(0.499), torch.zeros_like(p1), p1)
+		mtp1 = torch.where((x-0.5).abs().lt(0.499), torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 
