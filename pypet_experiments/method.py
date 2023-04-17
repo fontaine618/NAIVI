@@ -298,9 +298,12 @@ class Method:
     def from_VMP_parameters(cls, model_parameters: ParameterGroup, covariates_only: bool = False):
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import VMP
+            from NAIVI.vmp import enable_logging
             from NAIVI.vmp.distributions import Distribution
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
             Distribution.set_default_check_args(False)
+            # Distribution.set_default_check_args(True)
+            # enable_logging()
             fit_parameters_dict = dict(
                 max_iter=fit_parameters.vmp.max_iter,
                 rel_tol=fit_parameters.vmp.rel_tol,
@@ -323,6 +326,7 @@ class Method:
                     edge_index_left=data.edge_index_left,
                     edge_index_right=data.edge_index_right,
                     folds=cv_folds,
+                    logistic_approximation=self.model_parameters.vmp.logistic_approximation,
                 )
                 cv_vmp.fit(**fit_parameters_dict)
                 covariate_elbo = cv_vmp.covariate_elbo
@@ -341,6 +345,7 @@ class Method:
                 edges=data.edges if not covariates_only else None,
                 edge_index_left=data.edge_index_left,
                 edge_index_right=data.edge_index_right,
+                logistic_approximation=self.model_parameters.vmp.logistic_approximation,
             )
             vmp.fit(**fit_parameters_dict)
             model_output = MethodOutput(**vmp.output())
@@ -492,8 +497,21 @@ class Method:
             mice = MICE(
                 binary_covariates=data.binary_covariates,
                 continuous_covariates=data.continuous_covariates,
-                max_iter=fit_parameters.mice.max_iter
+                max_iter=fit_parameters.mice.max_iter,
+                rel_tol=fit_parameters.mice.rel_tol
             )
+            if mice.p_cts + mice.p_bin > 250: # this is too long, so we skip it
+                return Results(
+                    training_metrics=dict(
+                        edge_density=data.edge_density,
+                        X_missing_prop=data.covariate_missing_prop
+                    ),
+                    testing_metrics=dict(
+                        edge_density=data.missing_edge_density
+                    ),
+                    estimation_metrics=dict(),
+                    logs=dict()
+                )
             binary_proba, continuous_mean = mice.fit_transform()
             theta_X = torch.cat([continuous_mean, binary_proba], dim=1)
             model_output = MethodOutput(
