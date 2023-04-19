@@ -4,7 +4,7 @@ import numpy as np
 from torchmetrics.functional import auroc, mean_squared_error
 from sklearn.experimental import enable_iterative_imputer
 from sklearn.impute import IterativeImputer, KNNImputer
-from sklearn.linear_model import BayesianRidge
+from sklearn.linear_model import BayesianRidge, LogisticRegression
 
 
 class MICE:
@@ -23,6 +23,7 @@ class MICE:
         self.estimator = BayesianRidge()
         Xmin = torch.where(torch.isnan(X), torch.full_like(X, float("inf")), X).min(0)[0]
         Xmax = torch.where(torch.isnan(X), torch.full_like(X, float("-inf")), X).max(0)[0]
+        Xmax = torch.where(Xmax == Xmin, Xmin + 1, Xmax)
         self.model = IterativeImputer(
             random_state=0, estimator=self.estimator, imputation_order="random",
             max_iter=max_iter, tol=rel_tol,
