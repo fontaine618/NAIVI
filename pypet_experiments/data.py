@@ -260,13 +260,23 @@ class Dataset:
         p_bin = labels[:, 1].max() + 1
         X_bin = torch.zeros(n_nodes, p_bin)
         X_bin[labels[:, 0], labels[:, 1]] = 1
-        M_bin, M_cts = _create_mask_matrices(
-            0, p_bin, par.missing_covariate_rate, n_nodes, par.missing_mechanism
-        )
-        X_bin_missing = torch.where(~M_bin, torch.full_like(X_bin, torch.nan), X_bin)
-        X_bin[M_bin] = torch.nan
-        X_cts = torch.zeros(n_nodes, 0)
-        X_cts_missing = torch.zeros(n_nodes, 0)
+
+        seeds = []
+        for i in range(X_bin.shape[1]):
+            rows = X_bin[:, i].nonzero().flatten()
+            if rows.nelement() > 0:
+                seeds.append(rows[torch.randperm(len(rows))[:min(par.n_seeds, len(rows))]])
+        seeds = torch.cat(seeds)
+        M_labels = torch.ones(n_nodes, dtype=torch.bool)
+        M_labels[seeds] = False
+
+        M_labels_wide = M_labels.unsqueeze(1).repeat(1, X_bin.shape[1])
+        X_bin_missing = torch.where(M_labels_wide, X_bin, torch.full_like(X_bin, torch.nan))
+        X_bin = torch.where(M_labels_wide, torch.full_like(X_bin, torch.nan), X_bin)
+
+        X_cts = torch.empty(n_nodes, 0)
+        X_cts_missing = torch.empty(n_nodes, 0)
+
         return cls(
             edge_index_left=i0,
             edge_index_right=i1,

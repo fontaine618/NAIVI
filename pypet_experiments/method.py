@@ -7,8 +7,24 @@ from typing import Callable, Any
 import types
 import time
 import torch
+import math
 from torchmetrics.functional import auroc, mean_squared_error
 import gc
+
+def _eb_heterogeneity_prior(data: Dataset, model_parameters: ParameterGroup) -> tuple[float, float]:
+    hmean = model_parameters.heterogeneity_prior_mean
+    hvar = model_parameters.heterogeneity_prior_variance
+    if math.isnan(hmean) or math.isnan(hvar):
+        edges = data.edges
+        i0 = data.edge_index_left
+        i1 = data.edge_index_right
+        n = max(i0.max().item(), i1.max().item()) + 1
+        adj = torch.eye(n)
+        adj[i0, i1] = edges.flatten()
+        degrees = adj.mean(0)
+        hmean = torch.logit(degrees).mean().item()
+        hvar = torch.logit(degrees).var().item()*1.5
+    return hmean, hvar
 
 
 class Method:
@@ -53,6 +69,7 @@ class Method:
             from NAIVI.utils.data import JointDataset
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
+            hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
             train = JointDataset(
                 i0=data.edge_index_left,
                 i1=data.edge_index_right,
@@ -93,8 +110,7 @@ class Method:
                     self.model_parameters["latent_prior_variance"]
                 ),
                 "heterogeneity_prior": (
-                    self.model_parameters["heterogeneity_prior_mean"],
-                    self.model_parameters["heterogeneity_prior_variance"]
+                    hmean, hvar
                 ),
                 "estimate_components": False
             }
@@ -135,6 +151,7 @@ class Method:
             from NAIVI.initialization import initialize
             from NAIVI.utils.data import JointDataset
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
+            hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
 
             train = JointDataset(
                 i0=data.edge_index_left,
@@ -176,8 +193,7 @@ class Method:
                     self.model_parameters["latent_prior_variance"]
                 ),
                 "heterogeneity_prior": (
-                    self.model_parameters["heterogeneity_prior_mean"],
-                    self.model_parameters["heterogeneity_prior_variance"]
+                    hmean, hvar
                 ),
                 "estimate_components": False
             }
@@ -218,6 +234,7 @@ class Method:
             from NAIVI.initialization import initialize
             from NAIVI.utils.data import JointDataset
             torch.set_default_tensor_type(torch.cuda.FloatTensor)
+            hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
 
             train = JointDataset(
                 i0=data.edge_index_left,
@@ -259,8 +276,7 @@ class Method:
                     self.model_parameters["latent_prior_variance"]
                 ),
                 "heterogeneity_prior": (
-                    self.model_parameters["heterogeneity_prior_mean"],
-                    self.model_parameters["heterogeneity_prior_variance"]
+                    hmean, hvar
                 ),
                 "estimate_components": False
             }
@@ -310,13 +326,14 @@ class Method:
             )
             cv_folds = fit_parameters.vmp.cv_folds
             t0 = time.time()
+            hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
             if cv_folds > 1:
                 from NAIVI.vmp import CVVMP
                 cv_vmp = CVVMP(
                     latent_dim=self.model_parameters.latent_dim,
                     n_nodes=data.n_nodes,
-                    heterogeneity_prior_mean=self.model_parameters.heterogeneity_prior_mean,
-                    heterogeneity_prior_variance=self.model_parameters.heterogeneity_prior_variance,
+                    heterogeneity_prior_mean=hmean,
+                    heterogeneity_prior_variance=hvar,
                     latent_prior_mean=self.model_parameters.latent_prior_mean,
                     latent_prior_variance=self.model_parameters.latent_prior_variance,
                     # data
@@ -335,8 +352,8 @@ class Method:
                 # dimension and model parameters
                 latent_dim=self.model_parameters.latent_dim,
                 n_nodes=data.n_nodes,
-                heterogeneity_prior_mean=self.model_parameters.heterogeneity_prior_mean,
-                heterogeneity_prior_variance=self.model_parameters.heterogeneity_prior_variance,
+                    heterogeneity_prior_mean=hmean,
+                    heterogeneity_prior_variance=hvar,
                 latent_prior_mean=self.model_parameters.latent_prior_mean,
                 latent_prior_variance=self.model_parameters.latent_prior_variance,
                 # data
