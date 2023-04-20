@@ -13,7 +13,7 @@ if __name__ == "__main__":
     os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
-        trajectory="facebook",
+        trajectory="cora",
         filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
         multiproc=True,
@@ -24,15 +24,20 @@ if __name__ == "__main__":
     add_parameters(traj)
 
     traj.f_explore(cartesian_product({
-        "data.dataset": ["facebook"],
-        "data.path": ["~/Documents/NAIVI/datasets/facebook/"],
+        "data.dataset": ["email"],
+        "data.path": ["~/Documents/NAIVI/datasets/email/"],
         "data.seed": [int(seed)],
-        "data.facebook_center": [3980, 698, 686, 414, 348, 0, 3437, 1912, 1684, 107],
-        "data.missing_covariate_rate": [0.5],
-        "data.missing_mechanism": ["triangle", "row_deletion"],
+        "data.missing_edge_rate": [0.],
+        "data.n_seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "model.latent_dim": [5],
-        "model.heterogeneity_prior_mean": [float("nan")],  # EB
-        "method": ["MICE", "Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "ADVI", "NetworkSmoothing"],
+        "model.heterogeneity_prior_mean": [float("nan")],
+        "model.heterogeneity_prior_variance": [1.],
+        "model.latent_prior_mean": [0.],
+        "model.latent_prior_variance": [1.],
+        "method": ["Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "ADVI", "NetworkSmoothing", "MICE"],
+        "fit.vmp.max_iter": [100],
+        "fit.vmp.rel_tol": [1e-5],
+        "fit.vmp.cv_folds": [0],
     }))
 
     env.run(run)
