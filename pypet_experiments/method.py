@@ -517,18 +517,18 @@ class Method:
                 max_iter=fit_parameters.mice.max_iter,
                 rel_tol=fit_parameters.mice.rel_tol
             )
-            if mice.p_cts + mice.p_bin > 250: # this is too long, so we skip it
-                return Results(
-                    training_metrics=dict(
-                        edge_density=data.edge_density,
-                        X_missing_prop=data.covariate_missing_prop
-                    ),
-                    testing_metrics=dict(
-                        edge_density=data.missing_edge_density
-                    ),
-                    estimation_metrics=dict(),
-                    logs=dict()
-                )
+            # if mice.p_cts + mice.p_bin > 250: # this is too long, so we skip it
+            #     return Results(
+            #         training_metrics=dict(
+            #             edge_density=data.edge_density,
+            #             X_missing_prop=data.covariate_missing_prop
+            #         ),
+            #         testing_metrics=dict(
+            #             edge_density=data.missing_edge_density
+            #         ),
+            #         estimation_metrics=dict(),
+            #         logs=dict()
+            #     )
             binary_proba, continuous_mean = mice.fit_transform()
             theta_X = torch.cat([continuous_mean, binary_proba], dim=1)
             model_output = MethodOutput(
