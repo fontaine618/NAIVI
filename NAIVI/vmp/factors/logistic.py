@@ -23,7 +23,8 @@ class Logistic(Factor):
 	def __init__(self, dim: int, parent: Variable, method: str = "quadratic"):
 		super(Logistic, self).__init__(parent=parent)
 		self._elbo = self._quadrature_elbo
-		# self._elbo = self._quadratic_elbo
+		if parent.shape[0] > 2_000:
+			self._elbo = self._quadratic_elbo
 		self._n_updates = -1
 		i = self._name_to_id["parent"]
 		if method == "quadratic":
