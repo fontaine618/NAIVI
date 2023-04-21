@@ -1,5 +1,5 @@
 import torch
-from torchmetrics.functional import auroc, mean_squared_error, f1_score
+from torchmetrics.functional import auroc, mean_squared_error, f1_score, accuracy
 from .data import Dataset
 from .method_output import MethodOutput
 from collections import defaultdict
@@ -75,22 +75,24 @@ class Metrics:
                 self.dataset.binary_covariates
             )
             if self.dataset.multiclass_range is not None:
+                pred_mat = self.dataset.subset_multiclass(self.model_output.pred_binary_covariates)
+                pred_mat = pred_mat.nan_to_num()
                 self._metrics["training"]["auroc_multiclass"] = multiclass_auroc(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates
                 )
                 self._metrics["training"]["f1_multiclass_weighted"] = multiclass_f1_score(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates,
                     average="weighted"
                 )
                 self._metrics["training"]["f1_multiclass_macro"] = multiclass_f1_score(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates,
                     average="macro"
                 )
                 self._metrics["training"]["f1_multiclass_micro"] = multiclass_f1_score(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates,
                     average="micro"
                 )
@@ -114,25 +116,33 @@ class Metrics:
                 self.dataset.binary_covariates_missing
             )
             if self.dataset.multiclass_range is not None:
+                pred_mat = self.dataset.subset_multiclass(self.model_output.pred_binary_covariates)
+                pred_mat = pred_mat.nan_to_num()
                 self._metrics["testing"]["auroc_multiclass"] = multiclass_auroc(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates_missing
                 )
                 self._metrics["testing"]["f1_multiclass_weighted"] = multiclass_f1_score(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates_missing,
                     average="weighted"
                 )
                 self._metrics["testing"]["f1_multiclass_macro"] = multiclass_f1_score(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates_missing,
                     average="macro"
                 )
                 self._metrics["testing"]["f1_multiclass_micro"] = multiclass_f1_score(
-                    self.dataset.subset_multiclass(self.model_output.pred_binary_covariates),
+                    pred_mat,
                     self.dataset.multiclass_covariates_missing,
                     average="micro"
                 )
+                self._metrics["testing"]["accuracy_multiclass"] = accuracy(
+                    pred_mat.argmax(dim=1),
+                    self.dataset.multiclass_covariates_missing.argmax(dim=1),
+                    task="multiclass",
+                    num_classes=pred_mat.shape[1]
+                ).item()
         if self.model_output.pred_edges is not None and self.dataset.edges_missing is not None:
             self._metrics["testing"]["auroc_edges"] = nanauroc(
                 self.model_output.pred_edges,

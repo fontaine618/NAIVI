@@ -13,7 +13,7 @@ if __name__ == "__main__":
     os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
-        trajectory="cora",
+        trajectory="email",
         filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
         multiproc=True,
@@ -34,7 +34,7 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [1.],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "ADVI", "NetworkSmoothing", "MICE"],
+        "method": ["VMP", "MAP", "NetworkSmoothing"],
         "fit.vmp.max_iter": [100],
         "fit.vmp.rel_tol": [1e-5],
         "fit.vmp.cv_folds": [0],

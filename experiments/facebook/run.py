@@ -14,6 +14,7 @@ if __name__ == "__main__":
 
     env = Environment(
         trajectory="facebook",
+        # filename=f"./results/seed{seed}.hdf5",
         filename=f"./results/seed{seed}_698.hdf5",
         overwrite_file=True,
         multiproc=True,
@@ -28,12 +29,12 @@ if __name__ == "__main__":
         "data.path": ["~/Documents/NAIVI/datasets/facebook/"],
         "data.seed": [int(seed)],
         "data.facebook_center": [698],
-        # "data.facebook_center": [3980, 698, 686, 414, 348, 0, 3437, 1912, 1684, 107],
+        # "data.facebook_center": [3980, 398, 686, 414, 348, 0, 3437, 1912, 1684, 107],
         "data.missing_covariate_rate": [0.5],
         "data.missing_mechanism": ["triangle", "row_deletion"],
         "model.latent_dim": [5],
         "model.heterogeneity_prior_mean": [float("nan")],  # EB
-        "method": ["MICE", "Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "ADVI", "NetworkSmoothing"],
+        "method": ["Mean", "VMP", "MAP", "MLE", "NetworkSmoothing", "MICE", "KNN", "FA"]
     }))
 
     env.run(run)
