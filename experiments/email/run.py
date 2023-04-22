@@ -34,7 +34,7 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [1.],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["VMP", "MAP", "NetworkSmoothing"],
+        "method": ["VMP", "MAP", "MLE", "Mean", "NetworkSmoothing"],
         "fit.vmp.max_iter": [100],
         "fit.vmp.rel_tol": [1e-5],
         "fit.vmp.cv_folds": [0],

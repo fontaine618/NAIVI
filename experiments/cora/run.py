@@ -34,10 +34,14 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [1.],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "MICE"],
+        "method": ["Mean", "KNN",  "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "MICE", "GCN"],
         "fit.vmp.max_iter": [100],
         "fit.vmp.rel_tol": [1e-5],
         "fit.vmp.cv_folds": [0],
+        "model.gcn.n_hidden": [16],
+        "fit.gcn.weight_decay": [0.001],
+        "fit.gcn.lr": [0.01],
+        "fit.gcn.max_iter": [1000],
     }))
 
     env.run(run)
