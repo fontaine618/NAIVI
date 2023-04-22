@@ -41,7 +41,7 @@ if __name__ == "__main__":
         "model.gcn.n_hidden": [16],
         "fit.gcn.weight_decay": [0.001],
         "fit.gcn.lr": [0.01],
-        "fit.gcn.max_iter": [1000],
+        "fit.gcn.max_iter": [500],
     }))
 
     env.run(run)
