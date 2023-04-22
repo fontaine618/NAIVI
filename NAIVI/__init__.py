@@ -6,3 +6,4 @@ from .mcmc import MCMC
 from .smoothing import NetworkSmoothing
 from .constant import Mean
 from .vmp import VMP
+from .gcn import GCN

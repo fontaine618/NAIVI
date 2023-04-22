@@ -29,7 +29,9 @@ _default_model_parameters = {
     "latent_prior_variance": 1.,
     "mnar": False,
     "regularization": 0.,
-    "vmp.logistic_approximation": "quadratic"
+    "vmp.logistic_approximation": "quadratic",
+    "gcn.n_hidden": 16,
+    "gcn.dropout": 0.5,
 }
 
 _default_fit_parameters = {
@@ -47,6 +49,9 @@ _default_fit_parameters = {
     "mice.max_iter": 20,
     "mice.rel_tol": 1e-3,
     "knn.n_neighbors": 10,
+    "gcn.lr": 0.01,
+    "gcn.max_iter": 200,
+    "gcn.weight_decay": 5e-4,
 }
 
 

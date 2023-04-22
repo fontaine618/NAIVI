@@ -92,6 +92,12 @@ class Dataset:
         if self.edge_index_left is not None:
             return self.edge_index_left.max().item() + 1
 
+    @property
+    def adjacency_matrix(self):
+        adj = torch.zeros(self.n_nodes, self.n_nodes)
+        adj[self.edge_index_left, self.edge_index_right] = self.edges.flatten()
+        return adj
+
     @classmethod
     def from_parameters(cls, par: ParameterGroup):
         if par.dataset == "synthetic":
@@ -387,6 +393,22 @@ class Dataset:
             return_missingness=False,
             test=True
         )
+
+    def to_GCN_format(self):
+        # only valid for cora-like datasets
+        adj = self.adjacency_matrix
+        features = self.binary_covariates[:, :self.multiclass_range[0]]
+        labels_obs = self.binary_covariates[:, self.multiclass_range[0]:self.multiclass_range[1]]
+        labels_missing = self.binary_covariates_missing[:, self.multiclass_range[0]:self.multiclass_range[1]]
+        obs = labels_obs.isnan().sum(dim=1) == 0
+        labels = torch.where(
+            obs, labels_obs.argmax(1), labels_missing.argmax(1)
+        )
+        train_idx = obs.double().nonzero().squeeze()
+        test_idx = (~obs).double().nonzero().squeeze()
+        return adj, features, labels, train_idx, test_idx
+
+
 
 
 def _create_mask_matrices(p_cts, p_bin, missing_covariate_rate, n_nodes, missing_mechanism):

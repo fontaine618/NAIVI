@@ -507,6 +507,51 @@ class Method:
         return cls(model_parameters=model_parameters, fit_function=fit_function)
 
     @classmethod
+    def from_GCN_parameters(cls, model_parameters: ParameterGroup):
+        def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
+            from NAIVI import GCN
+            t0 = time.time()
+            adj, features, labels, train_idx, test_idx = data.to_GCN_format()
+            model_parameters_dict = dict(
+                n_hidden=self.model_parameters.gcn.n_hidden,
+                dropout=self.model_parameters.gcn.dropout,
+            )
+            fit_parameters_dict = dict(
+                max_iter=fit_parameters.gcn.max_iter,
+                learning_rate=fit_parameters.gcn.lr,
+                weight_decay=fit_parameters.gcn.weight_decay,
+            )
+            gcn = GCN(
+                adjacency_matrix=adj,
+                features=features,
+                labels=labels,
+                idx_train=train_idx,
+                idx_test=test_idx,
+                **model_parameters_dict
+            )
+            gcn.model.cuda()
+            gcn.fit(**fit_parameters_dict)
+            model_output = MethodOutput(**gcn.output())
+            metrics = Metrics(model_output, data).metrics
+            dt = time.time() - t0
+            return Results(
+                training_metrics=dict(
+                    edge_density=data.edge_density,
+                    X_missing_prop=data.covariate_missing_prop,
+                    cpu_time=dt,
+                    **metrics["training"]
+                ),
+                testing_metrics=dict(
+                    edge_density=data.missing_edge_density,
+                    **metrics["testing"]
+                ),
+                estimation_metrics=dict(),
+                logs=dict()
+            )
+
+        return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
     def from_MICE_parameters(cls, model_parameters: ParameterGroup):
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import MICE
