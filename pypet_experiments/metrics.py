@@ -137,9 +137,11 @@ class Metrics:
                     self.dataset.multiclass_covariates_missing,
                     average="micro"
                 )
+                labels = self.dataset.multiclass_covariates_missing.argmax(dim=1)
+                missing = self.dataset.multiclass_covariates_missing.isnan().any(dim=1)
                 self._metrics["testing"]["accuracy_multiclass"] = accuracy(
-                    pred_mat.argmax(dim=1),
-                    self.dataset.multiclass_covariates_missing.argmax(dim=1),
+                    pred_mat.argmax(dim=1)[~missing],
+                    labels[~missing],
                     task="multiclass",
                     num_classes=pred_mat.shape[1]
                 ).item()
