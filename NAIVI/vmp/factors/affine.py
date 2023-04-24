@@ -73,11 +73,11 @@ class Affine(Factor):
 		c = self._name_to_id["child"]
 		mfc = self.messages_to_children[c].message_to_factor
 		mfp = self.messages_to_parents[p].message_to_factor
-		mp = mfp.mean  # N x p x K, N x p x K x K
+		mp = mfp.mean  # N x p x K
 		pc, mtpc = mfc.precision_and_mean_times_precision  # N x p, N x p
 		B = self.parameters["weights"]  # K x p
 		WR = mtpc.sum(0) - torch.einsum("ijk, kj, ij -> j", mp, B, pc)
-		W = pc.sum(0) # N x p x K
+		W = pc.sum(0) # p
 
 		# check that it is exactly equivalent for Gaussian model
 		# mean_c = mfc.mean
@@ -100,6 +100,7 @@ class Affine(Factor):
 		# X'X
 		Vpmmt = vp + torch.einsum("ijk, ijl -> ijkl", mp, mp)
 		SpVpmmt = torch.einsum("ij, ijkl -> jkl", pc, Vpmmt)
+		# small regularization to ensure invertability, equivalent to a prior N(0, 100)
 		SpVpmmt += torch.eye(SpVpmmt.shape[-1]).unsqueeze(0) * 0.01
 		# X'Y
 		pr = mtpc - B0.reshape((1, -1)) * pc
