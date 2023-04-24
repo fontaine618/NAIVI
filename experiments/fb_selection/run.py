@@ -27,7 +27,7 @@ if __name__ == "__main__":
         "data.dataset": ["facebook"],
         "data.path": ["~/Documents/NAIVI/datasets/facebook/"],
         "data.seed": [int(seed)],
-        "data.facebook_center": [698, 0, 1912],
+        "data.facebook_center": [3980, 398, 686, 414, 348, 0, 3437, 1912, 1684, 107],
         "data.missing_covariate_rate": [0.5],
         "data.missing_edge_rate": [0.],
         "data.missing_mechanism": ["triangle"],
