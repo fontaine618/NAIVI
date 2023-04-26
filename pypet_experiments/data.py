@@ -123,9 +123,7 @@ class Dataset:
             par.latent_mean
         heterogeneity = torch.randn(par.n_nodes, 1) * math.sqrt(par.heterogeneity_variance) + \
             par.heterogeneity_mean
-        I = torch.ones(par.latent_dim)
-        I[:par.latent_dim_attributes] = 0
-        theta_X = (latent * I.unsqueeze(0)) @ weights + bias
+        theta_X = latent @ weights + bias
         mean_cts, logit_bin = theta_X[:, :par.p_cts], theta_X[:, par.p_cts:]
         X_cts = torch.randn(par.n_nodes, par.p_cts) * math.sqrt(par.cts_noise) + mean_cts
         X_bin = torch.sigmoid(logit_bin)
@@ -139,7 +137,9 @@ class Dataset:
         X_bin[M_bin] = torch.nan
         i = torch.tril_indices(par.n_nodes, par.n_nodes, offset=-1)
         i0, i1 = i[0, :], i[1, :]
-        theta_A = (latent[i0, :] * latent[i1, :]).sum(1, keepdim=True) + \
+        I = torch.ones(par.latent_dim)
+        I[:par.latent_dim_attributes] = 0
+        theta_A = (latent[i0, :] * latent[i1, :] * I.unsqueeze(0)).sum(1, keepdim=True) + \
             heterogeneity[i0] + heterogeneity[i1]
         A = torch.sigmoid(theta_A)
         A = torch.bernoulli(A)
