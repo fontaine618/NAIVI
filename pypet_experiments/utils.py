@@ -19,6 +19,7 @@ _default_data_parameters = {
     "missing_edge_rate": 0.,
     "missing_mechanism": "uniform",
     "n_seeds": 1,
+    "latent_dim_attributes": 0,
 }
 
 _default_model_parameters = {

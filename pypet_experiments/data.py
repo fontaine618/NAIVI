@@ -113,6 +113,8 @@ class Dataset:
 
     @classmethod
     def synthetic(cls, par: ParameterGroup):
+        if par.latent_dim_attributes > par.latent_dim:
+            raise ValueError("latent_dim_attributes must be smaller than latent_dim")
         p = par.p_cts + par.p_bin
         torch.manual_seed(par.seed)
         weights = torch.randn(par.latent_dim, p)
@@ -121,7 +123,9 @@ class Dataset:
             par.latent_mean
         heterogeneity = torch.randn(par.n_nodes, 1) * math.sqrt(par.heterogeneity_variance) + \
             par.heterogeneity_mean
-        theta_X = latent @ weights + bias
+        I = torch.ones(par.latent_dim)
+        I[:par.latent_dim_attributes] = 0
+        theta_X = (latent * I.unsqueeze(0)) @ weights + bias
         mean_cts, logit_bin = theta_X[:, :par.p_cts], theta_X[:, par.p_cts:]
         X_cts = torch.randn(par.n_nodes, par.p_cts) * math.sqrt(par.cts_noise) + mean_cts
         X_bin = torch.sigmoid(logit_bin)

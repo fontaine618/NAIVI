@@ -64,8 +64,6 @@ class GaussianFactor(Factor):
 		self.messages_to_parents[p].message_to_variable = Normal.from_mean_and_variance(m, var)
 
 	def update_parameters(self):
-		# TODO: check this
-		# curious to see the ELBO comparison with a gradient update
 		p = self._name_to_id["parent"]
 		c = self._name_to_id["child"]
 		# mfp = self.messages_to_parents[p].message_to_factor

@@ -9,12 +9,11 @@ from pypet_experiments.utils import add_parameters
 
 if __name__ == "__main__":
     torch.multiprocessing.set_start_method('spawn')
-    seed = sys.argv[1]
     os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
-        trajectory="fb_selection",
-        filename=f"./results/seed{seed}.hdf5",
+        trajectory="cora",
+        filename=f"./results/gcn.hdf5",
         overwrite_file=True,
         multiproc=True,
         ncores=1,
@@ -24,22 +23,21 @@ if __name__ == "__main__":
     add_parameters(traj)
 
     traj.f_explore(cartesian_product({
-        "data.dataset": ["facebook"],
-        "data.path": ["~/Documents/NAIVI/datasets/facebook/"],
-        "data.seed": [int(seed)],
-        "data.facebook_center": [3980, 698, 686, 414, 348, 0, 3437, 1912, 1684, 107],
-        "data.missing_covariate_rate": [0.5],
+        "data.dataset": ["cora"],
+        "data.path": ["~/Documents/NAIVI/datasets/cora/"],
+        "data.seed": np.arange(0, 31).tolist(),
         "data.missing_edge_rate": [0.],
-        "data.missing_mechanism": ["triangle"],
-        "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "data.n_seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "model.latent_dim": [5],
         "model.heterogeneity_prior_mean": [float("nan")],
         "model.heterogeneity_prior_variance": [1.],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["VMP", ],
-        "fit.vmp.max_iter": [100],
-        "fit.vmp.rel_tol": [1e-5],
-        "fit.vmp.cv_folds": [5],
+        "method": ["GCN"],
+        "model.gcn.n_hidden": [32],
+        "fit.gcn.weight_decay": [5e-4],
+        "fit.gcn.lr": [0.01],
+        "fit.gcn.max_iter": [500],
     }))
 
     env.run(run)

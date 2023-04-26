@@ -13,7 +13,7 @@ if __name__ == "__main__":
     os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
-        trajectory="fb_selection",
+        trajectory="dim_attributes",
         filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
         multiproc=True,
@@ -24,22 +24,30 @@ if __name__ == "__main__":
     add_parameters(traj)
 
     traj.f_explore(cartesian_product({
-        "data.dataset": ["facebook"],
-        "data.path": ["~/Documents/NAIVI/datasets/facebook/"],
+        "data.dataset": ["synthetic"],
         "data.seed": [int(seed)],
-        "data.facebook_center": [3980, 698, 686, 414, 348, 0, 3437, 1912, 1684, 107],
+        "data.n_nodes": [200],
+        "data.p_cts": [0],
+        "data.p_bin": [100],
+        "data.latent_dim": [10],
+        "data.latent_dim_attributes": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "data.latent_variance": [1.],
+        "data.latent_mean": [0.],
+        "data.heterogeneity_mean": [-2.],
+        "data.heterogeneity_variance": [1.],
+        "data.cts_noise": [1.],
         "data.missing_covariate_rate": [0.5],
         "data.missing_edge_rate": [0.],
-        "data.missing_mechanism": ["triangle"],
-        "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "model.heterogeneity_prior_mean": [float("nan")],
+        "data.missing_mechanism": ["row_deletion", "uniform"],
+        "model.latent_dim": [10],
+        "model.heterogeneity_prior_mean": [-2.],
         "model.heterogeneity_prior_variance": [1.],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["VMP", ],
+        "method": ["Mean", "KNN", "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "Oracle", "MICE"],
         "fit.vmp.max_iter": [100],
         "fit.vmp.rel_tol": [1e-5],
-        "fit.vmp.cv_folds": [5],
+        "fit.vmp.cv_folds": [0],
     }))
 
     env.run(run)
