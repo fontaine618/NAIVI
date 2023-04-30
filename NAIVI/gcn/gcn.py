@@ -65,6 +65,7 @@ class GCN:
                   'loss_train: {:.4f}'.format(loss_train.item()))
 
     def output(self):
+        self.model.eval()
         logits = self.model(self.features, self.adjacency_matrix)
         probas = torch.softmax(logits, dim=1)
         return dict(
