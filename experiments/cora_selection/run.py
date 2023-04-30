@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "method": ["VMP", ],
         "fit.vmp.max_iter": [100],
         "fit.vmp.rel_tol": [1e-5],
-        "fit.vmp.cv_folds": [5],
+        "fit.vmp.cv_folds": [0],
     }))
 
     env.run(run)
