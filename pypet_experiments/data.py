@@ -21,7 +21,8 @@ class Dataset:
             binary_covariates_missing: T | None = None,
             continuous_covariates_missing: T | None = None,
             true_values: dict[str, T] | None = None,
-            multiclass_range: tuple[int, int] | None = None
+            multiclass_range: tuple[int, int] | None = None,
+            best_K: int | None = None,
     ):
         self.edge_index_left = edge_index_left
         self.edge_index_right = edge_index_right
@@ -35,6 +36,7 @@ class Dataset:
             true_values = dict()
         self._true_values = true_values
         self.multiclass_range = multiclass_range
+        self.best_K = best_K
 
     @property
     def multiclass_covariates(self) -> T | None:
@@ -336,6 +338,18 @@ class Dataset:
         X_cts[M_cts] = torch.nan
         X_bin_missing = torch.where(~M_bin, torch.full_like(X_bin, torch.nan), X_bin)
         X_bin[M_bin] = torch.nan
+        best_K = { #center :K
+            3980: 3,
+            698: 4,
+            414: 6,
+            686: 6,
+            348: 7,
+            0: 4,
+            3437: 5,
+            1912: 6,
+            1684: 6,
+            107: 6
+        }[center]
         return cls(
             edge_index_left=i0,
             edge_index_right=i1,
@@ -352,7 +366,8 @@ class Dataset:
                 X_bin=X_bin.float(),
                 X_cts_missing=X_cts_missing.float(),
                 X_bin_missing=X_bin_missing.float(),
-            )
+            ),
+            best_K=best_K
         )
 
     @property
