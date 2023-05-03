@@ -13,7 +13,7 @@ if __name__ == "__main__":
 
     env = Environment(
         trajectory="cora",
-        filename=f"./results/gcn.hdf5",
+        filename=f"./results/gcn2.hdf5",
         overwrite_file=True,
         multiproc=True,
         ncores=1,
@@ -34,8 +34,8 @@ if __name__ == "__main__":
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
         "method": ["GCN"],
-        "model.gcn.n_hidden": [32],
-        "fit.gcn.weight_decay": [5e-4],
+        "model.gcn.n_hidden": [16],
+        "fit.gcn.weight_decay": [0.001],
         "fit.gcn.lr": [0.01],
         "fit.gcn.max_iter": [500],
     }))
