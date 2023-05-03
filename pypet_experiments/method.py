@@ -98,8 +98,13 @@ class Method:
                 test=test,
                 return_log=True
             )
+            K = self.model_parameters["latent_dim"]
+            if K == 0:
+                K = data.best_K
+                if K is None:
+                    raise ValueError("K=0 and no best K found")
             model_args = {
-                "K": self.model_parameters["latent_dim"],
+                "K": K,
                 "N": data.n_nodes,
                 "p_cts": data.p_cts,
                 "p_bin": data.p_bin,
@@ -116,7 +121,7 @@ class Method:
             }
             t0 = time.time()
             model = MAP(**model_args)
-            init = initialize(train, self.model_parameters["latent_dim"])
+            init = initialize(train, K)
             model.init(**init)
             out, logs = model.fit(**fit_parameters_dict)
             model_output = MethodOutput(**model.output(train))
@@ -181,8 +186,13 @@ class Method:
                 test=test,
                 return_log=True
             )
+            K = self.model_parameters["latent_dim"]
+            if K == 0:
+                K = data.best_K
+                if K is None:
+                    raise ValueError("K=0 and no best K found")
             model_args = {
-                "K": self.model_parameters["latent_dim"],
+                "K": K,
                 "N": data.n_nodes,
                 "p_cts": data.p_cts,
                 "p_bin": data.p_bin,
@@ -199,7 +209,7 @@ class Method:
             }
             t0 = time.time()
             model = MLE(**model_args)
-            init = initialize(train, self.model_parameters["latent_dim"])
+            init = initialize(train, K)
             model.init(**init)
             out, logs = model.fit(**fit_parameters_dict)
             model_output = MethodOutput(**model.output(train))
@@ -264,8 +274,13 @@ class Method:
                 test=test,
                 return_log=True
             )
+            K = self.model_parameters["latent_dim"]
+            if K == 0:
+                K = data.best_K
+                if K is None:
+                    raise ValueError("K=0 and no best K found")
             model_args = {
-                "K": self.model_parameters["latent_dim"],
+                "K": K,
                 "N": data.n_nodes,
                 "p_cts": data.p_cts,
                 "p_bin": data.p_bin,
@@ -282,7 +297,7 @@ class Method:
             }
             t0 = time.time()
             model = ADVI(**model_args)
-            init = initialize(train, self.model_parameters["latent_dim"])
+            init = initialize(train, K)
             model.init(**init)
             out, logs = model.fit(**fit_parameters_dict)
             model_output = MethodOutput(**model.output(train))
@@ -327,10 +342,15 @@ class Method:
             cv_folds = fit_parameters.vmp.cv_folds
             t0 = time.time()
             hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
+            K = self.model_parameters["latent_dim"]
+            if K == 0:
+                K = data.best_K
+                if K is None:
+                    raise ValueError("K=0 and no best K found")
             if cv_folds > 1:
                 from NAIVI.vmp import CVVMP
                 cv_vmp = CVVMP(
-                    latent_dim=self.model_parameters.latent_dim,
+                    latent_dim=K,
                     n_nodes=data.n_nodes,
                     heterogeneity_prior_mean=hmean,
                     heterogeneity_prior_variance=hvar,
@@ -350,7 +370,7 @@ class Method:
                 covariate_log_likelihood = cv_vmp.covariate_log_likelihood
             vmp = VMP(
                 # dimension and model parameters
-                latent_dim=self.model_parameters.latent_dim,
+                latent_dim=K,
                 n_nodes=data.n_nodes,
                     heterogeneity_prior_mean=hmean,
                     heterogeneity_prior_variance=hvar,
