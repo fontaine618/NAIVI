@@ -4,16 +4,23 @@ Author: **Simon Fontaine** (simfont@umich.edu)
 
 ## Current Status
 
-- FA with small p seems to break down?
 
 ## To do list
 
-[x] Implement all former models within pypet
-[x] multiclass metrics
-[ ] fix multicalss metrics
-[ ] implement new missing vales using seed nodes for multiclass
-[ ] make sure all methods work (MICE)
-[ ] run experiments
+[x] Chanage names in plots to match text
+[x] Redo K selection figures
+[x] Rewrite abstract
+[x] Update introduction
+[x] Rewrite hyper parameters
+[x] Wrtie M Step
+[x] Write semi-supervised part
+[x] Discuss synthetic results
+[x] Discuss Facebook results
+[x] Discuss SSL results
+[x] Redo discussion
+[x] Write implementation details
+[ ] Write additional experiemnts
+
 
 
 ## Backlog
@@ -26,9 +33,20 @@ Author: **Simon Fontaine** (simfont@umich.edu)
     - parameter update will need a proximal step
 [ ] Multinomial model
 
+                        method testing.auroc_binary
+run_00000000               VMP              0.81122
+run_00000001              MICE             0.662492
+run_00000002              Mean             0.671731
+run_00000003               KNN             0.669358
+run_00000004                FA             0.677461
+run_00000005               MAP             0.782768
+run_00000006               MLE              0.78271
+run_00000007  NetworkSmoothing             0.766941
+run_00000008            Oracle             0.827622
 
 
-scp simfont@greatlakes-xfer.arc-ts.umich.edu:./Documents/NAIVI/experiments/n_nodes/results.hdf5
+
+scp -r simfont@greatlakes-xfer.arc-ts.umich.edu:./Documents/NAIVI/experiments/fb_selection/results/ ./experiments/fb_selection/
 
 ## Changelog
 

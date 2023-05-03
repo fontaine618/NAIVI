@@ -30,18 +30,18 @@ plt.rcParams.update({
 methods = {
     "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
-    "VMP":              ("NAIVI-VMP",   "#8888ff", "dotted", "o"),
-    "ADVI":             ("NAIVI-QB",    "#8888ff", "dashed", "v"),
+    "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
+    # "ADVI":             ("NAIVI-QB",    "#8888ff", "dashed", "v"),
 
-    "MAP":              ("NAIVI-MAP",   "#3333ff", "dotted", "o"),
-    "MLE":              ("NAIVI-MLE",   "#3333ff", "dotted", "v"),
-    "NetworkSmoothing": ("Smoothing",   "#3333ff", "dashed", "s"),
+    "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
+    "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
+    "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
 
-    "FA":               ("NAIVI-FA",    "#88ff88", "dotted", "o"),
+    "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
     "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
     "MICE":             ("MICE",        "#88ff88", "dashed", "s"),
 
-    "Mean":             ("Mean",        "#ff8888", "dotted", "s"),
+    "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
 
 # missing mechanisms
@@ -53,8 +53,11 @@ missing_mechanisms = {
 }
 
 experiments = {
-    # "experiment_name": ("group_by", "display_var", "display_name")
-    "n_nodes_binary": ("data.n_nodes", "data.n_nodes", "Nb. nodes"),
+    # "experiment_name": ("group_by", "display_var", "display_name", logx?)
+    "n_nodes_binary": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
+    "n_attributes_binary": ("data.p_bin", "data.p_bin", "Nb. attributes", True),
+    "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
+    "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
 }
 
 
@@ -64,17 +67,19 @@ curves_by = "method"
 cols_by = "experiment"
 
 metric = "testing.auroc_binary"
+# metric = "training.cpu_time"
 yaxis = "Pred. AuROC"
+# yaxis = "CPU Time (s)"
 
 
 
 
 full_df_list = []
 
-for name, (group_by, display_var, display_name) in experiments.items():
+for name, (group_by, display_var, display_name, _) in experiments.items():
 
     res_list = []
-    for i in range(1):
+    for i in range(31):
         file = f"./experiments/{name}/results/seed{i}.hdf5"
         traj = Trajectory(name=name)
         traj.f_load(filename=file, load_results=2, force=True)
@@ -91,7 +96,7 @@ for name, (group_by, display_var, display_name) in experiments.items():
     cols = list(set([rows_by, curves_by, display_var, cols_by, group_by, metric]))
     df = results.loc[:, cols]
 
-    df["x_value"] = df.groupby([group_by, curves_by, rows_by])[display_var].transform("median")
+    df["x_value"] = df.groupby([group_by, rows_by])[display_var].transform("median")
 
     outdf = df.groupby([group_by, curves_by, rows_by]).agg({
         metric: "median",
@@ -106,9 +111,11 @@ full_df = pd.concat(full_df_list)
 
 
 
+# rows = [full_df[rows_by].unique()[0]]
 rows = full_df[rows_by].unique()
 cols = full_df[cols_by].unique()
 curves = full_df[curves_by].unique()
+# curves = ["VMP", "MAP"]
 
 
 
@@ -116,8 +123,10 @@ curves = full_df[curves_by].unique()
 
 
 plt.cla()
-fig, axs = plt.subplots(figsize=(8, 8), nrows=len(rows), ncols=len(cols),
-                        sharex="col", sharey="all", squeeze=False)
+fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows), ncols=len(cols),
+                        sharex="col", sharey="row", squeeze=False)
+# fig, axs = plt.subplots(figsize=(7, 4), nrows=len(rows), ncols=len(cols),
+#                         sharex="col", sharey="row", squeeze=False)
 for i, row in enumerate(rows):
     for j, col in enumerate(cols):
         ax = axs[i, j]
@@ -130,22 +139,28 @@ for i, row in enumerate(rows):
                     markerfacecolor='none')
             if i == len(rows)-1:
                 ax.set_xlabel(col)
-            ax.set_xscale("log")
+            if i == 0:
+                ax.set_title(f"Setting {'ABCDEFGHI'[j]}")
+            for name, (group_by, display_var, display_name, logx) in experiments.items():
+                if col == display_name:
+                    ax.set_xscale("log" if logx else "linear")
             if j == 0:
                 ax.set_ylabel(yaxis)
             if j == len(cols)-1:
-                ax.set_ylabel(missing_mechanisms[row])
+                ax.set_ylabel(f"{missing_mechanisms[row]}")
                 ax.yaxis.set_label_position("right")
+            ax.set_yscale("log")
 
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')
-         for _, (_, color, ltype, mtype) in methods.items()]
-labels = [name for _, (name, _, _, _) in methods.items()]
+         for nm, (name, color, ltype, mtype) in methods.items() if nm in curves]
+labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
-fig.legend(lines, labels, loc=9, ncol=5)
+fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
+# fig.subplots_adjust(top=0.80)
 fig.subplots_adjust(top=0.90)
-plt.savefig("experiments/metrics.pdf")
+plt.savefig("experiments/synthetic_metrics.pdf")
 
 
 
