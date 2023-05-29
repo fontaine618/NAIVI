@@ -21,7 +21,7 @@ add_parameters(traj)
 traj.f_explore(cartesian_product({
     # "data.dataset": ["synthetic"],
     "data.dataset": ["facebook"],
-    "data.facebook_center": [3980],
+    "data.facebook_center": [107],
     "data.path": ["/home/simon/Documents/NAIVI/datasets/facebook/"],
     # "data.seed": [0,],
     "data.seed": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
@@ -40,7 +40,7 @@ traj.f_explore(cartesian_product({
     "data.missing_covariate_rate": [0.5],
     "data.missing_edge_rate": [0.],
     "data.missing_mechanism": ["row_deletion"],
-    "model.latent_dim": [4, ],
+    "model.latent_dim": [0, ],
     # "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9],
     "model.heterogeneity_prior_mean": [float("nan")],
     "model.heterogeneity_prior_variance": [2.],

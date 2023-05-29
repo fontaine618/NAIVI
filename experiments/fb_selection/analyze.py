@@ -55,16 +55,26 @@ metrics = { # colname: (display_name, higher_is_better)
 
 cols = { #center :(N, p)
     # 3980: (59, 42),
-    698: (66, 48),
+    # 698: (66, 48),
     # 414: (159, 103),
     # 686: (170, 62),
     # 348: (227, 126),
-    # 0: (347, 139),
-    # 3437: (547, 116),
-    # 1912: (755, 133),
-    # 1684: (792, 100),
-    # 107: (1045, 153)
+    0: (347, 139),
+    3437: (547, 116),
+    1912: (755, 133),
+    1684: (792, 100),
+    107: (1045, 153)
 }
+
+
+
+
+
+
+
+
+
+
 
 fig, axs = plt.subplots(
     len(metrics), len(cols),
@@ -103,7 +113,9 @@ for col, (center, (N, p)) in enumerate(cols.items()):
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()
-# fig.subplots_adjust(top=0.86)
-# plt.show()
+# fig.subplots_adjust(top=0.90)
+# # plt.show()
+# plt.suptitle(f"Facebook ego centers", x=0.08,
+#              horizontalalignment='left')
 
-plt.savefig(f"./experiments/{name}/fb_selection_small.pdf")
+plt.savefig(f"./experiments/{name}/fb_selection_metrics_large.pdf")

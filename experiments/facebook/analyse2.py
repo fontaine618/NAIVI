@@ -59,7 +59,7 @@ missing_mechanisms = {
 name = "facebook"
 res_list = []
 for i in range(31):
-    file = f"./experiments/{name}/results/seed{i}.hdf5"
+    file = f"./experiments/{name}/results/seed{i}_K.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
 
@@ -69,18 +69,18 @@ for i in range(31):
 
     # there was a typo in the original job where 698 was replaced by 398,
     # so we need to patch things up a bit
-    to_drop = results["data.facebook_center"] == 398
-    results = results.loc[~to_drop, :]
-
-    file = f"./experiments/{name}/results/seed{i}_698.hdf5"
-    traj = Trajectory(name=name)
-    traj.f_load(filename=file, load_results=2, force=True)
-
-    parameters698 = gather_parameters_to_DataFrame(traj)
-    results698 = gather_results_to_DataFrame(traj)
-    results698 = parameters698.join(results698)
-
-    results = pd.concat([results, results698])
+    # to_drop = results["data.facebook_center"] == 398
+    # results = results.loc[~to_drop, :]
+    #
+    # file = f"./experiments/{name}/results/seed{i}_698.hdf5"
+    # traj = Trajectory(name=name)
+    # traj.f_load(filename=file, load_results=2, force=True)
+    #
+    # parameters698 = gather_parameters_to_DataFrame(traj)
+    # results698 = gather_results_to_DataFrame(traj)
+    # results698 = parameters698.join(results698)
+    #
+    # results = pd.concat([results, results698])
 
 
     res_list.append(results)
@@ -149,7 +149,7 @@ labels = [name for _, (name, _, _, _) in methods.items()]
 fig.legend(lines, labels, loc=9, ncol=6)
 plt.tight_layout()
 fig.subplots_adjust(top=0.92)
-plt.savefig(f"./experiments/{name}/facebook_metrics2.pdf")
+plt.savefig(f"./experiments/{name}/facebook_metrics3.pdf")
 
 
 
