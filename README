@@ -2,63 +2,65 @@
 
 Author: **Simon Fontaine** (simfont@umich.edu)
 
-## Current Status
+## Repository structure
 
+### NAIVI
 
-## To do list
+Contains the source code to run various node attribute imputation methods.
 
-[x] Chanage names in plots to match text
-[x] Redo K selection figures
-[x] Rewrite abstract
-[x] Update introduction
-[x] Rewrite hyper parameters
-[x] Wrtie M Step
-[x] Write semi-supervised part
-[x] Discuss synthetic results
-[x] Discuss Facebook results
-[x] Discuss SSL results
-[x] Redo discussion
-[x] Write implementation details
-[ ] Write additional experiemnts
+- `vmp`: the proposed method (joint latent space model estimated with variational message passing)
+- `mle`: the joint latent space model estimated using either maximum likelihood estimation with projection (MLE) or maximum a posteriori estimation (MAP) using the prior
+- `mice`: imputation within the data matrix only using either MICE with linear models or KNN
+- `constant`: imputaiton using the mean
+- `gcn`: imputation using a graph convolutional network
 
+### Pypet experiments
 
+This folder contains utilities to run experiments using the pypet library.
 
-## Backlog
-[ ] MNAR model
-    - should be fairly easy
-    - add an argument mnar: bool
-    - triggers _initialize_missingness_model
-    - which reads in the two covariate models to see where the missing values are
-    - create a binary model just like the binary covariates
-    - parameter update will need a proximal step
-[ ] Multinomial model
+### Experiments
 
-                        method testing.auroc_binary
-run_00000000               VMP              0.81122
-run_00000001              MICE             0.662492
-run_00000002              Mean             0.671731
-run_00000003               KNN             0.669358
-run_00000004                FA             0.677461
-run_00000005               MAP             0.782768
-run_00000006               MLE              0.78271
-run_00000007  NetworkSmoothing             0.766941
-run_00000008            Oracle             0.827622
+This folder contains the scripts to run the experiments using `pypet`. Results and figures are also included in the
+respective folders.
 
+### Datasets
 
+Datasets used in the real data experiments.
 
-scp -r simfont@greatlakes-xfer.arc-ts.umich.edu:./Documents/NAIVI/experiments/fb_selection/results/ ./experiments/fb_selection/
+### Requirements
 
-## Changelog
+All requirements are contained in the `requirements.txt` file, or can be obtained using the `poetry` library.
 
-### Version 0.1.0
+Note: the latest version of `pypet` conflicts with newer versions of `numpy`. There are some basic types that were
+removed from `numpy` that are referenced in `pypet`. This needs to be patched, otherwise you might not be able to import `pypet`.
+Here is my fix: in `pypetconstants.py`, you need to change the following tuple at line 204:
 
-Implemented methods:
-- Stochastic VI with reparameterization trick (VIMC)
-- Direct optimization (ADVI)
-- MLE & MAP
-- MICE, MissForest, mean imputation (no network)
-- MCMC (No missing values allowed)
-- NerworkSmoothing: average of the neighbors until stable
-
-Under development:
-- Variational message passing (VMP) with multivariate normal variational approximation
+```
+PARAMETER_SUPPORTED_DATA = (numpy.int8,
+                            numpy.int16,
+                            numpy.int32,
+                            numpy.int64,
+                            # numpy.int,
+                            numpy.int_,
+                            # numpy.long,
+                            numpy.uint8,
+                            numpy.uint16,
+                            numpy.uint32,
+                            numpy.uint64,
+                            # numpy.bool,
+                            numpy.bool_,
+                            numpy.float32,
+                            numpy.float64,
+                            # numpy.float,
+                            numpy.float_,
+                            numpy.complex64,
+                            # numpy.complex,
+                            numpy.complex_,
+                            numpy.str_,
+                            str,
+                            bytes,
+                            bool,
+                            int,
+                            float,
+                            complex)
+```

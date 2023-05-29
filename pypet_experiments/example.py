@@ -56,53 +56,8 @@ env.run(run)
 
 traj.f_load(load_results=2)
 res = gather_results_to_DataFrame(traj)
-# gather_parameters_to_DataFrame(traj)["data.seed"]
 print(res["testing.X_bin_missing_auroc"])
 
 
 
 
-
-# # debug
-traj.f_set_crun(0)
-data: Dataset = Dataset.from_parameters(traj.data)
-method: Method = Method.from_parameters(traj.method, traj.model)
-results: Results = method.fit(data, traj.fit)
-# import cProfile
-# cProfile.run("method.fit(data, traj.fit)")
-# # traj.res.crun.f_to_dict()
-# # traj.res.crun.logs.elbo_history
-#
-method_parameters = traj.method
-fit_parameters = traj.fit
-self = method
-#
-#
-# name = "weights"
-# value = data.true_values[name]
-
-
-traj.f_load(load_results=2)
-res = gather_results_to_DataFrame(traj)
-gather_parameters_to_DataFrame(traj)["data.seed"]
-print(res["testing.X_bin_missing_auroc"])
-
-
-
-import pandas as pd
-import matplotlib.pyplot as plt
-plt.style.use("seaborn-v0_8-whitegrid")
-
-plt.cla()
-for index, value in res["logs.elbo_history"].iteritems():
-    value = np.array(value)
-    i = np.argmax(np.diff(value) < 0.) + 1
-    value = (max(value)-value)/max(abs(value))+1e-5
-    plt.plot(value, label=index, alpha=0.2)
-    plt.scatter(i, value[i], marker="x", label=index, s=100)
-    plt.scatter(len(value), value[-1], marker=".", label=index, s=100)
-    plt.scatter(np.argmin(value), min(value), marker="^", label=index, s=100)
-plt.yscale("log")
-# plt.xscale("log")
-plt.tight_layout()
-plt.show()
