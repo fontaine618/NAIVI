@@ -7,25 +7,8 @@ import sys
 sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from NAIVI.mcmc import MCMC
 from NAIVI.vmp import VMP
+torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
-
-
-# torch.set_default_tensor_type(torch.cuda.FloatTensor)
-# plt.rcParams.update(plt.rcParamsDefault)
-# sns.set_theme(style="whitegrid", palette="colorblind")
-# plt.rcParams.update({
-#     "text.usetex": False,
-#     "mathtext.default": "regular",
-#     "font.family": ["sans-serif"],
-#     "font.sans-serif": ["Lato"],
-#     "axes.labelweight": "normal",
-#     "figure.titleweight": "bold",
-#     "figure.titlesize": "large",
-#     "font.weight": "normal",
-#     # "axes.formatter.use_mathtext": True,
-#     "xtick.labelsize": 9,
-#     "ytick.labelsize": 9,
-# })
 
 EXPERIMENT_NAME = "vmp_v_mcmc"
 DIR_RESULTS = "./results/"
@@ -107,18 +90,18 @@ for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
     # prediction bias
     res["vmp"]["X_cts_bias"] = (vmp_output["pred_continuous_covariates"][0] - X_cts)[i_cts, j_cts].cpu().numpy().tolist()
     res["mcmc"]["X_cts_bias"] = (mcmc_output["pred_continuous_covariates"][0] - X_cts)[i_cts, j_cts].cpu().numpy().tolist()
-    res["vmp"]["X_cts_missing_bias"] = (vmp_output["pred_continuous_covariates"][0] - X_cts)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
-    res["mcmc"]["X_cts_missing_bias"] = (mcmc_output["pred_continuous_covariates"][0] - X_cts)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["vmp"]["X_cts_missing_bias"] = (vmp_output["pred_continuous_covariates"][0] - X_cts_missing)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_missing_bias"] = (mcmc_output["pred_continuous_covariates"][0] - X_cts_missing)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
     # prediction variance
     res["vmp"]["X_cts_var"] = vmp_output["pred_continuous_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
     res["mcmc"]["X_cts_var"] = mcmc_output["pred_continuous_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
     res["vmp"]["X_cts_missing_var"] = vmp_output["pred_continuous_covariates"][1][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
     res["mcmc"]["X_cts_missing_var"] = mcmc_output["pred_continuous_covariates"][1][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
     # fitted mean bias
-    res["vmp"]["X_cts_fitted_bias"] = vmp_output["linear_predictor_covariates"][0][i_cts, j_cts].cpu().numpy().tolist()
-    res["mcmc"]["X_cts_fitted_bias"] = mcmc_output["linear_predictor_covariates"][0][i_cts, j_cts].cpu().numpy().tolist()
-    res["vmp"]["X_cts_missing_fitted_bias"] = vmp_output["linear_predictor_covariates"][0][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
-    res["mcmc"]["X_cts_missing_fitted_bias"] = mcmc_output["linear_predictor_covariates"][0][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["vmp"]["X_cts_fitted_bias"] = (vmp_output["linear_predictor_covariates"][0] - thetaX)[i_cts, j_cts].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_fitted_bias"] = (mcmc_output["linear_predictor_covariates"][0] - thetaX)[i_cts, j_cts].cpu().numpy().tolist()
+    res["vmp"]["X_cts_missing_fitted_bias"] = (vmp_output["linear_predictor_covariates"][0] - thetaX)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_missing_fitted_bias"] = (mcmc_output["linear_predictor_covariates"][0] - thetaX)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
     # fitted mean variance
     res["vmp"]["X_cts_fitted_var"] = vmp_output["linear_predictor_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
     res["mcmc"]["X_cts_fitted_var"] = mcmc_output["linear_predictor_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
