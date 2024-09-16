@@ -20,7 +20,7 @@ experiments = {
     "50_5_3": ("A", 50, 5, 0, 3),
     "50_20_3": ("B", 50, 20, 0, 3),
     "100_5_5": ("C", 100, 5, 0, 5),
-    "100_20_5": ("D", 100, 10, 0, 5),
+    "100_20_5": ("D", 100, 20, 0, 5),
 }
 
 for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
@@ -48,8 +48,8 @@ for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
     A = torch.bernoulli(pA)
     i_cts, j_cts = (~torch.isnan(X_cts)).nonzero(as_tuple=True)
     i_bin, j_bin = (~torch.isnan(X_bin)).nonzero(as_tuple=True)
-    i_cts_missing, j_cts_missing = (torch.isnan(X_cts_missing)).nonzero(as_tuple=True)
-    i_bin_missing, j_bin_missing = (torch.isnan(X_bin_missing)).nonzero(as_tuple=True)
+    i_cts_missing, j_cts_missing = (~torch.isnan(X_cts_missing)).nonzero(as_tuple=True)
+    i_bin_missing, j_bin_missing = (~torch.isnan(X_bin_missing)).nonzero(as_tuple=True)
     # priors
     h = {
         "latent_prior_variance": 1.,
