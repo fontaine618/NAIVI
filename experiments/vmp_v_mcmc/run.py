@@ -7,7 +7,7 @@ import sys
 sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from NAIVI.mcmc import MCMC
 from NAIVI.vmp import VMP
-torch.set_default_tensor_type(torch.cuda.FloatTensor)
+# torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 
 EXPERIMENT_NAME = "vmp_v_mcmc"
