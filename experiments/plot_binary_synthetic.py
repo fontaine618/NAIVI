@@ -66,10 +66,13 @@ rows_by = "data.missing_mechanism"
 curves_by = "method"
 cols_by = "experiment"
 
-metric = "testing.auroc_binary"
-# metric = "training.cpu_time"
-yaxis = "Pred. AuROC"
-# yaxis = "CPU Time (s)"
+# performance metric
+# metric = "testing.auroc_binary"
+# yaxis = "Pred. AuROC"
+
+# computation time
+metric = "training.cpu_time"
+yaxis = "CPU Time (s)"
 
 
 
@@ -110,12 +113,15 @@ full_df = pd.concat(full_df_list)
 
 
 
-
-# rows = [full_df[rows_by].unique()[0]]
+# performance metric
 rows = full_df[rows_by].unique()
 cols = full_df[cols_by].unique()
 curves = full_df[curves_by].unique()
-# curves = ["VMP", "MAP"]
+
+# computation time
+rows = [full_df[rows_by].unique()[0]]
+curves = ["VMP", "MLE"]
+cols = [full_df[cols_by].unique()[i] for i in [0, 1]]
 
 
 
@@ -123,10 +129,10 @@ curves = full_df[curves_by].unique()
 
 
 plt.cla()
-fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows), ncols=len(cols),
-                        sharex="col", sharey="row", squeeze=False)
-# fig, axs = plt.subplots(figsize=(7, 4), nrows=len(rows), ncols=len(cols),
+# fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows), ncols=len(cols),
 #                         sharex="col", sharey="row", squeeze=False)
+fig, axs = plt.subplots(figsize=(7, 4), nrows=len(rows), ncols=len(cols),
+                        sharex="col", sharey="row", squeeze=False)
 for i, row in enumerate(rows):
     for j, col in enumerate(cols):
         ax = axs[i, j]
@@ -158,9 +164,10 @@ labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
 fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-# fig.subplots_adjust(top=0.80)
-fig.subplots_adjust(top=0.90)
-plt.savefig("experiments/synthetic_metrics.pdf")
+fig.subplots_adjust(top=0.80)
+# fig.subplots_adjust(top=0.90)
+# plt.savefig("experiments/synthetic_metrics.pdf")
+plt.savefig("experiments/synthetic_cputime.pdf")
 
 
 

@@ -66,12 +66,12 @@ class GaussianFactor(Factor):
 	def update_parameters(self):
 		p = self._name_to_id["parent"]
 		c = self._name_to_id["child"]
-		# mfp = self.messages_to_parents[p].message_to_factor
-		# mfc = self.messages_to_children[c].message_to_factor
-		mfp = self.parents[p].posterior
-		mfc = self.children[c].posterior
+		mfp = self.messages_to_parents[p].message_to_factor
+		mfc = self.messages_to_children[c].message_to_factor
+		# mfp = self.parents[p].posterior
+		# mfc = self.children[c].posterior
 		m, v = mfp.mean_and_variance
-		observed = mfc.precision > 0.
+		observed = mfc.precision.isinf()
 		x = mfc.mean
 		s2 = (x - m).pow(2.) + v
 		s2sum = torch.where(observed, s2, torch.zeros_like(s2)).sum(dim=0)

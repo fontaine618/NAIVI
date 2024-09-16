@@ -754,3 +754,52 @@ class VMP:
             weight_covariates=self.weights.T,
             bias_covariates=self.bias.reshape(-1),
         )
+
+    def output_with_uncertainty(self):
+        out = dict()
+        if "cts_obs" in self.variables:
+            c_id = self.variables["cts_obs"].id
+            m, v = self.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean_and_variance
+            out["pred_continuous_covariates"] = m, v
+            m, v = self.variables["mean_cts"].posterior.mean_and_variance
+            if "linear_predictor_covariates" not in out:
+                out["linear_predictor_covariates"] = m, v
+        if "bin_obs" in self.variables:
+            c_id = self.variables["bin_obs"].id
+            p = self.factors["bin_model"].messages_to_children[c_id].message_to_variable.proba
+            out["pred_binary_covariates"] = p, p * (1 - p)
+            m, v = self.variables["logit_bin"].posterior.mean_and_variance
+            if "linear_predictor_covariates" not in out:
+                out["linear_predictor_covariates"] = m, v
+            else:
+                out["linear_predictor_covariates"] = (
+                    torch.cat([out["linear_predictor_covariates"][0], m], dim=1),
+                    torch.cat([out["linear_predictor_covariates"][1], v], dim=1)
+                )
+        if "edge" in self.variables:
+            c_id = self.variables["edge"].id
+            p = self.factors["edge_model"].messages_to_children[c_id].message_to_variable.proba
+            out["pred_edges"] = p, p * (1 - p)
+            m, v = self.variables["edge_logit"].posterior.mean_and_variance
+            out["linear_predictor_edges"] = m, v
+        if "latent" in self.variables:
+            m, v = self.variables["latent"].posterior.mean_and_variance
+            out["latent_positions"] = m, v
+        if "heterogeneity" in self.variables:
+            m, v = self.variables["heterogeneity"].posterior.mean_and_variance
+            out["latent_heterogeneity"] = m, v
+        if "affine_cts" in self.parameters:
+            m, v = self.parameters["affine_cts"]["weights"], None
+            out["weight_covariates"] = m, v
+            out["bias_covariates"] = self.parameters["affine_cts"]["bias"], None
+        if "affine_bin" in self.parameters:
+            m, v = self.parameters["affine_bin"]["weights"], None
+            if "weight_covariates" not in out:
+                out["weight_covariates"] = m, v
+                out["bias_covariates"] = self.parameters["affine_bin"]["bias"], None
+            else:
+                out["weight_covariates"] = torch.cat([out["weight_covariates"][0], m], dim=1), None
+                out["bias_covariates"] = torch.cat([out["bias_covariates"][0], self.parameters["affine_bin"]["bias"]], dim=0), None
+        return out
+
+
