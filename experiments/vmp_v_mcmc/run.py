@@ -1,10 +1,12 @@
 import torch
-from NAIVI.mcmc import MCMC
-from NAIVI.vmp import VMP
 # import matplotlib.pyplot as plt
 # import seaborn as sns
 import os
 import json
+import sys
+sys.path.insert(1, '/home/simon/Documents/NAIVI/')
+from NAIVI.mcmc import MCMC
+from NAIVI.vmp import VMP
 
 
 
