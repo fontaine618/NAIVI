@@ -1,33 +1,39 @@
 import torch
 from NAIVI.mcmc import MCMC
 from NAIVI.vmp import VMP
-import matplotlib.pyplot as plt
-import seaborn as sns
+# import matplotlib.pyplot as plt
+# import seaborn as sns
+import os
+import json
 
 
-torch.set_default_tensor_type(torch.cuda.FloatTensor)
-plt.rcParams.update(plt.rcParamsDefault)
-sns.set_theme(style="whitegrid", palette="colorblind")
-plt.rcParams.update({
-    "text.usetex": False,
-    "mathtext.default": "regular",
-    "font.family": ["sans-serif"],
-    "font.sans-serif": ["Lato"],
-    "axes.labelweight": "normal",
-    "figure.titleweight": "bold",
-    "figure.titlesize": "large",
-    "font.weight": "normal",
-    # "axes.formatter.use_mathtext": True,
-    "xtick.labelsize": 9,
-    "ytick.labelsize": 9,
-})
+
+# torch.set_default_tensor_type(torch.cuda.FloatTensor)
+# plt.rcParams.update(plt.rcParamsDefault)
+# sns.set_theme(style="whitegrid", palette="colorblind")
+# plt.rcParams.update({
+#     "text.usetex": False,
+#     "mathtext.default": "regular",
+#     "font.family": ["sans-serif"],
+#     "font.sans-serif": ["Lato"],
+#     "axes.labelweight": "normal",
+#     "figure.titleweight": "bold",
+#     "figure.titlesize": "large",
+#     "font.weight": "normal",
+#     # "axes.formatter.use_mathtext": True,
+#     "xtick.labelsize": 9,
+#     "ytick.labelsize": 9,
+# })
+
+EXPERIMENT_NAME = "vmp_v_mcmc"
+DIR_RESULTS = "./results/".format(EXPERIMENT_NAME)
+if not os.path.exists(DIR_RESULTS):
+    os.makedirs(DIR_RESULTS)
 
 experiments = {
     # name: (Display, n_nodes, p_cts, p_bin, latent_dim)
     "test": ("Test", 20, 5, 0, 3),
 }
-
-results = dict()
 
 for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
     # generate data
@@ -93,14 +99,37 @@ for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
     mcmc_output = mcmc.output_with_uncertainty()
     # store results
     res = dict(vmp=dict(), mcmc=dict())
-    res["vmp"]["X_cts_mean_error"] = (vmp_output["pred_continuous_covariates"][0] - X_cts)[i_cts_missing, j_cts_missing]
-    res["mcmc"]["X_cts_mean_error"] = (mcmc_output["pred_continuous_covariates"][0] - X_cts)[i_cts_missing, j_cts_missing]
+    # prediction bias
+    res["vmp"]["X_cts_bias"] = (vmp_output["pred_continuous_covariates"][0] - X_cts)[i_cts, j_cts].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_bias"] = (mcmc_output["pred_continuous_covariates"][0] - X_cts)[i_cts, j_cts].cpu().numpy().tolist()
+    res["vmp"]["X_cts_missing_bias"] = (vmp_output["pred_continuous_covariates"][0] - X_cts)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_missing_bias"] = (mcmc_output["pred_continuous_covariates"][0] - X_cts)[i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    # prediction variance
+    res["vmp"]["X_cts_var"] = vmp_output["pred_continuous_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_var"] = mcmc_output["pred_continuous_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
+    res["vmp"]["X_cts_missing_var"] = vmp_output["pred_continuous_covariates"][1][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_missing_var"] = mcmc_output["pred_continuous_covariates"][1][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    # fitted mean bias
+    res["vmp"]["X_cts_fitted_bias"] = vmp_output["linear_predictor_covariates"][0][i_cts, j_cts].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_fitted_bias"] = mcmc_output["linear_predictor_covariates"][0][i_cts, j_cts].cpu().numpy().tolist()
+    res["vmp"]["X_cts_missing_fitted_bias"] = vmp_output["linear_predictor_covariates"][0][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_missing_fitted_bias"] = mcmc_output["linear_predictor_covariates"][0][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    # fitted mean variance
+    res["vmp"]["X_cts_fitted_var"] = vmp_output["linear_predictor_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_fitted_var"] = mcmc_output["linear_predictor_covariates"][1][i_cts, j_cts].cpu().numpy().tolist()
+    res["vmp"]["X_cts_missing_fitted_var"] = vmp_output["linear_predictor_covariates"][1][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    res["mcmc"]["X_cts_missing_fitted_var"] = mcmc_output["linear_predictor_covariates"][1][i_cts_missing, j_cts_missing].cpu().numpy().tolist()
+    # fitted logit edge bias
+    res["vmp"]["thetaA_bias"] = (vmp_output["linear_predictor_edges"][0].squeeze(1) - thetaA).cpu().numpy().tolist()
+    res["mcmc"]["thetaA_bias"] = (mcmc_output["linear_predictor_edges"][0] - thetaA).cpu().numpy().tolist()
+    # fitted logit edge variance
+    res["vmp"]["thetaA_var"] = vmp_output["linear_predictor_edges"][1].squeeze(1).cpu().numpy().tolist()
+    res["mcmc"]["thetaA_var"] = mcmc_output["linear_predictor_edges"][1].cpu().numpy().tolist()
+    # store results as json
+    with open(f"{DIR_RESULTS}/{name}.json", "w") as f:
+        json.dump(res, f)
 
-    plt.cla()
-    plt.scatter(res["mcmc"]["X_cts_mean_error"].pow(2.), res["vmp"]["X_cts_mean_error"].pow(2.))
-    plt.axline((0, 0), (1, 1), color="black", linestyle="--")
-    plt.gca().set_aspect("equal", adjustable="box")
-    plt.show()
+
 
 
 
