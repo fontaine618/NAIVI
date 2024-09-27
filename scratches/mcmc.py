@@ -77,3 +77,13 @@ vmp.factors["cts_model"].messages_to_children[c_id].message_to_variable.mean_and
 vmp.factors["cts_model"].parameters["log_variance"].exp()
 
 self = vmp.factors["cts_model"]
+
+
+
+
+
+
+samples = mcmc.get_samples_with_derived_quantities()
+samples["llk"].reciprocal().mean().pow(-1.)
+samples["llk"].mean()
+(samples["llk"]+155.).exp().mean().log()-155.
