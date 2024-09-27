@@ -11,7 +11,6 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=1
-#SBATCH --gpus-per-node=1
 #SBATCH --mem-per-cpu=16g
 #SBATCH --output=/home/%u/logs/%x-%j.log
 # The application(s) to execute along with its input arguments and options:
