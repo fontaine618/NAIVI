@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import sys
 import os
-# sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
-sys.path.insert(1, '/home/simon/Documents/NAIVI/')
+sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
+# sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
@@ -28,6 +28,7 @@ if __name__ == "__main__":
         "data.dataset": ["synthetic"],
         "data.seed": [int(seed)],
         "data.n_nodes": [200],
+        # "data.p_cts": [5, ],
         "data.p_cts": [5, 10, 20, 50, 100, 200, 500, 1000,],
         "data.p_bin": [0],
         "data.latent_dim": [5],

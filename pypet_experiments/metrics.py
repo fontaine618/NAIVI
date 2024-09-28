@@ -12,7 +12,7 @@ def nanmse(pred, target):
 
 def nanauroc(pred, target):
     which = ~torch.isnan(target)
-    return auroc(pred[which], target[which], task="binary").item() if which.any() else float("nan")
+    return auroc(pred[which], target[which].long(), task="binary").item() if which.any() else float("nan")
 
 
 def relmse(pred, target):

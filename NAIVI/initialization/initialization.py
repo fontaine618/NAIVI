@@ -1,9 +1,7 @@
 from NAIVI.initialization.usvt import initialize_latent_variables
 from NAIVI.mle import GLM
-from NAIVI.advi import ADVI
 from NAIVI.utils.data import JointDataset
 import torch
-import copy
 
 
 def initialize(train: JointDataset, K: int, mnar: bool = False,
