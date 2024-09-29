@@ -37,7 +37,10 @@ class GradientBased:
         if true_values is None:
             true_values = dict()
         for k, v in true_values.items():
-            true_values[k] = v.cuda()
+            if torch.cuda.is_available():
+                true_values[k] = v.cuda()
+            else:
+                true_values[k] = v
         self.reg = reg
         self.reg_B = reg_B
         self.compute_denum(train)
@@ -97,24 +100,45 @@ class GradientBased:
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None, sig2=None, components=None):
         with torch.no_grad():
-            if positions is not None:
-                if "mean" in positions:
-                    self.model.encoder.latent_position_encoder.init(positions["mean"].cuda())
-                if "variance" in positions:
-                    self.model.encoder.latent_position_encoder.init(positions["variance"].cuda())
-            if heterogeneity is not None:
-                if "mean" in heterogeneity:
-                    self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["mean"].cuda())
-                if "variance" in heterogeneity:
-                    self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["variance"].cuda())
-            if bias is not None:
-                self.model.covariate_model.mean_model.bias.data = bias.view(-1).cuda()
-            if weight is not None:
-                self.model.covariate_model.mean_model.weight.data = weight.t().cuda()
-            if sig2 is not None:
-                self.model.covariate_model.set_var(sig2.cuda())
-            if components is not None:
-                self.model.adjacency_model.set_components(components.cuda())
+
+            if torch.cuda.is_available():
+                if positions is not None:
+                    if "mean" in positions:
+                        self.model.encoder.latent_position_encoder.init(positions["mean"].cuda())
+                    if "variance" in positions:
+                        self.model.encoder.latent_position_encoder.init(positions["variance"].cuda())
+                if heterogeneity is not None:
+                    if "mean" in heterogeneity:
+                        self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["mean"].cuda())
+                    if "variance" in heterogeneity:
+                        self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["variance"].cuda())
+                if bias is not None:
+                    self.model.covariate_model.mean_model.bias.data = bias.view(-1).cuda()
+                if weight is not None:
+                    self.model.covariate_model.mean_model.weight.data = weight.t().cuda()
+                if sig2 is not None:
+                    self.model.covariate_model.set_var(sig2.cuda())
+                if components is not None:
+                    self.model.adjacency_model.set_components(components.cuda())
+            else:
+                if positions is not None:
+                    if "mean" in positions:
+                        self.model.encoder.latent_position_encoder.init(positions["mean"])
+                    if "variance" in positions:
+                        self.model.encoder.latent_position_encoder.init(positions["variance"])
+                if heterogeneity is not None:
+                    if "mean" in heterogeneity:
+                        self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["mean"])
+                    if "variance" in heterogeneity:
+                        self.model.encoder.latent_heterogeneity_encoder.init(heterogeneity["variance"])
+                if bias is not None:
+                    self.model.covariate_model.mean_model.bias.data = bias.view(-1)
+                if weight is not None:
+                    self.model.covariate_model.mean_model.weight.data = weight.t()
+                if sig2 is not None:
+                    self.model.covariate_model.set_var(sig2)
+                if components is not None:
+                    self.model.adjacency_model.set_components(components)
 
     def epoch_metrics(self, test, train, grad_norms, true_values=None):
         if true_values is None:
@@ -220,14 +244,26 @@ class GradientBased:
             i0, i1, A, j, X_cts, X_bin = data[:]
         else:
             i0, i1, A, j, X_cts, X_bin = data[batch]
-        i0 = i0.cuda() if i0 is not None else i0
-        i1 = i1.cuda() if i1 is not None else i1
-        A = A.cuda() if A is not None else A
-        j = j.cuda() if isinstance(j, torch.Tensor) else j
-        if X_cts is not None:
-            X_cts = X_cts.cuda()
-        if X_bin is not None:
-            X_bin = X_bin.cuda()
+
+        if torch.cuda.is_available():
+            i0 = i0.cuda() if i0 is not None else i0
+            i1 = i1.cuda() if i1 is not None else i1
+            A = A.cuda() if A is not None else A
+            j = j.cuda() if isinstance(j, torch.Tensor) else j
+            if X_cts is not None:
+                X_cts = X_cts.cuda()
+            if X_bin is not None:
+                X_bin = X_bin.cuda()
+        else:
+            i0 = i0
+            i1 = i1
+            A = A
+            j = j
+            if X_cts is not None:
+                X_cts = X_cts
+            if X_bin is not None:
+                X_bin = X_bin
+
         return A, X_bin, X_cts, i0, i1, j
 
     @staticmethod
