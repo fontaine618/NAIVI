@@ -9,7 +9,7 @@ class JointDataset(Dataset):
                  cuda=True, return_missingness=False, test=False):
         super().__init__()
         if A is not None:
-            if cuda:
+            if cuda and torch.cuda.is_available():
                 self.i0 = i0.cuda()
                 self.i1 = i1.cuda()
                 self.A = A.cuda()
@@ -47,9 +47,9 @@ class JointDataset(Dataset):
             self.X_bin = X_bin
         self.p_cts = X_cts.size(1)
         self.p_bin = X_bin.size(1)
-        if self.X_cts is not None and cuda:
+        if self.X_cts is not None and cuda and torch.cuda.is_available():
             self.X_cts.cuda()
-        if self.X_bin is not None and cuda:
+        if self.X_bin is not None and cuda and torch.cuda.is_available():
             self.X_bin.cuda()
 
     def __len__(self):
