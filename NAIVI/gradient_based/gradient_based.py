@@ -273,7 +273,7 @@ class GradientBased:
         auc_mc = 0.
         auc_A = 0.
         if A is not None:
-            auc_A = auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().flatten(), task="binary").item()
+            auc_A = auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().clamp_(0, 1).flatten(), task="binary").item()
         if X_cts is not None:
             which_cts = ~X_cts.isnan()
             mse = mean_squared_error(mean_cts[which_cts], X_cts[which_cts]).item()
@@ -288,10 +288,10 @@ class GradientBased:
             which_rows = which_bin.sum(dim=1) > 0
             if which_rows.sum() > 0.:
                 proba_multiclass = proba_bin / proba_bin.sum(dim=1, keepdim=True)
-                obs_multiclass = (X_bin == 1.).int().argmax(dim=1)
+                obs_multiclass = (X_bin == 1.).int().clamp_(0, 1).argmax(dim=1)
                 auc_mc = auroc(
                     proba_multiclass[which_rows, :],
-                    obs_multiclass[which_rows].int(),
+                    obs_multiclass[which_rows].int().clamp_(0, 1),
                     task="multiclass", average="weighted",
                     num_classes=proba_multiclass.shape[1]
                 ).item()
