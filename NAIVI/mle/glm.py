@@ -16,7 +16,8 @@ class GLM(GradientBased):
             p_bin += p_bin + p_cts
         self.p_bin = p_bin
         self.model = CovariateModel(K, p_cts, p_bin, N)
-        self.model.cuda()
+        if torch.cuda.is_available():
+            self.model.cuda()
         if latent_positions is not None:
             self.positions = latent_positions.cuda()
 
