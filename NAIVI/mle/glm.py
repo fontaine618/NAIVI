@@ -18,15 +18,24 @@ class GLM(GradientBased):
         self.model = CovariateModel(K, p_cts, p_bin, N)
         if torch.cuda.is_available():
             self.model.cuda()
-        if latent_positions is not None:
-            self.positions = latent_positions.cuda()
+            if latent_positions is not None:
+                self.positions = latent_positions.cuda()
+        else:
+            if latent_positions is not None:
+                self.positions = latent_positions
 
     def init(self, positions=None, heterogeneity=None, bias=None, weight=None):
         with torch.no_grad():
             if bias is not None:
-                self.model.covariate_model.mean_model.bias.data = bias.view(-1).cuda()
+                if torch.cuda.is_available():
+                    self.model.covariate_model.mean_model.bias.data = bias.view(-1).cuda()
+                else:
+                    self.model.covariate_model.mean_model.bias.data = bias.view(-1)
             if weight is not None:
-                self.model.covariate_model.mean_model.weight.data = weight.t().cuda()
+                if torch.cuda.is_available():
+                    self.model.covariate_model.mean_model.weight.data = weight.t().cuda()
+                else:
+                    self.model.covariate_model.mean_model.weight.data = weight.t()
 
     def compute_penalty(self):
         with torch.no_grad():
@@ -53,9 +62,15 @@ class GLM(GradientBased):
             _, _, _, _, X_cts, X_bin = data[batch]
             latent_positions = self.positions[batch, :]
         if X_cts is not None:
-            X_cts = X_cts.cuda()
+            if torch.cuda.is_available():
+                X_cts = X_cts.cuda()
+            else:
+                X_cts = X_cts
         if X_bin is not None:
-            X_bin = X_bin.cuda()
+            if torch.cuda.is_available():
+                X_bin = X_bin.cuda()
+            else:
+                X_bin = X_bin
         return X_bin, X_cts, latent_positions
 
     def batch_update(self, batch, optimizer, train, epoch):
