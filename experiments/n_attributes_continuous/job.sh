@@ -13,6 +13,6 @@
 #SBATCH --cpus-per-task=1
 #SBATCH --mem-per-cpu=16g
 # The application(s) to execute along with its input arguments and options:
-module load python/3.11.2
-source /work/naivi/venv/bin/activate
+module load anaconda/2023.09
+conda activate naivi
 python -O run.py $SLURM_ARRAY_TASK_ID
