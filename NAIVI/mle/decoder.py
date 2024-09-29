@@ -28,7 +28,9 @@ class CovariateModel(nn.Module):
         return mean_cts, proba_bin
 
     def log_likelihood(self, mean_cts=None, X_cts=None, proba_bin=None, X_bin=None):
-        nll = torch.tensor(0.).cuda()
+        nll = torch.tensor(0.)
+        if torch.cuda.is_available():
+            nll = nll.cuda()
         if (X_cts is not None) and (mean_cts is not None):
             var = torch.exp(self.cts_logvar)
             X_cts_masked = X_cts.masked_fill(X_cts.isnan(), 0.)
@@ -97,7 +99,9 @@ class AdjacencyModel(nn.Module):
         return proba
 
     def log_likelihood(self, proba=None, A=None):
-        llk = torch.tensor(0.).cuda()
+        llk = torch.tensor(0.)
+        if torch.cuda.is_available():
+            llk = llk.cuda()
         if (A is not None) and (proba is not None):
             llk = A * torch.log(proba) + (1.-A) * torch.log(1. - proba)
         return torch.nansum(llk)
