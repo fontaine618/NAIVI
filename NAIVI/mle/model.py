@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch
 from NAIVI.mle.decoder import CovariateModel, AdjacencyModel
 from NAIVI.mle.encoder import Encoder
 from NAIVI.gradient_based.gradient_based import GradientBased
@@ -66,7 +67,8 @@ class MLE(GradientBased):
         self.model = JointModel(K, N, p_cts, p_bin, mnar, network_weight,
                                 position_prior, heterogeneity_prior,
             estimate_components=estimate_components)
-        self.model.cuda()
+        if torch.cuda.is_available():
+            self.model.cuda()
 
 
 class JointModelMAP(JointModel):
@@ -106,5 +108,6 @@ class MAP(GradientBased):
         self.model = JointModelMAP(K, N, p_cts, p_bin, mnar, network_weight,
                                    position_prior, heterogeneity_prior,
             estimate_components=estimate_components)
-        self.model.cuda()
+        if torch.cuda.is_available():
+            self.model.cuda()
 
