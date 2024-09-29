@@ -67,7 +67,8 @@ class Method:
             from NAIVI import MAP
             from NAIVI.initialization import initialize
             from NAIVI.utils.data import JointDataset
-            torch.set_default_tensor_type(torch.cuda.FloatTensor)
+            if torch.cuda.is_available():
+                torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
             hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
             train = JointDataset(
@@ -155,7 +156,8 @@ class Method:
             from NAIVI import MLE
             from NAIVI.initialization import initialize
             from NAIVI.utils.data import JointDataset
-            torch.set_default_tensor_type(torch.cuda.FloatTensor)
+            if torch.cuda.is_available():
+                torch.set_default_tensor_type(torch.cuda.FloatTensor)
             hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
 
             train = JointDataset(
@@ -242,7 +244,8 @@ class Method:
             from NAIVI import VMP
             from NAIVI.vmp import enable_logging
             from NAIVI.vmp.distributions import Distribution
-            torch.set_default_tensor_type(torch.cuda.FloatTensor)
+            if torch.cuda.is_available():
+                torch.set_default_tensor_type(torch.cuda.FloatTensor)
             Distribution.set_default_check_args(False)
             # Distribution.set_default_check_args(True)
             # enable_logging()
