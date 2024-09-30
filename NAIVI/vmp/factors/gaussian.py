@@ -33,42 +33,32 @@ class GaussianFactor(Factor):
 		self.messages_to_children[i] = GaussianFactorToChildMessage(self.children[i], self)
 
 	def update_messages_to_children(self):
-		# this is not the standard VMP message,
-		# we rather send this message so that the posterior is the predictive posterior
-		# for missing values
-		# This is also fine to do, because, the message_to_factor below will
-		# be fine since it removes the message in the other direction and only return the
-		# observed/missing message
 		p = self._name_to_id["parent"]
 		c = self._name_to_id["child"]
 		mfp = self.messages_to_parents[p].message_to_factor # N x p
 		# mfp = self.parents[p].posterior # N x p
 		m, v = mfp.mean_and_variance # N x p, N x p
 		var = self.parameters["log_variance"].data.exp() # p
-		v = v + var.reshape((1, -1))
+		v = v + var.unsqueeze(0).expand(m.shape[0], -1)
 		self.messages_to_children[c].message_to_variable = Normal.from_mean_and_variance(m, v)
 
 	def update_messages_to_parents(self):
 		p = self._name_to_id["parent"]
 		c = self._name_to_id["child"]
-		# now, the child is derived (equal to its obervation), so we just take the message
-		# however, we can have unobserved values so we need to adjust the variance below
-		mfc = self.messages_to_children[c].message_to_factor # N x p
-		m, v = mfc.mean_and_variance # N x p, N x p
+		x = self.children[c].children.values().__iter__().__next__().values.values # N x p
 		var = self.parameters["log_variance"].data.exp() # p
-		# v = v + var.reshape((1, -1))
-		var = var.unsqueeze(0).expand(m.shape[0], -1)
+		var = var.unsqueeze(0).expand(x.shape[0], -1)
 		# when unobserved, we need to send an empty message
-		var = torch.where(v.isinf(), torch.full_like(var, torch.inf), var)
-		m = torch.where(v.isinf(), torch.zeros_like(var), m)
+		var = torch.where(x.isnan(), torch.full_like(var, torch.inf), var)
+		m = torch.where(x.isnan(), torch.zeros_like(var), x)
 		self.messages_to_parents[p].message_to_variable = Normal.from_mean_and_variance(m, var)
 
 	def update_parameters(self):
 		p = self._name_to_id["parent"]
 		c = self._name_to_id["child"]
-		mfp = self.messages_to_parents[p].message_to_factor
+		# mfp = self.messages_to_parents[p].message_to_factor
 		mfc = self.messages_to_children[c].message_to_factor
-		# mfp = self.parents[p].posterior
+		mfp = self.parents[p].posterior
 		# mfc = self.children[c].posterior
 		m, v = mfp.mean_and_variance
 		observed = mfc.precision.isinf()
@@ -76,7 +66,8 @@ class GaussianFactor(Factor):
 		s2 = (x - m).pow(2.) + v
 		s2sum = torch.where(observed, s2, torch.zeros_like(s2)).sum(dim=0)
 		n = observed.sum(dim=0)
-		self.parameters["log_variance"].data = torch.log(s2sum / n)
+		new_log_variance = torch.log(s2sum / n)
+		self.parameters["log_variance"].data = new_log_variance
 
 	def forward(self, **kwargs):
 		pass

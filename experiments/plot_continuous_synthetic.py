@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 import seaborn as sns
 import pandas as pd
+import numpy as np
 
 from matplotlib.lines import Line2D
 
@@ -59,7 +60,7 @@ experiments = {
     # "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
     # "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
 }
-seeds = range(1)
+seeds = range(10)
 
 # Parameters
 rows_by = "data.missing_mechanism"
@@ -139,7 +140,7 @@ for i, row in enumerate(rows):
         for k, curve in enumerate(curves):
             df = full_df.loc[(full_df[rows_by] == row) & (full_df[cols_by] == col) & (full_df[curves_by] == curve)]
             df = df.sort_values(by="x_value")
-            ax.plot(df["x_value"], df[metric],
+            ax.plot(df["x_value"], np.sqrt(df[metric]),
                     label=methods[curve][0], color=methods[curve][1],
                     linestyle=methods[curve][2], marker=methods[curve][3],
                     markerfacecolor='none')
@@ -155,8 +156,8 @@ for i, row in enumerate(rows):
             if j == len(cols)-1:
                 ax.set_ylabel(f"{missing_mechanisms[row]}")
                 ax.yaxis.set_label_position("right")
-            ax.set_yscale("log")
-            ax.set_ylim(1e-1, 20)
+            # ax.set_yscale("log")
+            ax.set_ylim(0.5, 5)
 
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')

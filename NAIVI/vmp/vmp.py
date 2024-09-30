@@ -94,6 +94,7 @@ class VMP:
         self._initialize_binary_model(K, N, binary_covariates, latent, logistic_approximation)
         self._initialize_continuous_model(K, N, continuous_covariates, latent)
         self._initialize_edge_model(K, edge_index_left, edge_index_right, edges, heterogeneity, latent, logistic_approximation)
+        self._initialize_weights_and_bias()
         self._break_symmetry()
         self._initialize_posterior()
         self._vmp_forward()
@@ -294,6 +295,38 @@ class VMP:
             self.factors["select_left_latent"].messages_to_parents[p_id].message_to_variable = msg
         if VMP_OPTIONS["logging"]: print(f"{prefix}Symmetry broken")
 
+    def _initialize_weights_and_bias(self):
+        p_cts, p_bin = 0, 0
+        if "affine_cts" in self.factors:
+            p_cts = self.factors["affine_cts"].parameters["bias"].shape[0]
+        if "affine_bin" in self.factors:
+            p_bin = self.factors["affine_bin"].parameters["bias"].shape[0]
+        p = p_cts + p_bin
+        K = self.latent_dim
+        N = self.n_nodes
+        if p == 0:
+            return
+        X = torch.zeros(N, 0)
+        if p_cts > 0:
+            X_cts = self.factors["cts_observed"].values.values
+            rowmean = X_cts.nanmean(dim=0)
+            X_cts = X_cts - rowmean
+            X = torch.cat([X, X_cts], dim=1)
+            self.factors["affine_cts"].parameters["bias"].data = rowmean
+        if p_bin > 0:
+            X_bin = self.factors["bin_observed"].values.values
+            rowmean = X_bin.nanmean(dim=0)
+            X_bin = X_bin - rowmean
+            X = torch.cat([X, X_bin], dim=1)
+            self.factors["affine_bin"].parameters["bias"].data = torch.log(rowmean / (1 - rowmean))
+        # SVD of X
+        X[torch.isnan(X)] = 0.
+        _, _, V = torch.svd_lowrank(X, K)
+        if p_cts > 0:
+            self.factors["affine_cts"].parameters["weights"].data = V[:p_cts, :].T
+        if p_bin > 0:
+            self.factors["affine_bin"].parameters["weights"].data = V[p_cts:, :].T
+
     def _vmp_backward(self):
         if VMP_OPTIONS["logging"]: print(f"{prefix}Backward pass")
         for fname in self._vmp_sequence[::-1]:
@@ -475,7 +508,7 @@ class VMP:
             rel_tol: float = 1e-6,
             mc_samples: int = 0,
             true_values: dict | None = None,
-            min_iter: int = 20,
+            min_iter: int = 5,
     ):
         with torch.no_grad():
             if true_values is None:
@@ -489,7 +522,8 @@ class VMP:
                 new_elbo = self.elbo()
                 if math.isnan(new_elbo):
                     warnings.warn("ELBO is nan")
-                    break
+                    if i>min_iter:
+                        break
                 elbos = self._elbo()
                 elbos["sum"] = new_elbo
                 self._update_elbo_history(elbos)
@@ -504,7 +538,7 @@ class VMP:
                 increased = new_elbo >= elbo
                 if (i % 1) == 0:
                     print(f"{prefix}Iteration {i:<4} "
-                          f"Elbo: {new_elbo:.4f} {'' if increased else '(decreased)'}")
+                          f"Elbo: {new_elbo:.4f}{' (decreased)' if not increased else ''}")
                 if i > min_iter:
                     if abs(new_elbo - elbo) < rel_tol * abs(elbo):
                         break
@@ -513,8 +547,8 @@ class VMP:
                 elbo = new_elbo
                 prev_increased = increased
 
-    def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6):
-        self.fit_and_evaluate(max_iter, rel_tol)
+    def fit(self, max_iter: int = 1000, rel_tol: float = 1e-6, **kwargs):
+        self.fit_and_evaluate(max_iter, rel_tol, **kwargs)
 
     def evaluate(self, true_values: Dict[str, torch.Tensor] | None = None, store: bool = True):
         if true_values is None:

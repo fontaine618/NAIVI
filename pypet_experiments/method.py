@@ -242,14 +242,16 @@ class Method:
     def from_VMP_parameters(cls, model_parameters: ParameterGroup, covariates_only: bool = False):
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import VMP
-            from NAIVI.vmp import enable_logging
+            from NAIVI.vmp import enable_logging, set_damping
             from NAIVI.vmp.distributions import Distribution
             if torch.cuda.is_available():
                 torch.set_default_tensor_type(torch.cuda.FloatTensor)
             Distribution.set_default_check_args(False)
             # Distribution.set_default_check_args(True)
             # enable_logging()
+            # set_damping(.9)
             fit_parameters_dict = dict(
+                # min_iter=1,
                 max_iter=fit_parameters.vmp.max_iter,
                 rel_tol=fit_parameters.vmp.rel_tol,
             )
@@ -286,8 +288,8 @@ class Method:
                 # dimension and model parameters
                 latent_dim=K,
                 n_nodes=data.n_nodes,
-                    heterogeneity_prior_mean=hmean,
-                    heterogeneity_prior_variance=hvar,
+                heterogeneity_prior_mean=hmean,
+                heterogeneity_prior_variance=hvar,
                 latent_prior_mean=self.model_parameters.latent_prior_mean,
                 latent_prior_variance=self.model_parameters.latent_prior_variance,
                 # data
@@ -312,8 +314,8 @@ class Method:
                     aic=vmp.aic,
                     bic=vmp.bic,
                     weights_entropy=vmp.weights_entropy,
-                    cv_covariate_elbo=covariate_elbo if cv_folds > 1 else 0.,
-                    cv_covariate_log_likelihood=covariate_log_likelihood if cv_folds > 1 else 0.,
+                    cv_covariate_elbo=covariate_elbo if cv_folds > 1 else float("nan"),
+                    cv_covariate_log_likelihood=covariate_log_likelihood if cv_folds > 1 else float("nan"),
                     **metrics["training"]
                 ),
                 testing_metrics=dict(

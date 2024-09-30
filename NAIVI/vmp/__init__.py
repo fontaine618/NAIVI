@@ -1,10 +1,14 @@
 VMP_OPTIONS = {
 	"logging": False,
 	"check_args": 0,
+	"damping": 0.7
 }
 
 from .vmp import VMP
 from .cross_validation import CVVMP
+
+def set_damping(damping):
+	VMP_OPTIONS["damping"] = damping
 
 
 def disable_logging():

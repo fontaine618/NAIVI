@@ -131,7 +131,8 @@ class Dataset:
         X_bin = torch.sigmoid(logit_bin)
         X_bin = torch.bernoulli(X_bin)
         M_bin, M_cts = _create_mask_matrices(
-            par.p_cts, par.p_bin, par.missing_covariate_rate, par.n_nodes, par.missing_mechanism
+            par.p_cts, par.p_bin, par.missing_covariate_rate, par.n_nodes, par.missing_mechanism,
+            X_cts, X_bin
         )
         X_cts_missing = torch.where(~M_cts, torch.full_like(X_cts, torch.nan), X_cts)
         X_bin_missing = torch.where(~M_bin, torch.full_like(X_bin, torch.nan), X_bin)
@@ -430,7 +431,7 @@ class Dataset:
 
 
 
-def _create_mask_matrices(p_cts, p_bin, missing_covariate_rate, n_nodes, missing_mechanism):
+def _create_mask_matrices(p_cts, p_bin, missing_covariate_rate, n_nodes, missing_mechanism, X_cts, X_bin):
     p = p_cts + p_bin
     if missing_mechanism == "uniform":
         M_cts = torch.rand(n_nodes, p_cts) < missing_covariate_rate
@@ -454,6 +455,20 @@ def _create_mask_matrices(p_cts, p_bin, missing_covariate_rate, n_nodes, missing
         missing_props = missing_props[torch.randperm(p)].reshape(1, p).repeat(n_nodes, 1)
         M_cts = torch.rand(n_nodes, p_cts) < missing_props[:, :p_cts]
         M_bin = torch.rand(n_nodes, p_bin) < missing_props[:, p_cts:]
+    elif missing_mechanism == "conditional":
+        if p % 2 != 0:
+            raise ValueError("p must be even for conditional missingness")
+        if missing_covariate_rate > 0.5:
+            raise ValueError("missing_covariate_rate must be smaller than 0.5 for conditional missingness")
+        M = torch.zeros(n_nodes, p)
+        X = torch.cat([X_cts, X_bin], dim=1)
+        Xhalf = X[:, :p // 2]
+        Xpm = 2*Xhalf.gt(0.).float() - 1
+        mr = missing_covariate_rate
+        Mrate = 0.5 + 0.5*mr*Xpm
+        M[:, :p // 2] = Mrate
+        M_cts = torch.rand(n_nodes, p_cts) < M[:, :p_cts]
+        M_bin = torch.rand(n_nodes, p_bin) < M[:, p_cts:]
     else:
         raise ValueError("Unknown missing mechanism: " + missing_mechanism)
     return M_bin, M_cts

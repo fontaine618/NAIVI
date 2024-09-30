@@ -6,9 +6,9 @@ import graphviz
 
 # =============================================================================
 # generate data
-n_nodes = 33
+n_nodes = 50
 p_bin = 0
-p_cts = 0
+p_cts = 100
 X_bin = torch.randint(0, 2, (n_nodes, p_bin))
 M_bin = torch.randint(0, 3, (n_nodes, p_bin))
 X_cts = torch.randn(n_nodes, p_cts)
@@ -35,39 +35,43 @@ x_bin = binary_covariates[i_bin, j_bin]
 
 # =============================================================================
 # model
-from NAIVI.mcmc import MCMC
-self = MCMC(
-    n_nodes=n_nodes,
-    latent_dim=3,
-    binary_covariates=X_bin,
-    continuous_covariates=X_cts,
-    edges=edges,
-    edge_index_left=edge_index_left,
-    edge_index_right=edge_index_right,
-)
-self.fit(num_samples=1000, warmup_steps=200)
+# from NAIVI.mcmc import MCMC
+# self = MCMC(
+#     n_nodes=n_nodes,
+#     latent_dim=3,
+#     binary_covariates=X_bin,
+#     continuous_covariates=X_cts,
+#     edges=edges,
+#     edge_index_left=edge_index_left,
+#     edge_index_right=edge_index_right,
+# )
+# self.fit(num_samples=1000, warmup_steps=200)
+#
+#
+# samples = self.get_samples_with_derived_quantities()
+# pred = self.predict()
+#
+# self.output()
+# self.output_with_uncertainty()
 
 
-samples = self.get_samples_with_derived_quantities()
-pred = self.predict()
+from NAIVI.vmp import VMP, set_damping,set_check_args
 
-self.output()
-self.output_with_uncertainty()
-
-
-from NAIVI.vmp import VMP
+set_damping(0.9)
+set_check_args(0)
 
 self = VMP(
     latent_dim=3,
     n_nodes=n_nodes,
     binary_covariates=X_bin,
     continuous_covariates=X_cts,
-    edges=edges.unsqueeze(1),
+    # edges=edges.unsqueeze(1),
+    edges=None,
     edge_index_left=edge_index_left,
     edge_index_right=edge_index_right
 )
 
-self.fit()
+self.fit(rel_tol=1e-10)
 
 self.output()
 self.output_with_uncertainty().keys()
