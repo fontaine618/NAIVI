@@ -6,8 +6,10 @@ import matplotlib as mpl
 import seaborn as sns
 import pandas as pd
 import numpy as np
-
+from scipy.stats import wilcoxon
 from matplotlib.lines import Line2D
+from itertools import product
+import math
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 plt.rcParams.update(plt.rcParamsDefault)
@@ -60,7 +62,7 @@ experiments = {
     # "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
     # "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
 }
-seeds = range(10)
+seeds = range(30)
 
 # Parameters
 rows_by = "data.missing_mechanism"
@@ -97,9 +99,8 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     results["experiment"] = name
 
 
-    cols = list(set([rows_by, curves_by, display_var, cols_by, group_by, metric]))
+    cols = list(set([rows_by, curves_by, display_var, cols_by, group_by, metric, "data.seed"]))
     df = results.loc[:, cols]
-
     df["x_value"] = df.groupby([group_by, rows_by])[display_var].transform("median")
 
     outdf = df.groupby([group_by, curves_by, rows_by]).agg({
@@ -108,6 +109,34 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     }).reset_index().drop(columns=group_by)
     outdf[cols_by] = display_name
     full_df_list.append(outdf)
+
+    # wilcoxon siged rank test VMP vs others
+    curves = df[curves_by].unique()
+    curves = [c for c in curves if c != "VMP"]
+    curves = [c for c in curves if c != "Oracle"]
+    curves = [c for c in curves if isinstance(c, str)]
+    rows = df[rows_by].unique()
+    rows = [r for r in rows if isinstance(r, str)]
+    cols = df[cols_by].unique()
+    xvals = df["x_value"].unique()
+    xvals = [x for x in xvals if not math.isnan(x)]
+    for meth, row, col, xvar in product(curves, rows, cols, xvals):
+        which_vmp = (df[curves_by] == "VMP") & (df[rows_by] == row) & (df[cols_by] == col) & (df["x_value"]==xvar)
+        which_other = (df[curves_by] == meth) & (df[rows_by] == row) & (df[cols_by] == col) & (df["x_value"]==xvar)
+        seeds_vmp = df.loc[which_vmp]["data.seed"].values
+        seeds_other = df.loc[which_other]["data.seed"].values
+        values_vmp = df.loc[which_vmp][metric].values
+        values_other = df.loc[which_other][metric].values
+        # subset to common seeds
+        common_seeds = np.intersect1d(seeds_vmp, seeds_other)
+        vmp = values_vmp[np.isin(seeds_vmp, common_seeds)]
+        other = values_other[np.isin(seeds_other, common_seeds)]
+        # make sure ther are floats
+        vmp = vmp.astype(float)
+        other = other.astype(float)
+        prop_better = np.mean(vmp < other)
+        _, p = wilcoxon(vmp, other, nan_policy="omit")
+        print(meth, row, col, xvar, prop_better, p)
 
 full_df = pd.concat(full_df_list)
 
@@ -157,7 +186,7 @@ for i, row in enumerate(rows):
                 ax.set_ylabel(f"{missing_mechanisms[row]}")
                 ax.yaxis.set_label_position("right")
             # ax.set_yscale("log")
-            ax.set_ylim(0.5, 5)
+            # ax.set_ylim(0.5, 5)
 
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')

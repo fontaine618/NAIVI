@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import sys
 import os
-sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
+sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
+# sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
-        trajectory="n_nodes_binary",
+        trajectory=f"n_nodes_continuous_seed{seed}",
         filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
         multiproc=True,
@@ -26,9 +27,9 @@ if __name__ == "__main__":
     traj.f_explore(cartesian_product({
         "data.dataset": ["synthetic"],
         "data.seed": [int(seed)],
-        "data.n_nodes": [50, 100, 200, 500, 1000, 2000],
-        "data.p_cts": [0],
-        "data.p_bin": [100],
+        "data.n_nodes": [200],
+        "data.p_cts": [50, 100, 200, 500, 1000, 2000],
+        "data.p_bin": [0],
         "data.latent_dim": [5],
         "data.latent_variance": [1.],
         "data.latent_mean": [0.],
@@ -43,7 +44,8 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [1.],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["Mean", "KNN", "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "MICE", "Oracle"],
+        # NB: MICE with p>250 does not get run
+        "method": ["Mean", "KNN", "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "Oracle", "MICE"],
         "fit.vmp.max_iter": [100],
         "fit.vmp.rel_tol": [1e-5],
         "fit.vmp.cv_folds": [0],

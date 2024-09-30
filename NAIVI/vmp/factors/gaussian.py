@@ -45,6 +45,11 @@ class GaussianFactor(Factor):
 	def update_messages_to_parents(self):
 		p = self._name_to_id["parent"]
 		c = self._name_to_id["child"]
+		# this is a bit hacky, but for some reason the message sent is just slitghly wrong
+		# in such a way that we don't find the right observed/missing using variance.isinf()
+		# in the logistic fragment, this does not occur since there is some tolerance
+		# TODO: investigate why this is the case
+		# this is a workaround to fetch the observation directly, but it is not the right way to do it
 		x = self.children[c].children.values().__iter__().__next__().values.values # N x p
 		var = self.parameters["log_variance"].data.exp() # p
 		var = var.unsqueeze(0).expand(x.shape[0], -1)

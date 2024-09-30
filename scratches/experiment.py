@@ -28,6 +28,8 @@ data_parms = {
     "missing_mechanism": "uniform",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
+    "attribute_model": "distance",
+    "edge_model": "distance"
 }
 for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
@@ -75,7 +77,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "VMP"
+traj.method = "NetworkSmoothing"
 
 # get data instance (this could be loaded data or synthetic data)
 data: Dataset = Dataset.from_parameters(traj.data)
@@ -99,7 +101,8 @@ self = method
 covariates_only = False
 #
 # # set_damping(1.)
-self = vmp.factors["cts_model"]
+# self = vmp.factors["cts_model"]
 from NAIVI.vmp.distributions import Normal
 #
 # vmp.factors["cts_observed"].values.values
+par=traj.data

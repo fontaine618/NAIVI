@@ -125,7 +125,12 @@ class Dataset:
             par.latent_mean
         heterogeneity = torch.randn(par.n_nodes, 1) * math.sqrt(par.heterogeneity_variance) + \
             par.heterogeneity_mean
-        theta_X = latent @ weights + bias
+        if par.attribute_model == "inner_product":
+            theta_X = latent @ weights + bias
+        elif par.attribute_model == "distance":
+            theta_X = bias - torch.cdist(latent, weights.T, p=2).pow(2.) / par.latent_dim
+        else:
+            raise ValueError("Unknown attribute model: " + par.attribute_model)
         mean_cts, logit_bin = theta_X[:, :par.p_cts], theta_X[:, par.p_cts:]
         X_cts = torch.randn(par.n_nodes, par.p_cts) * math.sqrt(par.cts_noise) + mean_cts
         X_bin = torch.sigmoid(logit_bin)
@@ -142,8 +147,17 @@ class Dataset:
         i0, i1 = i[0, :], i[1, :]
         I = torch.ones(par.latent_dim)
         I[:par.latent_dim_attributes] = 0
-        theta_A = (latent[i0, :] * latent[i1, :] * I.unsqueeze(0)).sum(1, keepdim=True) + \
-            heterogeneity[i0] + heterogeneity[i1]
+        if par.edge_model == "inner_product":
+            theta_A = (latent[i0, :] * latent[i1, :] * I.unsqueeze(0)).sum(1, keepdim=True) + \
+                heterogeneity[i0] + heterogeneity[i1]
+        elif par.edge_model == "distance":
+            beta = 2*par.heterogeneity_mean
+            beta += par.latent_dim * par.latent_mean**2
+            beta += 2.*par.latent_dim * (par.latent_variance)
+            theta_A = beta - torch.cdist(latent, latent, p=2).pow(2.)
+            theta_A = theta_A[i0, i1].reshape(-1, 1)
+        else:
+            raise ValueError("Unknown edge model: " + par.edge_model)
         A = torch.sigmoid(theta_A)
         A = torch.bernoulli(A)
         M_A = torch.rand_like(A) < par.missing_edge_rate

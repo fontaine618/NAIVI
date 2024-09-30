@@ -20,6 +20,8 @@ _default_data_parameters = {
     "missing_mechanism": "uniform",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
+    "attribute_model": "inner_product",
+    "edge_model": "inner_product"
 }
 
 _default_model_parameters = {
