@@ -4,8 +4,8 @@
 #SBATCH --job-name=naivi_n_attributes_continuous
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=2:00:00
-#SBATCH --array=0
+#SBATCH --time=1:00:00
+#SBATCH --array=1-9
 #SBATCH --account=open
 #SBATCH --partition=open
 #SBATCH --nodes=1

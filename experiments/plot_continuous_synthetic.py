@@ -156,6 +156,7 @@ for i, row in enumerate(rows):
                 ax.set_ylabel(f"{missing_mechanisms[row]}")
                 ax.yaxis.set_label_position("right")
             ax.set_yscale("log")
+            ax.set_ylim(1e-1, 20)
 
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')
