@@ -27,8 +27,8 @@ if __name__ == "__main__":
     traj.f_explore(cartesian_product({
         "data.dataset": ["synthetic"],
         "data.seed": [int(seed)],
-        "data.n_nodes": [200],
-        "data.p_cts": [50, 100, 200, 500, 1000, 2000],
+        "data.n_nodes": [50, 100, 200, 500, 1000, 2000],
+        "data.p_cts": [100],
         "data.p_bin": [0],
         "data.latent_dim": [5],
         "data.latent_variance": [1.],

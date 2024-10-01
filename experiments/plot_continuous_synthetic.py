@@ -57,7 +57,7 @@ missing_mechanisms = {
 
 experiments = {
     # "experiment_name": ("group_by", "display_var", "display_name", logx?)
-    # "n_nodes_binary": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
+    "n_nodes_continuous": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
     "n_attributes_continuous": ("data.p_cts", "data.p_cts", "Nb. attributes", True),
     # "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
     # "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
