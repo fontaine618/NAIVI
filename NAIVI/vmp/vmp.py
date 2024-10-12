@@ -391,7 +391,7 @@ class VMP:
 
     @property
     def n(self):
-        n = 0
+        n = torch.Tensor([0])
         if "cts_observed" in self.factors:
             X = self.factors["cts_observed"].values.values
             n += (~X.isnan()).float().sum()
@@ -416,7 +416,7 @@ class VMP:
 
     @property
     def bic_penalty(self):
-        return self.df * math.log(self.n)
+        return self.df * math.log(max(1, self.n))
 
     @property
     def aic_penalty(self):
@@ -441,7 +441,7 @@ class VMP:
 
     @property
     def weights_entropy(self):
-        entropy = 0.
+        entropy = torch.Tensor([0.])
         if "affine_cts" in self.factors:
             entropy += self.factors["affine_cts"].weights_entropy()
         if "affine_bin" in self.factors:

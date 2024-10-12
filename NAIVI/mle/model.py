@@ -53,28 +53,33 @@ class JointModel(nn.Module):
         return loss, mean_cts, proba_bin, proba_adj
 
     def project(self):
-        self.encoder.project()
+        pass
 
+class JointModelMLE(JointModel):
 
-class MLE(GradientBased):
+    def loss(self,
+             mean_cts=None, X_cts=None,
+             proba_bin=None, X_bin=None,
+             proba_adj=None, A=None
+             ):
+        loss = super(JointModelMLE, self).loss(
+             mean_cts=mean_cts, X_cts=X_cts,
+             proba_bin=proba_bin, X_bin=X_bin,
+             proba_adj=proba_adj, A=A
+        )
+        # convex relaxation to the constraint JZ=Z
+        Z = self.encoder.latent_position_encoder.mean
+        Zcentered = Z - Z.mean(0, keepdim=True)
+        loss += 1e6 *(Z-Zcentered).pow(2).mean()
 
-    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
-				 position_prior=(0., 1.),
-				 heterogeneity_prior=(-2., 1.),
-                estimate_components=False
-                 ):
-        super().__init__()
-        self.model = JointModel(K, N, p_cts, p_bin, mnar, network_weight,
-                                position_prior, heterogeneity_prior,
-            estimate_components=estimate_components)
-        if torch.cuda.is_available():
-            self.model.cuda()
+        return loss
+
+    def project(self):
+        pass # no need to project with convex relaxation
+        # self.encoder.project()
 
 
 class JointModelMAP(JointModel):
-
-    def project(self):
-        pass  # no need to project if we regularize
 
     def loss(self,
              mean_cts=None, X_cts=None,
@@ -95,6 +100,23 @@ class JointModelMAP(JointModel):
         loss += (alpha**2).sum() / (2. * self.heterogeneity_prior[1])
 
         return loss
+
+    def project(self):
+        pass  # no need to project if we regularize
+
+class MLE(GradientBased):
+
+    def __init__(self, K, N, p_cts, p_bin, mnar=False, network_weight=1.0,
+				 position_prior=(0., 1.),
+				 heterogeneity_prior=(-2., 1.),
+                estimate_components=False, **kwargs
+                 ):
+        super().__init__()
+        self.model = JointModelMLE(K, N, p_cts, p_bin, mnar, network_weight,
+                                position_prior, heterogeneity_prior,
+            estimate_components=estimate_components)
+        if torch.cuda.is_available():
+            self.model.cuda()
 
 
 class MAP(GradientBased):

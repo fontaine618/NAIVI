@@ -180,10 +180,10 @@ class Method:
                 cuda=True
             )
             fit_parameters_dict = dict(
-                max_iter=fit_parameters.map.max_iter,
-                eps=fit_parameters.map.eps,
-                optimizer=fit_parameters.map.optimizer,
-                lr=fit_parameters.map.lr,
+                max_iter=fit_parameters.mle.max_iter,
+                eps=fit_parameters.mle.eps,
+                optimizer=fit_parameters.mle.optimizer,
+                lr=fit_parameters.mle.lr,
                 train=train,
                 test=test,
                 return_log=True

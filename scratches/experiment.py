@@ -14,8 +14,8 @@ data_parms = {
     "facebook_center": 0,
     "path": "",
     "n_nodes": 200,
-    "p_cts": 20,
-    "p_bin": 20,
+    "p_cts": 100,
+    "p_bin": 100,
     "seed": 0,
     "latent_dim": 5,
     "latent_variance": 1.,
@@ -25,11 +25,11 @@ data_parms = {
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "uniform",
+    "missing_mechanism": "row_deletion",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
-    "attribute_model": "distance",
-    "edge_model": "distance"
+    "attribute_model": "inner_product",
+    "edge_model": "inner_product"
 }
 for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
@@ -49,19 +49,17 @@ model_parms = {
 for k, v in model_parms.items():
     traj.f_add_parameter(f"model.{k}", data=v)
 fit_parms = {
-    "vmp.max_iter": 200,
+    "vmp.max_iter": 100,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
-    "mle.lr": 0.01,
-    "mle.optimizer": "Rprop",
     "map.lr": 0.05,
-    "map.optimizer": "Adam",
     "map.max_iter": 500,
     "map.eps": 1e-5,
-    "advi.lr": 0.01,
-    "advi.max_iter": 200,
-    "advi.eps": 1e-5,
-    "advi.optimizer": "Rprop",
+    "map.optimizer": "Rprop",
+    "mle.lr": 0.05,
+    "mle.max_iter": 500,
+    "mle.eps": 1e-5,
+    "mle.optimizer": "Rprop",
     "mice.max_iter": 20,
     "mice.rel_tol": 1e-3,
     "knn.n_neighbors": 10,
@@ -77,7 +75,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "NetworkSmoothing"
+traj.method = "MLE"
 
 # get data instance (this could be loaded data or synthetic data)
 data: Dataset = Dataset.from_parameters(traj.data)
@@ -94,15 +92,17 @@ for k, v in results.to_dict().items():
 from pypet_experiments.method import _eb_heterogeneity_prior
 import time
 import math
-model_pararmeters = traj.model
-data_parameters = traj.data
-fit_parameters = traj.fit
-self = method
-covariates_only = False
+# model_pararmeters = traj.model
+# data_parameters = traj.data
+# fit_parameters = traj.fit
+# self = method
+# covariates_only = False
 #
 # # set_damping(1.)
 # self = vmp.factors["cts_model"]
 from NAIVI.vmp.distributions import Normal
 #
 # vmp.factors["cts_observed"].values.values
-par=traj.data
+# par=traj.data
+
+

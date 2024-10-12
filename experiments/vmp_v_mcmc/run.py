@@ -1,3 +1,4 @@
+import pyro.ops.stats
 import torch
 # import matplotlib.pyplot as plt
 # import seaborn as sns
@@ -83,7 +84,18 @@ for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
         edge_index_right=i1,
         **h
     )
-    mcmc.fit()
+    mcmc.fit(num_samples=2000, warmup_steps=1000)
+
+
+    # import pyro
+    # pyro.ops.stats.effective_sample_size(mcmc._mcmc.get_samples()["z"].unsqueeze(0))
+    # pyro.ops.stats.autocorrelation(mcmc._mcmc.get_samples()["z"], 0)[1, :, :]
+    #
+    # mcmc._mcmc.get_samples()["z"][:, 0, 0]
+    # import matplotlib.pyplot as plt
+    # plt.plot(mcmc._mcmc.get_samples()["z"][:, 2, 0])
+    # plt.show()
+
     mcmc_output = mcmc.output_with_uncertainty()
     # store results
     res = dict(vmp=dict(), mcmc=dict())

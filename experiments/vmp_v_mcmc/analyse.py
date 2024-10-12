@@ -29,7 +29,7 @@ experiments = {
     "50_5_3": ("A", 50, 5, 0, 3),
     "50_20_3": ("B", 50, 20, 0, 3),
     "100_5_5": ("C", 100, 5, 0, 5),
-    "100_20_5": ("D", 100, 10, 0, 5),
+    "100_20_5": ("D", 100, 20, 0, 5),
 }
 
 results = dict()
@@ -97,12 +97,12 @@ for r, (rname, (rdisp, rstat, robs, rmiss)) in enumerate(rows.items()):
         axes[r, c].set_ylim(0, maxval)
         axes[r, c].axline((0, 0), (1, 1), color="black", linestyle="--", alpha=0.5)
         if rmiss is not None:
-            axes[r, c].scatter(xmiss, ymiss, alpha=0.5, label="Missing")
-        axes[r, c].scatter(x, y, alpha=0.5, label="Observed")
+            axes[r, c].scatter(xmiss, ymiss, alpha=0.5, label="Missing", color="blue")
+        axes[r, c].scatter(x, y, alpha=0.5, label="Observed", color="red")
         axes[r, c].set_title(title)
         axes[r, c].set_xlabel(xlabel)
         axes[r, c].set_ylabel(ylabel)
-        # axes[r, c].set_aspect("equal")
+        axes[r, c].set_aspect("equal")
 plt.tight_layout()
 plt.savefig(f"{DIR_FIGURES}comparison.png")
 
