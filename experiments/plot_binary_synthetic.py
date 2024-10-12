@@ -31,7 +31,6 @@ methods = {
     "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
-    # "ADVI":             ("NAIVI-QB",    "#8888ff", "dashed", "v"),
 
     "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
     "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
@@ -67,12 +66,12 @@ curves_by = "method"
 cols_by = "experiment"
 
 # performance metric
-# metric = "testing.auroc_binary"
-# yaxis = "Pred. AuROC"
+metric = "testing.auroc_binary"
+yaxis = "Pred. AuROC"
 
 # computation time
-metric = "training.cpu_time"
-yaxis = "CPU Time (s)"
+# metric = "training.cpu_time"
+# yaxis = "CPU Time (s)"
 
 
 
@@ -111,27 +110,14 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
 full_df = pd.concat(full_df_list)
 
 
-
-
 # performance metric
 rows = full_df[rows_by].unique()
 cols = full_df[cols_by].unique()
 curves = full_df[curves_by].unique()
 
-# computation time
-rows = [full_df[rows_by].unique()[0]]
-curves = ["VMP", "MLE"]
-cols = [full_df[cols_by].unique()[i] for i in [0, 1]]
-
-
-
-
-
-
+# plot
 plt.cla()
-# fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows), ncols=len(cols),
-#                         sharex="col", sharey="row", squeeze=False)
-fig, axs = plt.subplots(figsize=(7, 4), nrows=len(rows), ncols=len(cols),
+fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows), ncols=len(cols),
                         sharex="col", sharey="row", squeeze=False)
 for i, row in enumerate(rows):
     for j, col in enumerate(cols):
@@ -164,10 +150,8 @@ labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
 fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-fig.subplots_adjust(top=0.80)
-# fig.subplots_adjust(top=0.90)
-# plt.savefig("experiments/synthetic_metrics.pdf")
-plt.savefig("experiments/synthetic_cputime.pdf")
+fig.subplots_adjust(top=0.90)
+plt.savefig("experiments/synthetic_binary.pdf")
 
 
 

@@ -239,6 +239,57 @@ class Method:
         return cls(model_parameters=model_parameters, fit_function=fit_function)
 
     @classmethod
+    def from_MCMC_parameters(cls, model_parameters: ParameterGroup):
+        def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
+            from NAIVI import MCMC
+            from NAIVI.utils.data import JointDataset
+            if torch.cuda.is_available():
+                torch.set_default_tensor_type(torch.cuda.FloatTensor)
+            fit_parameters_dict = dict(
+                num_samples=fit_parameters.mcmc.num_samples,
+                warmup_steps=fit_parameters.mcmc.warmup_steps
+            )
+            t0 = time.time()
+            hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
+            K = self.model_parameters["latent_dim"]
+            mcmc = MCMC(
+                # dimension and model parameters
+                latent_dim=K,
+                n_nodes=data.n_nodes,
+                heterogeneity_prior_mean=hmean,
+                heterogeneity_prior_variance=hvar,
+                latent_prior_mean=self.model_parameters.latent_prior_mean,
+                latent_prior_variance=self.model_parameters.latent_prior_variance,
+                # data
+                binary_covariates=data.binary_covariates,
+                continuous_covariates=data.continuous_covariates,
+                edges=data.edges,
+                edge_index_left=data.edge_index_left,
+                edge_index_right=data.edge_index_right,
+                logistic_approximation=self.model_parameters.vmp.logistic_approximation,
+            )
+            mcmc.fit(**fit_parameters_dict)
+            model_output = MethodOutput(**mcmc.output())
+            metrics = Metrics(model_output, data).metrics
+            dt = time.time() - t0
+            return Results(
+                training_metrics=dict(
+                    cpu_time=dt,
+                    edge_density=data.edge_density,
+                    X_missing_prop=data.covariate_missing_prop,
+                    **metrics["training"]
+                ),
+                testing_metrics=dict(
+                    edge_density=data.missing_edge_density,
+                    **metrics["testing"]
+                ),
+                estimation_metrics=dict(
+                    **metrics["estimation"]
+                )
+            )
+        return cls(model_parameters=model_parameters, fit_function=fit_function)
+
+    @classmethod
     def from_VMP_parameters(cls, model_parameters: ParameterGroup, covariates_only: bool = False):
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import VMP

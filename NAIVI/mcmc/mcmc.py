@@ -284,7 +284,7 @@ class MCMC:
             ).log_prob(self._data["binary_covariates"].unsqueeze(0))
             llks.append(samples["llk_bin"].nansum((-1, -2)))
         Amat = torch.zeros_like(samples["thetaA"][0,:,:]).float()
-        Amat[self._data["edge_index_left"], self._data["edge_index_right"]] = self._data["edges"]
+        Amat[self._data["edge_index_left"], self._data["edge_index_right"]] = self._data["edges"].flatten()
         Amat.fill_diagonal_(torch.nan)
         samples["llk_edges"] = dist.Bernoulli(
             logits=samples["thetaA"],

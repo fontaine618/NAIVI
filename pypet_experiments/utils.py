@@ -55,6 +55,8 @@ _default_fit_parameters = {
     "gcn.lr": 0.01,
     "gcn.max_iter": 200,
     "gcn.weight_decay": 5e-4,
+    "mcmc.num_samples": 2000,
+    "mcmc.warmup_steps": 1000,
 }
 
 

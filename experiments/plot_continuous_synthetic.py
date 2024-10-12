@@ -34,7 +34,6 @@ methods = {
     "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
-    # "ADVI":             ("NAIVI-QB",    "#8888ff", "dashed", "v"),
 
     "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
     "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
@@ -57,10 +56,10 @@ missing_mechanisms = {
 
 experiments = {
     # "experiment_name": ("group_by", "display_var", "display_name", logx?)
-    "n_nodes_continuous": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
-    "n_attributes_continuous": ("data.p_cts", "data.p_cts", "Nb. attributes", True),
-    # "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
-    # "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
+    # "n_nodes_continuous": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
+    # "n_attributes_continuous": ("data.p_cts", "data.p_cts", "Nb. attributes", True),
+    "edge_density_continuous": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
+    # "missing_rate_continuous": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
 }
 seeds = range(30)
 
@@ -73,13 +72,6 @@ cols_by = "experiment"
 metric = "testing.mse_continuous"
 yaxis = "Pred. MSE"
 
-# computation time
-# metric = "training.cpu_time"
-# yaxis = "CPU Time (s)"
-
-
-
-
 full_df_list = []
 
 for name, (group_by, display_var, display_name, _) in experiments.items():
@@ -87,7 +79,10 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     res_list = []
     for i in seeds:
         file = f"./experiments/{name}/results/seed{i}.hdf5"
-        traj = Trajectory(name=name+"_seed"+str(i))
+        tname = name+"_seed"+str(i)
+        if name == "edge_density_continuous": # patch some typo when running
+            tname = "edge_density_seed"+str(i)
+        traj = Trajectory(name=tname)
         traj.f_load(filename=file, load_results=2, force=True)
 
         parameters = gather_parameters_to_DataFrame(traj)
@@ -105,10 +100,11 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
 
     outdf = df.groupby([group_by, curves_by, rows_by]).agg({
         metric: "median",
-        "x_value": "median",
+        "x_value": "median"
     }).reset_index().drop(columns=group_by)
     outdf[cols_by] = display_name
-    full_df_list.append(outdf)
+
+    pdf = pd.DataFrame(columns=outdf.columns)
 
     # wilcoxon siged rank test VMP vs others
     curves = df[curves_by].unique()
@@ -136,11 +132,19 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
         other = other.astype(float)
         prop_better = np.mean(vmp < other)
         _, p = wilcoxon(vmp, other, nan_policy="omit")
-        print(meth, row, col, xvar, prop_better, p)
+        print(f"{meth} vs VMP on {row} {col} {xvar}: {prop_better:.2f} {p:.2e}")
+        # store in pdf as new row
+        pdf = pdf.append({
+            rows_by: row,
+            curves_by: meth,
+            cols_by: col,
+            "x_value": xvar,
+            "p_value": p,
+        }, ignore_index=True)
+
+    full_df_list.append(outdf)
 
 full_df = pd.concat(full_df_list)
-
-
 
 
 # performance metric
@@ -148,21 +152,10 @@ rows = full_df[rows_by].unique()
 cols = full_df[cols_by].unique()
 curves = full_df[curves_by].unique()
 
-# computation time
-# rows = [full_df[rows_by].unique()[0]]
-# curves = ["VMP", "MLE"]
-# cols = [full_df[cols_by].unique()[i] for i in [0, 1]]
-
-
-
-
-
-
+# plots
 plt.cla()
 fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows), ncols=len(cols),
                         sharex="col", sharey="row", squeeze=False)
-# fig, axs = plt.subplots(figsize=(7, 4), nrows=len(rows), ncols=len(cols),
-#                         sharex="col", sharey="row", squeeze=False)
 for i, row in enumerate(rows):
     for j, col in enumerate(cols):
         ax = axs[i, j]
@@ -185,8 +178,6 @@ for i, row in enumerate(rows):
             if j == len(cols)-1:
                 ax.set_ylabel(f"{missing_mechanisms[row]}")
                 ax.yaxis.set_label_position("right")
-            # ax.set_yscale("log")
-            # ax.set_ylim(0.5, 5)
 
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')
@@ -195,9 +186,7 @@ labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
 fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-# fig.subplots_adjust(top=0.80)
 fig.subplots_adjust(top=0.90)
-# plt.savefig("experiments/synthetic_metrics.pdf")
 plt.savefig("experiments/synthetic_continuous.pdf")
 
 

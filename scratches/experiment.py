@@ -13,11 +13,11 @@ data_parms = {
     "dataset": "synthetic",
     "facebook_center": 0,
     "path": "",
-    "n_nodes": 200,
-    "p_cts": 100,
-    "p_bin": 100,
+    "n_nodes": 20,
+    "p_cts": 10,
+    "p_bin": 0,
     "seed": 0,
-    "latent_dim": 5,
+    "latent_dim": 2,
     "latent_variance": 1.,
     "latent_mean": 0.,
     "heterogeneity_variance": 1.,
@@ -25,7 +25,7 @@ data_parms = {
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "row_deletion",
+    "missing_mechanism": "uniform",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
     "attribute_model": "inner_product",
@@ -66,6 +66,8 @@ fit_parms = {
     "gcn.lr": 0.01,
     "gcn.max_iter": 200,
     "gcn.weight_decay": 5e-4,
+    "mcmc.num_samples": 10,
+    "mcmc.warmup_steps": 5,
 }
 for k, v in fit_parms.items():
     traj.f_add_parameter(f"fit.{k}", data=v)
@@ -75,7 +77,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "MLE"
+traj.method = "MCMC"
 
 # get data instance (this could be loaded data or synthetic data)
 data: Dataset = Dataset.from_parameters(traj.data)
