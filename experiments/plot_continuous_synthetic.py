@@ -80,8 +80,6 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     for i in seeds:
         file = f"./experiments/{name}/results/seed{i}.hdf5"
         tname = name+"_seed"+str(i)
-        if name == "edge_density_continuous": # patch some typo when running
-            tname = "edge_density_seed"+str(i)
         traj = Trajectory(name=tname)
         traj.f_load(filename=file, load_results=2, force=True)
 

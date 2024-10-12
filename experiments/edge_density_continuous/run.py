@@ -14,7 +14,7 @@ if __name__ == "__main__":
     os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
-        trajectory=f"edge_density_seed{seed}",
+        trajectory=f"edge_density_continuous_seed{seed}",
         filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
         multiproc=True,
