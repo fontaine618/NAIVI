@@ -56,10 +56,10 @@ missing_mechanisms = {
 
 experiments = {
     # "experiment_name": ("group_by", "display_var", "display_name", logx?)
-    # "n_nodes_continuous": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
-    # "n_attributes_continuous": ("data.p_cts", "data.p_cts", "Nb. attributes", True),
+    "n_nodes_continuous": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
+    "n_attributes_continuous": ("data.p_cts", "data.p_cts", "Nb. attributes", True),
     "edge_density_continuous": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
-    # "missing_rate_continuous": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
+    "missing_rate_continuous": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
 }
 seeds = range(30)
 
@@ -73,6 +73,7 @@ metric = "testing.mse_continuous"
 yaxis = "Pred. MSE"
 
 full_df_list = []
+full_pdf_list = []
 
 for name, (group_by, display_var, display_name, _) in experiments.items():
 
@@ -80,6 +81,8 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     for i in seeds:
         file = f"./experiments/{name}/results/seed{i}.hdf5"
         tname = name+"_seed"+str(i)
+        if name == "edge_density_continuous":
+            tname = "edge_density_seed"+str(i)
         traj = Trajectory(name=tname)
         traj.f_load(filename=file, load_results=2, force=True)
 
@@ -102,7 +105,10 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     }).reset_index().drop(columns=group_by)
     outdf[cols_by] = display_name
 
-    pdf = pd.DataFrame(columns=outdf.columns)
+    pdf = pd.DataFrame(columns=[curves_by, rows_by, cols_by, "x_value",
+                                "p_value_two-sided", "stat_rwo-sided",
+                                "p_value_less", "stat_less",
+                                "p_value_greater", "stat_greater"])
 
     # wilcoxon siged rank test VMP vs others
     curves = df[curves_by].unique()
@@ -125,47 +131,60 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
         common_seeds = np.intersect1d(seeds_vmp, seeds_other)
         vmp = values_vmp[np.isin(seeds_vmp, common_seeds)]
         other = values_other[np.isin(seeds_other, common_seeds)]
-        # make sure ther are floats
+        # make sure they are floats
         vmp = vmp.astype(float)
         other = other.astype(float)
         prop_better = np.mean(vmp < other)
-        _, p = wilcoxon(vmp, other, nan_policy="omit")
-        print(f"{meth} vs VMP on {row} {col} {xvar}: {prop_better:.2f} {p:.2e}")
+        stat, p = wilcoxon(vmp, other, nan_policy="omit", alternative="two-sided")
+        stat_l, p_l = wilcoxon(vmp, other, nan_policy="omit", alternative="less")
+        stat_g, p_g = wilcoxon(vmp, other, nan_policy="omit", alternative="greater")
+        # print(f"{meth} vs VMP on {row} {col} {xvar}: {prop_better:.2f} {p:.2e}")
         # store in pdf as new row
         pdf = pdf.append({
             rows_by: row,
             curves_by: meth,
             cols_by: col,
             "x_value": xvar,
-            "p_value": p,
+            "p_value_two-sided": p,
+            "stat_rwo-sided": stat,
+            "p_value_less": p_l,
+            "stat_less": stat_l,
+            "p_value_greater": p_g,
+            "stat_greater": stat_g,
         }, ignore_index=True)
+    pdf[cols_by] = display_name
 
     full_df_list.append(outdf)
+    full_pdf_list.append(pdf)
 
 full_df = pd.concat(full_df_list)
+full_pdf = pd.concat(full_pdf_list)
 
 
 # performance metric
 rows = full_df[rows_by].unique()
 cols = full_df[cols_by].unique()
 curves = full_df[curves_by].unique()
+curves_pdf = full_pdf[curves_by].unique()
 
 # plots
 plt.cla()
-fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows), ncols=len(cols),
-                        sharex="col", sharey="row", squeeze=False)
+fig, axs = plt.subplots(figsize=(12, 10), nrows=len(rows)*2, ncols=len(cols),
+                        sharex="col", sharey="row", squeeze=False,
+                        gridspec_kw={"height_ratios": [1, 0.4] * len(rows)})
 for i, row in enumerate(rows):
     for j, col in enumerate(cols):
-        ax = axs[i, j]
-        for k, curve in enumerate(curves):
+        # metric
+        ax = axs[2*i, j]
+        for _, curve in enumerate(curves):
             df = full_df.loc[(full_df[rows_by] == row) & (full_df[cols_by] == col) & (full_df[curves_by] == curve)]
             df = df.sort_values(by="x_value")
             ax.plot(df["x_value"], np.sqrt(df[metric]),
                     label=methods[curve][0], color=methods[curve][1],
                     linestyle=methods[curve][2], marker=methods[curve][3],
                     markerfacecolor='none')
-            if i == len(rows)-1:
-                ax.set_xlabel(col)
+            # if i == len(rows)-1:
+            #     ax.set_xlabel(col)
             if i == 0:
                 ax.set_title(f"Setting {'ABCDEFGHI'[j]}")
             for name, (group_by, display_var, display_name, logx) in experiments.items():
@@ -174,8 +193,31 @@ for i, row in enumerate(rows):
             if j == 0:
                 ax.set_ylabel(yaxis)
             if j == len(cols)-1:
-                ax.set_ylabel(f"{missing_mechanisms[row]}")
                 ax.yaxis.set_label_position("right")
+                ax.set_ylabel(f"{missing_mechanisms[row]}", rotation=270, labelpad=15)
+            ax.set_ylim(0.95, 2.55)
+        # wilcoxon p-values
+        ax = axs[2*i+1, j]
+        ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)
+        ax.axhline(y=-np.log10(0.05), color="black", linestyle="--", alpha=0.5)
+        for _, curve in enumerate(curves_pdf):
+            pdf = full_pdf.loc[(full_pdf[rows_by] == row) & (full_pdf[cols_by] == col) & (full_pdf[curves_by] == curve)]
+            pdf = pdf.sort_values(by="x_value")
+            sign = (pdf["p_value_greater"] > pdf["p_value_less"])*1.
+            y = sign * - np.log10(pdf["p_value_less"]) + (1. - sign) * np.log10(pdf["p_value_greater"])
+            ax.plot(pdf["x_value"], y,
+                    label=methods[curve][0], color=methods[curve][1],
+                    linestyle="none", marker=methods[curve][3],
+                    # linestyle=methods[curve][2], marker=methods[curve][3],
+                    markerfacecolor='none')
+            for name, (group_by, display_var, display_name, logx) in experiments.items():
+                if col == display_name:
+                    ax.set_xscale("log" if logx else "linear")
+            if i == len(rows)-1:
+                ax.set_xlabel(col)
+            # ax.set_yscale("log")
+            if j == 0:
+                ax.set_ylabel("Signed -log $p$-value \n NAIVI vs. Other")
 
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')
@@ -184,7 +226,7 @@ labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
 fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-fig.subplots_adjust(top=0.90)
+fig.subplots_adjust(top=0.93)
 plt.savefig("experiments/synthetic_continuous.pdf")
 
 

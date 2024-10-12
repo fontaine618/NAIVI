@@ -13,19 +13,19 @@ data_parms = {
     "dataset": "synthetic",
     "facebook_center": 0,
     "path": "",
-    "n_nodes": 20,
-    "p_cts": 10,
+    "n_nodes": 200,
+    "p_cts": 100,
     "p_bin": 0,
     "seed": 0,
-    "latent_dim": 2,
+    "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
     "heterogeneity_variance": 1.,
-    "heterogeneity_mean": -2.,
+    "heterogeneity_mean": 1.,
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "uniform",
+    "missing_mechanism": "row_deletion",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
     "attribute_model": "inner_product",
@@ -36,8 +36,8 @@ for k, v in data_parms.items():
 
 model_parms = {
     "latent_dim": 5,
-    "heterogeneity_prior_mean": -2.,
-    "heterogeneity_prior_variance": 1.,
+    "heterogeneity_prior_mean": float("nan"),
+    "heterogeneity_prior_variance": float("nan"),
     "latent_prior_mean": 0.,
     "latent_prior_variance": 1.,
     "mnar": False,
@@ -77,7 +77,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "MCMC"
+traj.method = "MAP"
 
 # get data instance (this could be loaded data or synthetic data)
 data: Dataset = Dataset.from_parameters(traj.data)
