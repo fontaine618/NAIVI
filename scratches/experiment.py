@@ -13,9 +13,9 @@ data_parms = {
     "dataset": "synthetic",
     "facebook_center": 0,
     "path": "",
-    "n_nodes": 50,
-    "p_cts": 20,
-    "p_bin": 0,
+    "n_nodes": 500,
+    "p_cts": 0,
+    "p_bin": 100,
     "seed": 0,
     "latent_dim": 2,
     "latent_variance": 1.,
@@ -28,14 +28,16 @@ data_parms = {
     "missing_mechanism": "uniform",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
-    "attribute_model": "distance",
-    "edge_model": "distance"
+    "attribute_model": "inner_product",
+    "edge_model": "inner_product"
 }
 for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 
 model_parms = {
     "latent_dim": 2,
+    # "heterogeneity_prior_mean": 0.,
+    # "heterogeneity_prior_variance": 0.0001,
     "heterogeneity_prior_mean": -2.,
     "heterogeneity_prior_variance": 1.,
     "latent_prior_mean": 0.,
@@ -52,7 +54,7 @@ fit_parms = {
     "vmp.max_iter": 100,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
-    "map.lr": 0.001,
+    "map.lr": 0.05,
     "map.max_iter": 2000,
     "map.eps": 1e-5,
     "map.optimizer": "Rprop",
@@ -77,7 +79,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "Mean"
+traj.method = "VMP"
 
 
 # get data instance (this could be loaded data or synthetic data)
