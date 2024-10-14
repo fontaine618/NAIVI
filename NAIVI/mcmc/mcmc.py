@@ -341,10 +341,11 @@ class MCMC:
             linear_predictor_covariates_bin = torch.zeros((n_nodes, 0))
         linear_predictor_covariates = torch.cat([linear_predictor_covariates_cts, linear_predictor_covariates_bin], dim=1)
         pred_edges = pred["edges"]["arithmetic_mean"]
+        pred_edges = pred_edges[self._data["edge_index_left"], self._data["edge_index_right"]].unsqueeze(1)
         linear_predictor_edges = samples["thetaA"].mean(0)
-        linear_predictor_edges = linear_predictor_edges[self._data["edge_index_left"], self._data["edge_index_right"]]
+        linear_predictor_edges = linear_predictor_edges[self._data["edge_index_left"], self._data["edge_index_right"]].unsqueeze(1)
         latent_positions = samples["z"].mean(0)
-        latent_heterogeneity = samples["alpha"].mean(0)
+        latent_heterogeneity = samples["alpha"].mean(0).unsqueeze(1)
         if p_cts + p_bin > 0:
             weight_covariates = samples["b"].mean(0)
             bias_covariates = samples["b0"].mean(0)

@@ -81,8 +81,8 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     for i in seeds:
         file = f"./experiments/{name}/results/seed{i}.hdf5"
         tname = name+"_seed"+str(i)
-        if name == "edge_density_continuous":
-            tname = "edge_density_seed"+str(i)
+        # if name == "edge_density_continuous":
+        #     tname = "edge_density_seed"+str(i)
         traj = Trajectory(name=tname)
         traj.f_load(filename=file, load_results=2, force=True)
 
@@ -199,6 +199,7 @@ for i, row in enumerate(rows):
         # wilcoxon p-values
         ax = axs[2*i+1, j]
         ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)
+        ax.axhline(y=0, color="black", linestyle="-", alpha=0.5)
         ax.axhline(y=-np.log10(0.05), color="black", linestyle="--", alpha=0.5)
         for _, curve in enumerate(curves_pdf):
             pdf = full_pdf.loc[(full_pdf[rows_by] == row) & (full_pdf[cols_by] == col) & (full_pdf[curves_by] == curve)]

@@ -23,6 +23,6 @@ class Results:
         for key, value in self._metrics.items():
             for metric, val in value.items():
                 out[f"{key}.{metric}"] = val
-        for key, value in self._logs.items():
+        for key, value in self._logs.items() if self._logs is not None else dict():
             out[f"logs.{key}"] = value
         return out

@@ -13,31 +13,31 @@ data_parms = {
     "dataset": "synthetic",
     "facebook_center": 0,
     "path": "",
-    "n_nodes": 200,
-    "p_cts": 100,
+    "n_nodes": 50,
+    "p_cts": 20,
     "p_bin": 0,
     "seed": 0,
-    "latent_dim": 5,
+    "latent_dim": 2,
     "latent_variance": 1.,
     "latent_mean": 0.,
     "heterogeneity_variance": 1.,
-    "heterogeneity_mean": 1.,
+    "heterogeneity_mean": -2.,
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "row_deletion",
+    "missing_mechanism": "uniform",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
-    "attribute_model": "inner_product",
-    "edge_model": "inner_product"
+    "attribute_model": "distance",
+    "edge_model": "distance"
 }
 for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 
 model_parms = {
-    "latent_dim": 5,
-    "heterogeneity_prior_mean": float("nan"),
-    "heterogeneity_prior_variance": float("nan"),
+    "latent_dim": 2,
+    "heterogeneity_prior_mean": -2.,
+    "heterogeneity_prior_variance": 1.,
     "latent_prior_mean": 0.,
     "latent_prior_variance": 1.,
     "mnar": False,
@@ -52,12 +52,12 @@ fit_parms = {
     "vmp.max_iter": 100,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
-    "map.lr": 0.05,
-    "map.max_iter": 500,
+    "map.lr": 0.001,
+    "map.max_iter": 2000,
     "map.eps": 1e-5,
     "map.optimizer": "Rprop",
     "mle.lr": 0.05,
-    "mle.max_iter": 500,
+    "mle.max_iter": 2000,
     "mle.eps": 1e-5,
     "mle.optimizer": "Rprop",
     "mice.max_iter": 20,
@@ -66,8 +66,8 @@ fit_parms = {
     "gcn.lr": 0.01,
     "gcn.max_iter": 200,
     "gcn.weight_decay": 5e-4,
-    "mcmc.num_samples": 10,
-    "mcmc.warmup_steps": 5,
+    "mcmc.num_samples": 1000,
+    "mcmc.warmup_steps": 500,
 }
 for k, v in fit_parms.items():
     traj.f_add_parameter(f"fit.{k}", data=v)
@@ -77,7 +77,8 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "MAP"
+traj.method = "Mean"
+
 
 # get data instance (this could be loaded data or synthetic data)
 data: Dataset = Dataset.from_parameters(traj.data)
