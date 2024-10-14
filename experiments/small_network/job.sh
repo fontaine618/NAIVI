@@ -4,7 +4,7 @@
 #SBATCH --job-name=naivi_small_network
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=3:00:00
+#SBATCH --time=10:00:00
 #SBATCH --array=0
 #SBATCH --account=open
 #SBATCH --partition=open
