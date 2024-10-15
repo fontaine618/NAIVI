@@ -193,8 +193,6 @@ class Method:
                 test=test,
                 return_log=True
             )
-            if math.isnan(fit_parameters_dict["lr"]):
-
             K = self.model_parameters["latent_dim"]
             if K == 0:
                 K = data.best_K
