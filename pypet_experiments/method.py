@@ -7,6 +7,7 @@ from typing import Callable, Any
 import types
 import time
 import torch
+import numpy as np
 import math
 from torchmetrics.functional import auroc, mean_squared_error
 import gc
@@ -22,9 +23,12 @@ def _eb_heterogeneity_prior(data: Dataset, model_parameters: ParameterGroup) -> 
         adj = torch.zeros(n, n)
         adj[i0, i1] = edges.flatten()
         adj[i1, i0] = edges.flatten()
-        degrees = adj.mean(0)
-        hmean = torch.logit(degrees).mean().item()
-        hvar = torch.logit(degrees).var().item()*2.
+        degrees = adj.sum(0)
+        degrees = degrees.clamp(1, n-2)
+        avg_degree = degrees / (n-1)
+        hmean = torch.logit(avg_degree).mean().item()
+        hvar = torch.logit(avg_degree).var().item()*2.
+
     return hmean, hvar
 
 
@@ -311,8 +315,8 @@ class Method:
             t0 = time.time()
             hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
             if not heterogeneity:
-                print(hmean)
                 hvar = 0.0001
+            print(hmean, hvar)
             K = self.model_parameters["latent_dim"]
             if K == 0:
                 K = data.best_K

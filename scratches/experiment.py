@@ -21,7 +21,7 @@ data_parms = {
     "latent_variance": 1.,
     "latent_mean": 0.,
     "heterogeneity_mean": -2.,
-    "heterogeneity_variance": 1.,
+    "heterogeneity_variance": 3.,
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
@@ -79,7 +79,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "VMP0"
+traj.method = "VMP"
 
 
 # get data instance (this could be loaded data or synthetic data)
