@@ -13,15 +13,15 @@ data_parms = {
     "dataset": "synthetic",
     "facebook_center": 0,
     "path": "",
-    "n_nodes": 20,
-    "p_cts": 20,
-    "p_bin": 0,
+    "n_nodes": 200,
+    "p_cts": 0,
+    "p_bin": 100,
     "seed": 0,
-    "latent_dim": 2,
+    "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
-    "heterogeneity_variance": 1.,
     "heterogeneity_mean": -2.,
+    "heterogeneity_variance": 1.,
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
@@ -35,11 +35,11 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 
 model_parms = {
-    "latent_dim": 2,
+    "latent_dim": 5,
     # "heterogeneity_prior_mean": 0.,
     # "heterogeneity_prior_variance": 0.0001,
-    "heterogeneity_prior_mean": -2.,
-    "heterogeneity_prior_variance": 1.,
+    "heterogeneity_prior_mean": float("nan"),
+    "heterogeneity_prior_variance": float("nan"),
     "latent_prior_mean": 0.,
     "latent_prior_variance": 1.,
     "mnar": False,
@@ -79,7 +79,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "VMP"
+traj.method = "VMP0"
 
 
 # get data instance (this could be loaded data or synthetic data)

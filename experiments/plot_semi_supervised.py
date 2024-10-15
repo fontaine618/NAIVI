@@ -7,7 +7,8 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from matplotlib.lines import Line2D
-
+import math
+from scipy.stats import wilcoxon
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 plt.rcParams.update(plt.rcParamsDefault)
@@ -28,10 +29,7 @@ plt.rcParams.update({
 
 # Methods
 methods = {
-    # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
-
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
-    # "ADVI":             ("NAIVI-QB",    "#8888ff", "dashed", "v"),
 
     "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
     "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
@@ -44,7 +42,7 @@ methods = {
 
     "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
-
+seeds = range(31)
 
 name = "email"
 res_list = []
@@ -90,25 +88,20 @@ cora["dataset"] = "cora"
 results = pd.concat([email, cora])
 
 
-
-
-
 metrics = {
-    # "testing.auroc_binary": ("Binary AuROC", ),
-    # "testing.auroc_multiclass": ("Multiclass AuROC", ),
-    # "testing.f1_multiclass_micro": ("F1 (micro)", ),
-    # "testing.f1_multiclass_macro": ("F1 (macro)", ),
     "testing.f1_multiclass_weighted": ("F1 (weighted)", ),
     "testing.accuracy_multiclass": ("Accuracy", ),
 }
 
 
-fig, axs = plt.subplots(len(metrics), 2, figsize=(10, 3*len(metrics)), sharey="row", sharex="col")
+fig, axs = plt.subplots(nrows=len(metrics)*2, ncols=2, figsize=(10, 4*len(metrics)),
+                        sharey="row", sharex="col", squeeze=False,
+                        gridspec_kw={"height_ratios": [1, 0.6] * len(metrics)})
 for col, (dataset, dataset_name) in enumerate([("email", "Email"), ("cora", "Cora")]):
     res_dataset = results.loc[results["dataset"] == dataset]
     for row, (metric, (metric_name, )) in enumerate(metrics.items()):
-        ax = axs[row, col]
-
+        # metric
+        ax = axs[2*row, col]
         for i, (method, (method_name, color, linestyle, marker)) in enumerate(methods.items()):
             res_method = res_dataset.loc[res_dataset["method"] == method]
             ys = res_method.groupby("data.n_seeds").agg(
@@ -121,12 +114,37 @@ for col, (dataset, dataset_name) in enumerate([("email", "Email"), ("cora", "Cor
             ax.plot(xs, ys["median"], color=color, linestyle=linestyle,
                     marker=marker, label=method_name, markerfacecolor='none')
             # ax.fill_between(xs, ys["lower"], ys["upper"], color=color, alpha=0.2)
-
-        if row == len(metrics) - 1:
-            ax.set_xlabel("Seeds / class", size=10)
         ax.set_xticks([2, 4, 6, 8, 10])
         if col == 0:
             ax.set_ylabel(metric_name, size=10)
+        # wilcoxon
+        ax = axs[2*row+1, col]
+        ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)
+        ax.axhline(y=0, color="black", linestyle="-", alpha=0.5)
+        ax.axhline(y=-np.log10(0.05), color="black", linestyle="--", alpha=0.5)
+        if col == 0:
+            ax.set_ylabel("Signed -log $p$-value \n NAIVI vs. Other")
+        if row == len(metrics) - 1:
+            ax.set_xlabel("Seeds / class", size=10)
+
+        for i, (method, (method_name, color, linestyle, marker)) in enumerate(methods.items()):
+            if method == "VMP":
+                continue
+            res_other = res_dataset.loc[res_dataset["method"] == method]
+            res_vmp = res_dataset.loc[res_dataset["method"] == "VMP"]
+            signed_pvals = []
+            for x in xs:
+                other = res_other.loc[res_other["data.n_seeds"] == x][metric].values.astype(float)
+                vmp = res_vmp.loc[res_vmp["data.n_seeds"] == x][metric].values.astype(float)
+                stat, p = wilcoxon(vmp, other, nan_policy="omit", alternative="two-sided")
+                stat_l, p_l = wilcoxon(vmp, other, nan_policy="omit", alternative="less")
+                stat_g, p_g = wilcoxon(vmp, other, nan_policy="omit", alternative="greater")
+                s = (p_g > p_l)*1.
+                y = s * -math.log(p_l) + (1-s) * math.log(p_g)
+                signed_pvals.append(y)
+            ax.plot(xs, np.array(signed_pvals), color=color, linestyle=linestyle, marker=marker, markerfacecolor='none')
+
+
     axs[0, col].set_title(dataset_name, size=12)
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')
@@ -134,7 +152,7 @@ lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerface
 labels = [name for _, (name, _, _, _) in methods.items()]
 fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-fig.subplots_adjust(top=0.88)
+fig.subplots_adjust(top=0.92)
 # plt.show()
 
-plt.savefig(f"./experiments/semi_supervised_metrics2.pdf")
+plt.savefig(f"./experiments/semi_supervised_metrics.pdf")

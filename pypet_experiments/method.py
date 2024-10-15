@@ -19,11 +19,12 @@ def _eb_heterogeneity_prior(data: Dataset, model_parameters: ParameterGroup) -> 
         i0 = data.edge_index_left
         i1 = data.edge_index_right
         n = max(i0.max().item(), i1.max().item()) + 1
-        adj = torch.eye(n)
+        adj = torch.zeros(n, n)
         adj[i0, i1] = edges.flatten()
+        adj[i1, i0] = edges.flatten()
         degrees = adj.mean(0)
         hmean = torch.logit(degrees).mean().item()
-        hvar = torch.logit(degrees).var().item()*1.5
+        hvar = torch.logit(degrees).var().item()*2.
     return hmean, hvar
 
 
@@ -290,7 +291,7 @@ class Method:
         return cls(model_parameters=model_parameters, fit_function=fit_function)
 
     @classmethod
-    def from_VMP_parameters(cls, model_parameters: ParameterGroup, covariates_only: bool = False):
+    def from_VMP_parameters(cls, model_parameters: ParameterGroup, covariates_only: bool = False, heterogeneity: bool = True):
         def fit_function(self: Method, data: Dataset, fit_parameters: ParameterGroup):
             from NAIVI import VMP
             from NAIVI.vmp import enable_logging, set_damping
@@ -309,6 +310,9 @@ class Method:
             cv_folds = fit_parameters.vmp.cv_folds
             t0 = time.time()
             hmean, hvar = _eb_heterogeneity_prior(data, self.model_parameters)
+            if not heterogeneity:
+                print(hmean)
+                hvar = 0.0001
             K = self.model_parameters["latent_dim"]
             if K == 0:
                 K = data.best_K
@@ -627,4 +631,8 @@ class Method:
     @classmethod
     def from_FA_parameters(cls, model_parameters: ParameterGroup):
         return cls.from_VMP_parameters(model_parameters, True)
+
+    @classmethod
+    def from_VMP0_parameters(cls, model_parameters: ParameterGroup):
+        return cls.from_VMP_parameters(model_parameters, heterogeneity=False)
 
