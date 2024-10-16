@@ -59,7 +59,7 @@ experiments = {
     # "experiment_name": ("group_by", "display_var", "display_name", logx?)
     "small_network": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
 }
-seeds = range(1)
+seeds = range(30)
 
 # Parameters
 rows_by = "data.missing_mechanism"
@@ -74,7 +74,6 @@ models = {
 # performance metric
 metric = "testing.mse_continuous"
 yaxis = "Pred. MSE"
-
 
 full_df_list = []
 full_pdf_list = []
@@ -122,48 +121,36 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     xvals = df["x_value"].unique()
     xvals = [x for x in xvals if not math.isnan(x)]
     for meth, row, col0, xvar in product(curves, rows, cols0, xvals):
-        # which_vmp = (df[curves_by] == "VMP") & (df[rows_by] == row) & (df[cols_by[0]] == col0) & (df["x_value"]==xvar)
-        # which_other = (df[curves_by] == meth) & (df[rows_by] == row) & (df[cols_by[0]] == col0) & (df["x_value"]==xvar)
-        # seeds_vmp = df.loc[which_vmp]["data.seed"].values
-        # seeds_other = df.loc[which_other]["data.seed"].values
-        # values_vmp = df.loc[which_vmp][metric].values
-        # values_other = df.loc[which_other][metric].values
-        # # subset to common seeds
-        # common_seeds = np.intersect1d(seeds_vmp, seeds_other)
-        # vmp = values_vmp[np.isin(seeds_vmp, common_seeds)]
-        # other = values_other[np.isin(seeds_other, common_seeds)]
-        # # make sure they are floats
-        # vmp = vmp.astype(float)
-        # other = other.astype(float)
-        # prop_better = np.mean(vmp < other)
-        # stat, p = wilcoxon(vmp, other, nan_policy="omit", alternative="two-sided")
-        # stat_l, p_l = wilcoxon(vmp, other, nan_policy="omit", alternative="less")
-        # stat_g, p_g = wilcoxon(vmp, other, nan_policy="omit", alternative="greater")
-        # # print(f"{meth} vs VMP on {row} {col} {xvar}: {prop_better:.2f} {p:.2e}")
-        # # store in pdf as new row
-        # pdf = pdf.append({
-        #     rows_by: row,
-        #     curves_by: meth,
-        #     cols_by: col0,
-        #     "x_value": xvar,
-        #     "p_value_two-sided": p,
-        #     "stat_rwo-sided": stat,
-        #     "p_value_less": p_l,
-        #     "stat_less": stat_l,
-        #     "p_value_greater": p_g,
-        #     "stat_greater": stat_g,
-        # }, ignore_index=True)
+        which_vmp = (df[curves_by] == "VMP") & (df[rows_by] == row) & (df[cols_by] == col0) & (df["x_value"]==xvar)
+        which_other = (df[curves_by] == meth) & (df[rows_by] == row) & (df[cols_by] == col0) & (df["x_value"]==xvar)
+        seeds_vmp = df.loc[which_vmp]["data.seed"].values
+        seeds_other = df.loc[which_other]["data.seed"].values
+        values_vmp = df.loc[which_vmp][metric].values
+        values_other = df.loc[which_other][metric].values
+        # subset to common seeds
+        common_seeds = np.intersect1d(seeds_vmp, seeds_other)
+        vmp = values_vmp[np.isin(seeds_vmp, common_seeds)]
+        other = values_other[np.isin(seeds_other, common_seeds)]
+        # make sure they are floats
+        vmp = vmp.astype(float)
+        other = other.astype(float)
+        prop_better = np.mean(vmp < other)
+        stat, p = wilcoxon(vmp, other, nan_policy="omit", alternative="two-sided")
+        stat_l, p_l = wilcoxon(vmp, other, nan_policy="omit", alternative="less")
+        stat_g, p_g = wilcoxon(vmp, other, nan_policy="omit", alternative="greater")
+        # print(f"{meth} vs VMP on {row} {col} {xvar}: {prop_better:.2f} {p:.2e}")
+        # store in pdf as new row
         pdf = pdf.append({
             rows_by: row,
             curves_by: meth,
             cols_by: col0,
             "x_value": xvar,
-            "p_value_two-sided": float("nan"),
-            "stat_rwo-sided": float("nan"),
-            "p_value_less": float("nan"),
-            "stat_less": float("nan"),
-            "p_value_greater": float("nan"),
-            "stat_greater": float("nan"),
+            "p_value_two-sided": p,
+            "stat_rwo-sided": stat,
+            "p_value_less": p_l,
+            "stat_less": stat_l,
+            "p_value_greater": p_g,
+            "stat_greater": stat_g,
         }, ignore_index=True)
 
     full_df_list.append(outdf)
@@ -181,7 +168,7 @@ curves_pdf = full_pdf[curves_by].unique()
 
 # plots
 plt.cla()
-fig, axs = plt.subplots(figsize=(8, 8), nrows=len(rows)*2, ncols=len(cols),
+fig, axs = plt.subplots(figsize=(8, 6), nrows=len(rows)*2, ncols=len(cols),
                         sharex="col", sharey="row", squeeze=False,
                         gridspec_kw={"height_ratios": [1, 0.4] * len(rows)})
 for i, row in enumerate(rows):
@@ -197,16 +184,16 @@ for i, row in enumerate(rows):
                     markerfacecolor='none')
             # if i == len(rows)-1:
             #     ax.set_xlabel(col)
-            if i == 0:
-                ax.set_title(col)
+            # if i == 0:
+            #     ax.set_title(col)
             # ax.set_xscale("log" if logx else "linear")
             if j == 0:
                 ax.set_ylabel(yaxis)
-            if j == len(cols)-1:
-                ax.yaxis.set_label_position("right")
-                ax.set_ylabel(f"{missing_mechanisms[row]}", rotation=270, labelpad=15)
+            # if j == len(cols)-1:
+            #     ax.yaxis.set_label_position("right")
+            #     ax.set_ylabel(f"{missing_mechanisms[row]}", rotation=270, labelpad=15)
             # ax.set_ylim(0.95, 2.55)
-        ax.set_ylim(0.95, 2.25)
+        ax.set_ylim(0.95, 3.05)
         # wilcoxon p-values
         ax = axs[2*i+1, j]
         ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)

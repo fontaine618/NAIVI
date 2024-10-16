@@ -25,7 +25,7 @@ data_parms = {
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "uniform",
+    "missing_mechanism": "conditional",
     "n_seeds": 1,
     "latent_dim_attributes": 0,
     "attribute_model": "inner_product",
@@ -79,7 +79,7 @@ traj.f_add_parameter("method", data="VMP")
 
 # ================================================================================
 # RUN
-traj.method = "VMP"
+traj.method = "MICE"
 
 
 # get data instance (this could be loaded data or synthetic data)
