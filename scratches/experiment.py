@@ -1,43 +1,45 @@
 import torch
 
-from pypet import ParameterGroup, Parameter, Trajectory
+from pypet import Trajectory
 from pypet_experiments.data import Dataset
 from pypet_experiments.method import Method
 from pypet_experiments.results import Results
-from NAIVI.vmp import VMP, set_damping,set_check_args
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 # ================================================================================
 # DATA SETTINGS
 traj = Trajectory(name="test")
 data_parms = {
-    "dataset": "synthetic",
+    # "dataset": "synthetic",
+    "dataset": "facebook",
     "facebook_center": 0,
-    "path": "",
+    "n_seeds": 5,
+    "path": "~/Documents/NAIVI/datasets/facebook/",
     "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 100,
-    "seed": 0,
+    "seed": 3,
     "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
+    "latent": "continuous",
+    "discrete_latent_components": 100,
     "heterogeneity_mean": -2.,
-    "heterogeneity_variance": 3.,
+    "heterogeneity_variance": 1.,
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "conditional",
-    "n_seeds": 1,
+    "missing_mechanism": "triangle",
     "latent_dim_attributes": 0,
     "attribute_model": "inner_product",
     "edge_model": "inner_product"
 }
 for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
-
+# MODEL SETTINGS
 model_parms = {
-    "latent_dim": 5,
-    # "heterogeneity_prior_mean": 0.,
-    # "heterogeneity_prior_variance": 0.0001,
+    "latent_dim": 3,
+    # "heterogeneity_prior_mean": -2.,
+    # "heterogeneity_prior_variance": 9.,
     "heterogeneity_prior_mean": float("nan"),
     "heterogeneity_prior_variance": float("nan"),
     "latent_prior_mean": 0.,
@@ -50,17 +52,20 @@ model_parms = {
 }
 for k, v in model_parms.items():
     traj.f_add_parameter(f"model.{k}", data=v)
+# METHOD
+traj.f_add_parameter("method", data="VMP")
+# ESTIMATION SETTINGS
 fit_parms = {
     "vmp.max_iter": 100,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
-    "map.lr": 0.002,
+    "map.lr": 0.05,
     "map.max_iter": 5000,
-    "map.eps": 1e-4,
-    "map.optimizer": "Adam",
-    "mle.lr": 0.002,
+    "map.eps": 1e-5,
+    "map.optimizer": "Rprop",
+    "mle.lr": 0.05,
     "mle.max_iter": 5000,
-    "mle.eps": 1e-4,
+    "mle.eps": 1e-5,
     "mle.optimizer": "Rprop",
     "mice.max_iter": 20,
     "mice.rel_tol": 1e-3,
@@ -73,13 +78,18 @@ fit_parms = {
 }
 for k, v in fit_parms.items():
     traj.f_add_parameter(f"fit.{k}", data=v)
-traj.f_add_parameter("method", data="VMP")
 # ================================================================================
 
 
 # ================================================================================
 # RUN
-traj.method = "MICE"
+
+# choose which method to run
+# ["Mean", "VMP", "VMP0", "MAP", "MLE", "NetworkSmoothing", "MICE", "KNN", "FA", "Oracle", "MCMC", "GCN"]
+# VMP0: VMP without heterogeneity
+# MCMC is very slow, avoid more than 50 nodes/50 attributes
+# GCN only works for the Cora dataset
+traj.method = "VMP"
 
 
 # get data instance (this could be loaded data or synthetic data)
@@ -97,13 +107,17 @@ for k, v in results.to_dict().items():
 from pypet_experiments.method import _eb_heterogeneity_prior
 import time
 import math
-# model_pararmeters = traj.model
-# data_parameters = traj.data
-# fit_parameters = traj.fit
-# self = method
-# covariates_only = False
-#
-# # set_damping(1.)
+model_pararmeters = traj.model
+data_parameters = traj.data
+fit_parameters = traj.fit
+self = method
+covariates_only = False
+heterogeneity = True
+
+
+from NAIVI.vmp.messages import Message
+
+# set_damping(1.)
 # self = vmp.factors["cts_model"]
 from NAIVI.vmp.distributions import Normal
 #

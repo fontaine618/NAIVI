@@ -12,6 +12,8 @@ _default_data_parameters = {
     "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
+    "latent": "continuous",
+    "discrete_latent_components": 10,
     "heterogeneity_variance": 1.,
     "heterogeneity_mean": -2.,
     "cts_noise": 1.,

@@ -121,8 +121,15 @@ class Dataset:
         torch.manual_seed(par.seed)
         weights = torch.randn(par.latent_dim, p)
         bias = torch.randn(1, p)
-        latent = torch.randn(par.n_nodes, par.latent_dim) * math.sqrt(par.latent_variance) + \
-            par.latent_mean
+        if par.latent == "continuous":
+            latent = torch.randn(par.n_nodes, par.latent_dim) * math.sqrt(par.latent_variance) + \
+                par.latent_mean
+        elif par.latent == "discrete":
+            centers = torch.randn(par.discrete_latent_components, par.latent_dim) * math.sqrt(par.latent_variance) + \
+                par.latent_mean
+            latent = centers[torch.randint(par.discrete_latent_components, (par.n_nodes,))]
+        else:
+            raise ValueError("Unknown latent type: " + par.latent)
         heterogeneity = torch.randn(par.n_nodes, 1) * math.sqrt(par.heterogeneity_variance) + \
             par.heterogeneity_mean
         if par.attribute_model == "inner_product":
@@ -347,12 +354,20 @@ class Dataset:
         else:
             X_bin = torch.empty((n_nodes, 0))
         M_bin, M_cts = _create_mask_matrices(
-            p_cts, p_bin, par.missing_covariate_rate, n_nodes, par.missing_mechanism
+            p_cts, p_bin, par.missing_covariate_rate, n_nodes, par.missing_mechanism, X_cts, X_bin
         )
         X_cts_missing = torch.where(~M_cts, torch.full_like(X_cts, torch.nan), X_cts)
         X_cts[M_cts] = torch.nan
         X_bin_missing = torch.where(~M_bin, torch.full_like(X_bin, torch.nan), X_bin)
         X_bin[M_bin] = torch.nan
+        # make sure we have non degenerate columns
+        which = X_bin.nanmean(dim=0)
+        which = which * (1. - which)
+        which = which.gt(0.01)
+        X_bin = X_bin[:, which]
+        X_bin_missing = X_bin_missing[:, which]
+        print(X_bin.shape)
+
         best_K = { #center :K
             3980: 2,
             698: 2,

@@ -14,8 +14,7 @@ if __name__ == "__main__":
 
     env = Environment(
         trajectory="facebook",
-        # filename=f"./results/seed{seed}.hdf5",
-        filename=f"./results/seed{seed}_K.hdf5",
+        filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
         multiproc=True,
         ncores=1,
@@ -26,16 +25,14 @@ if __name__ == "__main__":
 
     traj.f_explore(cartesian_product({
         "data.dataset": ["facebook"],
-        "data.path": ["~/Documents/NAIVI/datasets/facebook/"],
+        "data.path": ["~/work/NAIVI/datasets/facebook/"],
         "data.seed": [int(seed)],
         "data.facebook_center": [3980, 698, 686, 414, 348, 0, 3437, 1912, 1684, 107],
         "data.missing_covariate_rate": [0.5],
         "data.missing_mechanism": ["triangle", "row_deletion"],
-        "model.latent_dim": [0],
+        "model.latent_dim": [0], # take the best selected (hard coded)
         "model.heterogeneity_prior_mean": [float("nan")],  # EB
-        "fit.vmp.max_iter": [500, ],
-        "fit.vmp.rel_tol": [1e-5],
-        "method": ["Mean", "VMP", "MAP", "MLE", "NetworkSmoothing", "MICE", "KNN", "FA"]
+        "method": ["Mean", "VMP", "VMP0", "MAP", "MLE", "NetworkSmoothing", "MICE", "KNN", "FA"]
     }))
 
     env.run(run)

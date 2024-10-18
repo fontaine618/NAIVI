@@ -275,15 +275,11 @@ class VMP:
         """Break the rotational symmetry in the latent variables.
 
         Particularly useful when there are only edges; if there are covariates,
-        then the symmetry is broken by the randomness in the initiailization
+        then the symmetry is broken by the assymetry in the initiailization
         of the weight parameters.
 
         This is done by randomly initializing the messages from the edges to the
-        latent variables.
-
-        The posterior should be updated after this step to ensure consistency of
-        the messages with the posterior. (I am not sure if this is true,
-        since setting the messages should automatically update the posterior.)"""
+        latent variables."""
         if VMP_OPTIONS["logging"]: print(f"{prefix}Breaking symmetry")
         if "select_left_latent" in self.factors:
             p_id = self.variables["latent"].id
