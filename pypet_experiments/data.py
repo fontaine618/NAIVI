@@ -366,7 +366,6 @@ class Dataset:
         which = which.gt(0.01)
         X_bin = X_bin[:, which]
         X_bin_missing = X_bin_missing[:, which]
-        print(X_bin.shape)
 
         best_K = { #center :K
             3980: 2,
