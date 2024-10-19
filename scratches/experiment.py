@@ -10,9 +10,9 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 traj = Trajectory(name="test")
 data_parms = {
     # "dataset": "synthetic",
-    "dataset": "facebook",
-    "facebook_center": 0,
-    "n_seeds": 5,
+    "dataset": "facebook", # synthetic, email, facebook or cora
+    "facebook_center": 414,
+    "n_seeds": 5, # cora and email
     "path": "~/Documents/NAIVI/datasets/facebook/",
     "n_nodes": 200,
     "p_cts": 0,
@@ -37,11 +37,11 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim": 3,
+    "latent_dim": 0,
     # "heterogeneity_prior_mean": -2.,
-    # "heterogeneity_prior_variance": 9.,
-    "heterogeneity_prior_mean": float("nan"),
-    "heterogeneity_prior_variance": float("nan"),
+    # "heterogeneity_prior_variance": 1.,
+    "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
+    "heterogeneity_prior_variance": float("nan"), # nan for EB estimate
     "latent_prior_mean": 0.,
     "latent_prior_variance": 1.,
     "mnar": False,
@@ -56,18 +56,18 @@ for k, v in model_parms.items():
 traj.f_add_parameter("method", data="VMP")
 # ESTIMATION SETTINGS
 fit_parms = {
-    "vmp.max_iter": 100,
+    "vmp.max_iter": 500,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
     "map.lr": 0.05,
-    "map.max_iter": 5000,
+    "map.max_iter": 500,
     "map.eps": 1e-5,
     "map.optimizer": "Rprop",
     "mle.lr": 0.05,
-    "mle.max_iter": 5000,
+    "mle.max_iter": 500,
     "mle.eps": 1e-5,
     "mle.optimizer": "Rprop",
-    "mice.max_iter": 20,
+    "mice.max_iter": 1,
     "mice.rel_tol": 1e-3,
     "knn.n_neighbors": 10,
     "gcn.lr": 0.01,
@@ -89,7 +89,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "VMP"
+traj.method = "Mean"
 
 
 # get data instance (this could be loaded data or synthetic data)

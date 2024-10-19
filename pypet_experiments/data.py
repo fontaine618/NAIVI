@@ -368,16 +368,16 @@ class Dataset:
         X_bin_missing = X_bin_missing[:, which]
 
         best_K = { #center :K
-            3980: 2,
-            698: 2,
-            414: 2,
-            686: 2,
-            348: 2,
-            0: 3,
-            3437: 4,
-            1912: 4,
-            1684: 4,
-            107: 5
+            3980: 4,
+            698: 4,
+            414: 6,
+            686: 5,
+            348: 7,
+            0: 4,
+            3437: 5,
+            1912: 6,
+            1684: 6,
+            107: 6
         }[center]
         return cls(
             edge_index_left=i0,

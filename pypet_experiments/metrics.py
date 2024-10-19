@@ -10,9 +10,20 @@ def nanmse(pred, target):
     return mean_squared_error(pred[which], target[which]).item() if which.any() else float("nan")
 
 
-def nanauroc(pred, target):
+def nanauroc_pooled(pred, target):
     which = ~torch.isnan(target)
     return auroc(pred[which], target[which].long(), task="binary").item() if which.any() else float("nan")
+
+
+def nanauroc_columnwise_weighted_average(pred, target):
+    aucs = []
+    ns = []
+    for j in range(target.shape[1]):
+        which = ~torch.isnan(target[:, j])
+        if which.any():
+            aucs.append(auroc(pred[which, j], target[which, j].long(), task="binary").item())
+            ns.append(which.sum().item())
+    return sum(a * n for a, n in zip(aucs, ns)) / sum(ns) if ns else float("nan")
 
 
 def relmse(pred, target):
@@ -70,7 +81,11 @@ class Metrics:
             )
         if self.model_output.pred_binary_covariates is not None and \
                 self.dataset.binary_covariates is not None:
-            self._metrics["training"]["auroc_binary"] = nanauroc(
+            self._metrics["training"]["auroc_binary"] = nanauroc_pooled(
+                self.model_output.pred_binary_covariates,
+                self.dataset.binary_covariates
+            )
+            self._metrics["training"]["auroc_binary_weighted_average"] = nanauroc_columnwise_weighted_average(
                 self.model_output.pred_binary_covariates,
                 self.dataset.binary_covariates
             )
@@ -97,10 +112,11 @@ class Metrics:
                     average="micro"
                 )
         if self.model_output.pred_edges is not None and self.dataset.edges is not None:
-            self._metrics["training"]["auroc_edges"] = nanauroc(
+            self._metrics["training"]["auroc_edges"] = nanauroc_pooled(
                 self.model_output.pred_edges,
                 self.dataset.edges
             )
+
 
     def _compute_test_metrics(self):
         if self.model_output.pred_continuous_covariates is not None and \
@@ -111,7 +127,11 @@ class Metrics:
             )
         if self.model_output.pred_binary_covariates is not None and \
                 self.dataset.binary_covariates_missing is not None:
-            self._metrics["testing"]["auroc_binary"] = nanauroc(
+            self._metrics["testing"]["auroc_binary"] = nanauroc_pooled(
+                self.model_output.pred_binary_covariates,
+                self.dataset.binary_covariates_missing
+            )
+            self._metrics["testing"]["auroc_binary_weighted_average"] = nanauroc_columnwise_weighted_average(
                 self.model_output.pred_binary_covariates,
                 self.dataset.binary_covariates_missing
             )
@@ -146,7 +166,7 @@ class Metrics:
                     num_classes=pred_mat.shape[1]
                 ).item()
         if self.model_output.pred_edges is not None and self.dataset.edges_missing is not None:
-            self._metrics["testing"]["auroc_edges"] = nanauroc(
+            self._metrics["testing"]["auroc_edges"] = nanauroc_pooled(
                 self.model_output.pred_edges,
                 self.dataset.edges_missing
             )

@@ -33,7 +33,9 @@ if __name__ == "__main__":
         "data.missing_mechanism": ["triangle", "row_deletion"],
         "model.latent_dim": [0], # take the best selected (hard coded)
         "model.heterogeneity_prior_mean": [float("nan")],  # EB
-        "method": ["Mean", "VMP", "VMP0", "MAP", "MLE", "NetworkSmoothing", "MICE", "KNN", "FA"]
+        "method": ["Mean", "VMP", "VMP0", "MAP", "MLE", "NetworkSmoothing", "MICE", "KNN", "FA"],
+        "fit.vmp.max_iter": [500],
+        "fit.mice.max_iter": [10],
     }))
 
     env.run(run)
