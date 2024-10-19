@@ -106,9 +106,9 @@ for row, (missing_mechanism, missing_mechanism_name) in enumerate(missing_mechan
 
         for i, (method, (method_name, color, linestyle, marker)) in enumerate(methods.items()):
             res_method = res_center.loc[res_center["method"] == method]
-            med = res_method["testing.auroc_binary"].median()
-            lower = res_method["testing.auroc_binary"].quantile(0.25)
-            upper = res_method["testing.auroc_binary"].quantile(0.75)
+            med = res_method["testing.auroc_binary_weighted_average"].median()
+            lower = res_method["testing.auroc_binary_weighted_average"].quantile(0.25)
+            upper = res_method["testing.auroc_binary_weighted_average"].quantile(0.75)
             xi = x + (i - n_methods/2 + 0.5) / (n_methods+5)
             ax.scatter(xi, med, color=color, marker=marker, facecolor='none')
             ax.plot([xi, xi], [0., med], color=color, linestyle=linestyle)
@@ -121,7 +121,7 @@ for row, (missing_mechanism, missing_mechanism_name) in enumerate(missing_mechan
     ax.set_xticklabels([f"{center}\n({N}, {p})" for center, (N, p) in centers.items()])
     ax.grid(axis="x")
     ax.set_ylabel("Pred. AuROC")
-    ax.set_ylim(0.7, 0.9)
+    # ax.set_ylim(0.7, 0.9)
 
     # Wilcoxon signed rank test
     ax = axs[2*row+1]
@@ -133,13 +133,13 @@ for row, (missing_mechanism, missing_mechanism_name) in enumerate(missing_mechan
     for x, (center, (N, p)) in enumerate(centers.items()):
         res_center = res.loc[res["data.facebook_center"] == center]
         res_vmp = res_center.loc[res_center["method"] == "VMP"]
-        y_vmp = res_vmp["testing.auroc_binary"].values.astype(float)
+        y_vmp = res_vmp["testing.auroc_binary_weighted_average"].values.astype(float)
 
         for i, (method, (method_name, color, linestyle, marker)) in enumerate(methods.items()):
             if method == "VMP":
                 continue
             res_other = res_center.loc[res_center["method"] == method]
-            y_other = res_other["testing.auroc_binary"].values.astype(float)
+            y_other = res_other["testing.auroc_binary_weighted_average"].values.astype(float)
             stat, p = wilcoxon(y_vmp, y_other, nan_policy="omit", alternative="two-sided")
             stat_l, p_l = wilcoxon(y_vmp, y_other, nan_policy="omit", alternative="less")
             stat_g, p_g = wilcoxon(y_vmp, y_other, nan_policy="omit", alternative="greater")

@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import sys
 import os
-sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
+sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
+# sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
@@ -45,7 +46,7 @@ if __name__ == "__main__":
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
         "method": ["Mean", "KNN", "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "Oracle", "MICE"],
-        "fit.vmp.max_iter": [100],
+        "fit.vmp.max_iter": [200],
         "fit.vmp.rel_tol": [1e-5],
         "fit.vmp.cv_folds": [0],
     }))
