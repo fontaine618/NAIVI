@@ -23,11 +23,25 @@ def _eb_heterogeneity_prior(data: Dataset, model_parameters: ParameterGroup) -> 
         adj = torch.zeros(n, n)
         adj[i0, i1] = edges.flatten()
         adj[i1, i0] = edges.flatten()
-        degrees = adj.sum(0)
-        degrees = degrees.clamp(1, n-2)
-        avg_degree = degrees / (n-1)
-        hmean = torch.logit(avg_degree).mean().item()
-        hvar = torch.logit(avg_degree).var().item()*2.
+
+        # MLE
+        a = torch.nn.Parameter(torch.zeros((n, 1), device=adj.device), requires_grad=True)
+        opt = torch.optim.Rprop([a], lr=0.01)
+        for i in range(100):
+            opt.zero_grad()
+            Theta = a + a.T
+            Theta = Theta[i0, i1]
+            loss = -torch.distributions.Bernoulli(logits=Theta).log_prob(edges.flatten()).mean()
+            loss.backward()
+            if i % 10 == 0:
+                print(loss.item())
+            opt.step()
+        alpha_hat = a.data
+
+        hmean = alpha_hat.median().item()
+        iqr = alpha_hat.quantile(0.75).item() - alpha_hat.quantile(0.25).item()
+        hvar = iqr / 1.349
+
 
     return hmean, hvar
 

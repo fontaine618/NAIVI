@@ -124,6 +124,7 @@ class VMP:
         )
         edge_logit = Variable((ne, 1), "EdgeLogit")
         edge_model = Logistic(1, parent=edge_logit, method=logistic_approximation)
+        edge_model._name = "EdgeLogistic"
         edge = ProbabilityVariable((ne, 1), "Edge")
         edge_observed = ObservedFactor(edges, parent=edge, dist=Probability)
         # attach children
@@ -210,6 +211,7 @@ class VMP:
         affine_bin = Affine(K, p_bin, latent)
         logit_bin = Variable((N, p_bin), "CovariateLogit")
         bin_model = Logistic(p_bin, parent=logit_bin, method=logistic_approximation)
+        bin_model._name = "CovariateLogistic"
         bin_obs = ProbabilityVariable((N, p_bin), "BinaryCovariate")
         bin_observed = ObservedFactor(binary_covariates, parent=bin_obs, dist=Probability)
         affine_bin.set_children(child=logit_bin)
@@ -285,7 +287,7 @@ class VMP:
             p_id = self.variables["latent"].id
             dim = self.variables["left_latent"].shape
             k = dim[-1]
-            precision = torch.eye(k).expand(*dim, k)
+            precision = torch.eye(k).expand(*dim, k)*0.01
             mean_times_precision = torch.randn(dim)
             msg = MultivariateNormal(precision, mean_times_precision)
             self.factors["select_left_latent"].messages_to_parents[p_id].message_to_variable = msg
@@ -317,11 +319,17 @@ class VMP:
             self.factors["affine_bin"].parameters["bias"].data = torch.log(rowmean / (1 - rowmean))
         # SVD of X
         X[torch.isnan(X)] = 0.
-        _, _, V = torch.svd_lowrank(X, K)
+        U, _, V = torch.svd_lowrank(X, K)
         if p_cts > 0:
             self.factors["affine_cts"].parameters["weights"].data = V[:p_cts, :].T
+            for fname in ["affine_cts", "cts_model", "cts_observed"][::-1]:
+                self.factors[fname].update_messages_from_children()
+                self.factors[fname].update_messages_to_parents()
         if p_bin > 0:
             self.factors["affine_bin"].parameters["weights"].data = V[p_cts:, :].T
+            for fname in ["affine_bin", "bin_model", "bin_observed"][::-1]:
+                self.factors[fname].update_messages_from_children()
+                self.factors[fname].update_messages_to_parents()
 
     def _vmp_backward(self):
         if VMP_OPTIONS["logging"]: print(f"{prefix}Backward pass")
@@ -330,8 +338,8 @@ class VMP:
             self.factors[fname].update_messages_to_parents()
             # elbo = self.elbo()
             # if math.isnan(elbo):
-            #     print(f"ELBO is nan! Factor: {fname}")
-            #     raise RuntimeError("ELBO is nan!")
+            #     print(f"-------------------ELBO is nan! Updating Factor: {repr(self.factors[fname])}")
+                # raise RuntimeError("ELBO is nan!")
 
     def _vmp_forward(self):
         if VMP_OPTIONS["logging"]: print(f"{prefix}Forward pass")
@@ -340,8 +348,8 @@ class VMP:
             self.factors[fname].update_messages_to_children()
             # elbo = self.elbo()
             # if math.isnan(elbo):
-            #     print(f"ELBO is nan! Factor: {fname}")
-            #     raise RuntimeError("ELBO is nan!")
+            #     print(f"-------------------ELBO is nan! Updating Factor: {repr(self.factors[fname])}")
+                # raise RuntimeError("ELBO is nan!")
 
     def _e_step(self, n_iter: int = 1):
         if VMP_OPTIONS["logging"]: print(f"{prefix}E-step")

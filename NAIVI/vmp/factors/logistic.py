@@ -25,19 +25,20 @@ class Logistic(Factor):
 		self._elbo = self._quadrature_elbo
 		if parent.shape[0] > 2_000:
 			self._elbo = self._quadratic_elbo
+		# self._elbo = self._quadratic_elbo
 		self._n_updates = -1
 		i = self._name_to_id["parent"]
 		if method == "quadratic":
 			self._update = self._quadratic_update
-			self.messages_to_parents[i].damping = 1.
+			self.messages_to_parents[i]._damping = 1.
 		elif method == "adaptive":
 			self._update = self._adaptive_update
 		elif method == "tilted":
 			self._update = self._tilted_update
-			self.messages_to_parents[i].damping = 0.25
+			# self.messages_to_parents[i].damping = 0.25
 		elif method == "mk":
 			self._update = self._mk_update
-			self.messages_to_parents[i].damping = 0.1
+			# self.messages_to_parents[i].damping = 0.1
 		else:
 			raise ValueError(f"cannot recognize method {method}")
 
@@ -82,9 +83,10 @@ class Logistic(Factor):
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
 		s = mfc.proba - 0.5
+		obs = s.abs().gt(1e-10) # floating point error
 		t = (m.pow(2.) + v).sqrt()
 		elbo = torch.sigmoid(t).log() + s * m - t * 0.5
-		elbo = torch.where(s.abs()==0.5, elbo, torch.zeros_like(elbo))
+		elbo = torch.where(obs, elbo, torch.zeros_like(elbo))
 		return elbo.sum()
 
 	def _mk_elbo(self, x: torch.Tensor | None = None):
@@ -110,13 +112,14 @@ class Logistic(Factor):
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
 		if x is None:
-			x = self.children[c_id].posterior.proba
+			x = self.children[c_id].children.values().__iter__().__next__().values.values # N x p
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
-		s = 2*x - 1
+		s = 2.*x - 1.
+		obs = s.abs().gt(1e-10) # floating point error
 		sm = s*m
 		elbo = sm - _gh_quadrature(sm, v, _log1p_exp)
-		elbo = torch.where(s.abs()==1., elbo, torch.zeros_like(elbo))
+		elbo = torch.where(obs, elbo, torch.zeros_like(elbo))
 		return elbo.sum()
 
 	def log_likelihood(self, x: torch.Tensor | None = None):
@@ -182,20 +185,16 @@ class Logistic(Factor):
 		"""Uses the quadratic bound of Jaakola and Jordan (2000)"""
 		p_id = self._name_to_id["parent"]
 		c_id = self._name_to_id["child"]
-		mfc = self.messages_to_children[c_id].message_to_factor
-		# mfc = self.children[c_id].posterior
-		# mfp = self.messages_to_parents[p_id].message_to_factor
+		x = x = self.children[c_id].children.values().__iter__().__next__().values.values # N x p
 		mfp = self.parents[p_id].posterior
 		m, v = mfp.mean_and_variance
-		s = mfc.proba - 0.5
-		# because of floating point error, sometimes 0.5-0.5 is not exactly 0.
-		s = torch.where(s.abs().lt(0.1), torch.zeros_like(s), s.nan_to_num())
+		s = x - 0.5
 		t = (m.pow(2.) + v).sqrt()
 		lam = (torch.sigmoid(t) - 0.5) / t
 		p1 = lam
 		mtp1 = s
-		p1 = torch.where(s==0., torch.zeros_like(p1), p1)
-		mtp1 = torch.where(s==0., torch.zeros_like(mtp1), mtp1)
+		p1 = torch.where(x.isnan(), torch.zeros_like(p1), p1)
+		mtp1 = torch.where(x.isnan(), torch.zeros_like(mtp1), mtp1)
 		self.messages_to_parents[p_id].message_to_variable = Normal(p1, mtp1)
 
 	def _tilted_update(self):

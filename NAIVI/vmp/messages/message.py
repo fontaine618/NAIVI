@@ -19,7 +19,7 @@ class Message:
 	new_id = itertools.count()
 	instance = dict()
 
-	def __init__(self, variable: Variable, factor: Factor, damping: float = VMP_OPTIONS["damping"], **kw):
+	def __init__(self, variable: Variable, factor: Factor, damping: float | None = None, **kw):
 		self._factor_is_deterministic = factor.deterministic
 		self.id = next(Message.new_id)
 		self.variable = variable
@@ -27,9 +27,15 @@ class Message:
 		self._dim = variable.shape
 		self._message_to_factor: Distribution = Normal.unit_from_dimension(self._dim)
 		self._message_to_variable: Distribution = Normal.unit_from_dimension(self._dim)
-		# self.damping = damping
+		self._damping = damping
 		Message.instance[self.id] = self
 		if VMP_OPTIONS["logging"]: print(f"Initialized {repr(self)}")
+
+	@property
+	def damping(self):
+		if self._damping is None:
+			return VMP_OPTIONS["damping"]
+		return self._damping
 
 	@property
 	def name(self):
@@ -42,7 +48,10 @@ class Message:
 		"""Stores the new message and updates the posterior of the variable."""
 		if VMP_OPTIONS["logging"]: print(f"Update message from {repr(self.factor)} to {self.variable} ({repr(self)})")
 		prev_msg = self._message_to_variable
-		self._message_to_variable = (msg**VMP_OPTIONS["damping"]) * (prev_msg**(1-VMP_OPTIONS["damping"]))
+		if self.damping == 1.:
+			self._message_to_variable = msg
+		else:
+			self._message_to_variable = (msg**self.damping) * (prev_msg**(1.-self.damping))
 		self.variable.update(prev_msg, self._message_to_variable)
 
 	def _get_message_to_variable(self):

@@ -1,7 +1,7 @@
 VMP_OPTIONS = {
 	"logging": False,
 	"check_args": 0,
-	"damping": 0.7
+	"damping": 1.
 }
 
 from .vmp import VMP

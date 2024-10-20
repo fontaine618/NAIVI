@@ -9,11 +9,10 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 # DATA SETTINGS
 traj = Trajectory(name="test")
 data_parms = {
-    # "dataset": "synthetic",
-    "dataset": "facebook", # synthetic, email, facebook or cora
+    "dataset": "email", # synthetic, email, facebook or cora
     "facebook_center": 414,
-    "n_seeds": 5, # cora and email
-    "path": "~/Documents/NAIVI/datasets/facebook/",
+    "n_seeds": 5, # for cora and email: number of seeds per class
+    "path": "~/Documents/NAIVI/datasets/email/",
     "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 100,
@@ -37,9 +36,9 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim": 0,
+    "latent_dim": 7,
     # "heterogeneity_prior_mean": -2.,
-    # "heterogeneity_prior_variance": 1.,
+    # "heterogeneity_prior_variance": 0.2,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
     "heterogeneity_prior_variance": float("nan"), # nan for EB estimate
     "latent_prior_mean": 0.,
@@ -56,7 +55,7 @@ for k, v in model_parms.items():
 traj.f_add_parameter("method", data="VMP")
 # ESTIMATION SETTINGS
 fit_parms = {
-    "vmp.max_iter": 500,
+    "vmp.max_iter": 200,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
     "vmp.damping": 0.7,
@@ -72,7 +71,7 @@ fit_parms = {
     "mice.rel_tol": 1e-3,
     "knn.n_neighbors": 10,
     "gcn.lr": 0.01,
-    "gcn.max_iter": 200,
+    "gcn.max_iter": 500,
     "gcn.weight_decay": 5e-4,
     "mcmc.num_samples": 1000,
     "mcmc.warmup_steps": 500,
@@ -80,6 +79,8 @@ fit_parms = {
 for k, v in fit_parms.items():
     traj.f_add_parameter(f"fit.{k}", data=v)
 # ================================================================================
+
+
 
 
 # ================================================================================
@@ -90,7 +91,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "MAP"
+traj.method = "VMP0"
 
 
 # get data instance (this could be loaded data or synthetic data)

@@ -155,10 +155,9 @@ class AffineToParentMessage(Message):
 
 	def _set_message_to_variable(self, msg):
 		"""Stores the new message and updates the posterior of the variable."""
-		# print(f"Update message from {repr(self.factor)} to {self.variable}")
-		prev_msg = self.message_to_variable
-		self._message_to_variable = msg
-		self.variable.update(prev_msg, msg.prod(1))
+		prev_msg = self._message_to_variable
+		self._message_to_variable = (msg**self.damping) * (prev_msg**(1-self.damping))
+		self.variable.update(prev_msg.prod(1), self._message_to_variable.prod(1))
 
 	def _del_message_to_variable(self):
 		del self._message_to_variable

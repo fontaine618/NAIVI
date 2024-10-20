@@ -280,12 +280,26 @@ class Dataset:
         path_labels = par.path + "/dpt_labels.txt"
         edges = pd.read_table(path_edges, header=None, sep=" ").values
         labels = pd.read_table(path_labels, header=None, sep=" ").values
+        # remove self loops
+        self_loop = edges[:, 0] == edges[:, 1]
+        edges = edges[~self_loop, :]
+
         n_nodes = labels[:, 0].max() + 1
         n_nodes = max(n_nodes, edges.max() + 1)
         i0, i1 = torch.tril_indices(n_nodes, n_nodes, offset=-1)
         A = torch.zeros(n_nodes, n_nodes)
         A[edges[:, 0], edges[:, 1]] = 1
         A[edges[:, 1], edges[:, 0]] = 1
+        # find orphan
+        orphan = A.sum(0) == 0
+        not_orphan = ~orphan
+        not_orphan_i = torch.where(not_orphan)[0]
+        new_id = torch.arange(not_orphan_i.shape[0])
+        id = torch.full((n_nodes, ), -1)
+        id[not_orphan_i] = new_id
+        not_orphan_e = torch.logical_and(not_orphan[i0], not_orphan[i1])
+        not_orphan_e = torch.where(not_orphan_e)[0]
+
         A = A[i0, i1].reshape(-1, 1)
         torch.manual_seed(par.seed)
         M_A = torch.rand_like(A) < par.missing_edge_rate
@@ -294,6 +308,9 @@ class Dataset:
         p_bin = labels[:, 1].max() + 1
         X_bin = torch.zeros(n_nodes, p_bin)
         X_bin[labels[:, 0], labels[:, 1]] = 1
+        # drop columns with too few observations
+        keep = X_bin.sum(0).gt(3)
+        X_bin = X_bin[:, keep]
 
         seeds = []
         for i in range(X_bin.shape[1]):
@@ -312,21 +329,21 @@ class Dataset:
         X_cts_missing = torch.empty(n_nodes, 0)
 
         return cls(
-            edge_index_left=i0,
-            edge_index_right=i1,
-            edges=A,
-            edges_missing=A_missing,
-            binary_covariates=X_bin,
-            binary_covariates_missing=X_bin_missing,
-            continuous_covariates=X_cts,
-            continuous_covariates_missing=X_cts_missing,
+            edge_index_left=id[i0[not_orphan_e]],
+            edge_index_right=id[i1[not_orphan_e]],
+            edges=A[not_orphan_e, :],
+            edges_missing=A_missing[not_orphan_e, :],
+            binary_covariates=X_bin[not_orphan, :],
+            binary_covariates_missing=X_bin_missing[not_orphan, :],
+            continuous_covariates=X_cts[not_orphan, :],
+            continuous_covariates_missing=X_cts_missing[not_orphan, :],
             true_values=dict(
-                A=A,
-                A_missing=A_missing,
-                X_bin=X_bin,
-                X_bin_missing=X_bin_missing,
-                X_cts=X_cts,
-                X_cts_missing=X_cts_missing
+                A=A[not_orphan_e, :],
+                A_missing=A_missing[not_orphan_e, :],
+                X_bin=X_bin[not_orphan, :],
+                X_bin_missing=X_bin_missing[not_orphan, :],
+                X_cts=X_cts[not_orphan, :],
+                X_cts_missing=X_cts_missing[not_orphan, :]
             ),
             multiclass_range=(0, p_bin)
         )
