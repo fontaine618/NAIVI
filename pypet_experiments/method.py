@@ -33,8 +33,6 @@ def _eb_heterogeneity_prior(data: Dataset, model_parameters: ParameterGroup) -> 
             Theta = Theta[i0, i1]
             loss = -torch.distributions.Bernoulli(logits=Theta).log_prob(edges.flatten()).mean()
             loss.backward()
-            if i % 10 == 0:
-                print(loss.item())
             opt.step()
         alpha_hat = a.data
 
@@ -537,7 +535,8 @@ class Method:
                 idx_test=test_idx,
                 **model_parameters_dict
             )
-            gcn.model.cuda()
+            if torch.cuda.is_available():
+                gcn.model.cuda()
             gcn.fit(**fit_parameters_dict)
             model_output = MethodOutput(**gcn.output())
             metrics = Metrics(model_output, data).metrics
