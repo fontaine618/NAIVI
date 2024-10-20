@@ -61,6 +61,7 @@ name = "facebook"
 res_list = []
 for i in range(30):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
+    # file = f"./experiments/{name}/results/old/seed{i}_K.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
 
@@ -72,7 +73,8 @@ for i in range(30):
     res_list.append(results)
 
 results = pd.concat(res_list)
-
+metric = "testing.auroc_binary_weighted_average"
+# metric = "testing.auroc_binary"
 centers = { #center :(N, p)
     3980: (59, 39),
     698: (66, 41),
@@ -106,23 +108,23 @@ for row, (missing_mechanism, missing_mechanism_name) in enumerate(missing_mechan
 
         for i, (method, (method_name, color, linestyle, marker)) in enumerate(methods.items()):
             res_method = res_center.loc[res_center["method"] == method]
-            med = res_method["testing.auroc_binary_weighted_average"].median()
-            lower = res_method["testing.auroc_binary_weighted_average"].quantile(0.25)
-            upper = res_method["testing.auroc_binary_weighted_average"].quantile(0.75)
+            med = res_method[metric].median()
+            lower = res_method[metric].quantile(0.25)
+            upper = res_method[metric].quantile(0.75)
             xi = x + (i - n_methods/2 + 0.5) / (n_methods+5)
             ax.scatter(xi, med, color=color, marker=marker, facecolor='none')
             ax.plot([xi, xi], [0., med], color=color, linestyle=linestyle)
-    ax2 = ax.twinx()
-    ax2.set_ylabel(missing_mechanism_name, rotation=270, labelpad=15)
-    ax2.set_yticks([])
-    ax2.set_yticklabels([])
+    # ax2 = ax.twinx()
+    # ax2.set_ylabel(missing_mechanism_name, rotation=270, labelpad=15)
+    # ax2.set_yticks([])
+    # ax2.set_yticklabels([])
 
     ax.set_xticks(np.linspace(0, 9, 10))
     ax.set_xticklabels([f"{center}\n({N}, {p})" for center, (N, p) in centers.items()])
     ax.grid(axis="x")
     ax.set_ylabel("Pred. AuROC")
-    # ax.set_ylim(0.7, 0.9)
-
+    ax.set_ylim(0.4, 0.75)
+    ax.set_title(f"{missing_mechanism_name}")
     # Wilcoxon signed rank test
     ax = axs[2*row+1]
     ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)
@@ -133,13 +135,13 @@ for row, (missing_mechanism, missing_mechanism_name) in enumerate(missing_mechan
     for x, (center, (N, p)) in enumerate(centers.items()):
         res_center = res.loc[res["data.facebook_center"] == center]
         res_vmp = res_center.loc[res_center["method"] == "VMP"]
-        y_vmp = res_vmp["testing.auroc_binary_weighted_average"].values.astype(float)
+        y_vmp = res_vmp[metric].values.astype(float)
 
         for i, (method, (method_name, color, linestyle, marker)) in enumerate(methods.items()):
             if method == "VMP":
                 continue
             res_other = res_center.loc[res_center["method"] == method]
-            y_other = res_other["testing.auroc_binary_weighted_average"].values.astype(float)
+            y_other = res_other[metric].values.astype(float)
             stat, p = wilcoxon(y_vmp, y_other, nan_policy="omit", alternative="two-sided")
             stat_l, p_l = wilcoxon(y_vmp, y_other, nan_policy="omit", alternative="less")
             stat_g, p_g = wilcoxon(y_vmp, y_other, nan_policy="omit", alternative="greater")
@@ -160,7 +162,7 @@ lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerface
 labels = [name for _, (name, _, _, _) in methods.items()]
 fig.legend(lines, labels, loc=9, ncol=5)
 plt.tight_layout()
-fig.subplots_adjust(top=0.92)
+fig.subplots_adjust(top=0.90)
 plt.savefig(f"./experiments/{name}/facebook_metrics.pdf")
 
 

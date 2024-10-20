@@ -303,9 +303,8 @@ class Method:
             if torch.cuda.is_available():
                 torch.set_default_tensor_type(torch.cuda.FloatTensor)
             Distribution.set_default_check_args(False)
-            # Distribution.set_default_check_args(True)
-            # enable_logging()
-            # set_damping(.9)
+            torch.random.manual_seed(0)
+            set_damping(fit_parameters.vmp.damping)
             fit_parameters_dict = dict(
                 # min_iter=1,
                 max_iter=fit_parameters.vmp.max_iter,
