@@ -30,10 +30,11 @@ plt.rcParams.update({
 
 # Methods
 methods = {
-    "Oracle":           ("Oracle",      "#000000", "solid", "s"),
+    # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
+    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
-    # "ADVI":             ("NAIVI-QB",    "#8888ff", "dashed", "v"),
+    # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
     "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
     "MLE":              ("MLE",         "#3333ff", "dotted", "v"),

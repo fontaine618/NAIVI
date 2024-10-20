@@ -29,12 +29,15 @@ plt.rcParams.update({
 
 # Methods
 methods = {
+    # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
+
+    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
+    # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
     "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
     "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
     "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
-    "GCN":              ("GCN",         "#8833ff", "dashed", "v"),
 
     "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
     "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
@@ -42,11 +45,11 @@ methods = {
 
     "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
-seeds = range(31)
+seeds = range(30)
 
 name = "email"
 res_list = []
-for i in range(31):
+for i in seeds:
     file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
@@ -60,7 +63,7 @@ email = pd.concat(res_list)
 
 name = "cora"
 res_list = []
-for i in range(31):
+for i in seeds:
     file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
@@ -71,16 +74,6 @@ for i in range(31):
     results = results.loc[results["method"] != "GCN"]
     res_list.append(results)
 
-file = f"./experiments/{name}/results/gcn2.hdf5"
-traj = Trajectory(name=name)
-traj.f_load(filename=file, load_results=2, force=True)
-
-parameters = gather_parameters_to_DataFrame(traj)
-results = gather_results_to_DataFrame(traj)
-results = parameters.join(results)
-res_list.append(results)
-
-
 cora = pd.concat(res_list)
 
 email["dataset"] = "email"
@@ -90,11 +83,11 @@ results = pd.concat([email, cora])
 
 metrics = {
     "testing.f1_multiclass_weighted": ("F1 (weighted)", ),
-    "testing.accuracy_multiclass": ("Accuracy", ),
+    # "testing.accuracy_multiclass": ("Accuracy", ),
 }
 
 
-fig, axs = plt.subplots(nrows=len(metrics)*2, ncols=2, figsize=(10, 4*len(metrics)),
+fig, axs = plt.subplots(nrows=len(metrics)*2, ncols=2, figsize=(10, 3*len(metrics)+2),
                         sharey="row", sharex="col", squeeze=False,
                         gridspec_kw={"height_ratios": [1, 0.6] * len(metrics)})
 for col, (dataset, dataset_name) in enumerate([("email", "Email"), ("cora", "Cora")]):
@@ -142,7 +135,7 @@ for col, (dataset, dataset_name) in enumerate([("email", "Email"), ("cora", "Cor
                 s = (p_g > p_l)*1.
                 y = s * -math.log(p_l) + (1-s) * math.log(p_g)
                 signed_pvals.append(y)
-            ax.plot(xs, np.array(signed_pvals), color=color, linestyle=linestyle, marker=marker, markerfacecolor='none')
+            ax.plot(xs, np.array(signed_pvals), color=color, linestyle="none", marker=marker, markerfacecolor='none')
 
 
     axs[0, col].set_title(dataset_name, size=12)
@@ -152,7 +145,7 @@ lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerface
 labels = [name for _, (name, _, _, _) in methods.items()]
 fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-fig.subplots_adjust(top=0.92)
+fig.subplots_adjust(top=0.85)
 # plt.show()
 
 plt.savefig(f"./experiments/semi_supervised_metrics.pdf")
