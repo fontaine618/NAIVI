@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim": 7,
+    "latent_dim": 9,
     # "heterogeneity_prior_mean": -2.,
     # "heterogeneity_prior_variance": 0.2,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -55,7 +55,7 @@ for k, v in model_parms.items():
 traj.f_add_parameter("method", data="VMP")
 # ESTIMATION SETTINGS
 fit_parms = {
-    "vmp.max_iter": 200,
+    "vmp.max_iter": 10000,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
     "vmp.damping": 0.7,
