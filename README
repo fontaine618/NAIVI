@@ -2,6 +2,16 @@
 
 Author: **Simon Fontaine** (simfont@umich.edu)
 
+
+## Requirements
+
+All requirements are contained in the `requirements.txt` file, or can be obtained using the `poetry` library.
+
+Note: the latest version of `pypet` conflicts with newer versions of `numpy`. There are some basic types that were
+removed from `numpy` that are referenced in `pypet`. Therefore, I am using a patched version of `pypet` that is
+compatible with the latest version of `numpy`. This patched version, rather than the public version, is referenced in the `requirements.txt` file,
+so you should not have any issues with the installation.
+
 ## Repository structure
 
 ### NAIVI
@@ -16,51 +26,20 @@ Contains the source code to run various node attribute imputation methods.
 
 ### Pypet experiments
 
-This folder contains utilities to run experiments using the pypet library.
+This folder contains utilities to run experiments using the `pypet` library.
 
 ### Experiments
 
-This folder contains the scripts to run the experiments using `pypet`. Results and figures are also included in the
-respective folders.
+This folder contains the scripts to run the experiments using `pypet`. Figures are also included in the
+respective folders; raw results are omitted to reduce memory requirements for the repository, but are available upon request.
 
 ### Datasets
 
 Datasets used in the real data experiments.
 
-### Requirements
+### Examples
 
-All requirements are contained in the `requirements.txt` file, or can be obtained using the `poetry` library.
+#### Using the `pypet` manager
 
-Note: the latest version of `pypet` conflicts with newer versions of `numpy`. There are some basic types that were
-removed from `numpy` that are referenced in `pypet`. This needs to be patched, otherwise you might not be able to import `pypet`.
-Here is my fix: in `pypetconstants.py`, you need to change the following tuple at line 204:
+The file `single_experiment.py` shows how to run a single experiment using the `pypet` manager.
 
-```
-PARAMETER_SUPPORTED_DATA = (numpy.int8,
-                            numpy.int16,
-                            numpy.int32,
-                            numpy.int64,
-                            # numpy.int,
-                            numpy.int_,
-                            # numpy.long,
-                            numpy.uint8,
-                            numpy.uint16,
-                            numpy.uint32,
-                            numpy.uint64,
-                            # numpy.bool,
-                            numpy.bool_,
-                            numpy.float32,
-                            numpy.float64,
-                            # numpy.float,
-                            numpy.float_,
-                            numpy.complex64,
-                            # numpy.complex,
-                            numpy.complex_,
-                            numpy.str_,
-                            str,
-                            bytes,
-                            bool,
-                            int,
-                            float,
-                            complex)
-```

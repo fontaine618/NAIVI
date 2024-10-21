@@ -31,7 +31,7 @@ plt.rcParams.update({
 methods = {
     # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
-    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "."),
+    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
     # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
@@ -72,7 +72,7 @@ for i in seeds:
     parameters = gather_parameters_to_DataFrame(traj)
     results = gather_results_to_DataFrame(traj)
     results = parameters.join(results)
-    results = results.loc[results["method"] != "GCN"]
+    # results = results.loc[results["method"] != "GCN"]
     res_list.append(results)
 
 cora = pd.concat(res_list)
