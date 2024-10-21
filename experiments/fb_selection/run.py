@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import sys
 import os
-sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
+sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
+# sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
@@ -25,21 +26,16 @@ if __name__ == "__main__":
 
     traj.f_explore(cartesian_product({
         "data.dataset": ["facebook"],
-        "data.path": ["~/Documents/NAIVI/datasets/facebook/"],
+        "data.path": ["~/work/NAIVI/datasets/facebook/"],
         "data.seed": [int(seed)],
         "data.facebook_center": [3980, 698, 686, 414, 348, 0, 3437, 1912, 1684, 107],
         "data.missing_covariate_rate": [0.5],
-        "data.missing_edge_rate": [0.],
         "data.missing_mechanism": ["triangle"],
         "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "model.heterogeneity_prior_mean": [float("nan")],
-        "model.heterogeneity_prior_variance": [1.],
-        "model.latent_prior_mean": [0.],
-        "model.latent_prior_variance": [1.],
+        "model.heterogeneity_prior_mean": [float("nan")],  # EB
+        "model.heterogeneity_prior_variance": [float("nan")],
         "method": ["VMP", ],
         "fit.vmp.max_iter": [500],
-        "fit.vmp.rel_tol": [1e-5],
-        "fit.vmp.cv_folds": [0],
     }))
 
     env.run(run)
