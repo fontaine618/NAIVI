@@ -28,7 +28,7 @@ if __name__ == "__main__":
         "data.dataset": ["email"],
         "data.path": ["~/work/NAIVI/datasets/email/"],
         "data.seed": [int(seed)],
-        "data.n_seeds": [1, 3, 5, 10],
+        "data.n_seeds": [5],
         "model.heterogeneity_prior_mean": [float("nan")],
         "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],

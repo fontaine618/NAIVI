@@ -31,13 +31,14 @@ plt.rcParams.update({
 methods = {
     # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
-    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
+    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "."),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
     # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
     "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
     "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
     "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
+    "GCN": ("GCN", "#8833ff", "dashed", "v"),
 
     "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
     "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
