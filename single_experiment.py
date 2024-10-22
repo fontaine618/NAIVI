@@ -9,7 +9,7 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 # DATA SETTINGS
 traj = Trajectory(name="test")
 data_parms = {
-    "dataset": "facebook", # synthetic, email, facebook or cora
+    "dataset": "synthetic", # synthetic, email, facebook or cora
     "facebook_center": 348,
     "n_seeds": 5, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/facebook/",
@@ -21,7 +21,7 @@ data_parms = {
     "latent_variance": 1.,
     "latent_mean": 0.,
     "latent": "continuous",
-    "discrete_latent_components": 100,
+    "discrete_latent_components": 10,
     "heterogeneity_mean": -2.,
     "heterogeneity_variance": 1.,
     "cts_noise": 1.,
@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim":10,
+    "latent_dim":5,
     # "heterogeneity_prior_mean": -2.,
     # "heterogeneity_prior_variance": 0.2,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate

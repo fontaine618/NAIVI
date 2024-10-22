@@ -132,7 +132,7 @@ for r, (rname, (rdisp, rstat, robs, rmiss)) in enumerate(rows.items()):
                 ymiss = np.array(results[cname]["vmp"][f"{rmiss}_var"])
                 xmiss = np.sqrt(xmiss)
                 ymiss = np.sqrt(ymiss)
-        elif rstat == "rmse":
+        elif rstat == "mse":
             x = np.array(results[cname]["mcmc"][f"{robs}_bias"])**2 + np.array(results[cname]["mcmc"][f"{robs}_var"])
             y = np.array(results[cname]["vmp"][f"{robs}_bias"])**2 + np.array(results[cname]["vmp"][f"{robs}_var"])
             x = np.sqrt(x)

@@ -46,19 +46,23 @@ results = pd.concat(res_list)
 
 results["training.elbo_plus_entropy"] = results["training.elbo"] - \
                                         results["training.weights_entropy"]
+results["training.elbo_covariates_plus_entropy"] = results["training.elbo_covariates"] - \
+                                        results["training.weights_entropy"]
 
 metrics = { # colname: (display_name, higher_is_better)
     "training.elbo": ("ELBO", True),
     "training.elbo_plus_entropy": ("ELBO - H(B)", True),
+    "training.elbo_covariates": ("Cov. ELBO", True),
+    "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True),
     "testing.auroc_binary": ("AuROC", True),
 }
 
 cols = { #center :(N, p)
-    # 3980: (59, 42),
-    # 698: (66, 48),
-    # 414: (159, 103),
-    # 686: (170, 62),
-    # 348: (227, 126),
+    3980: (59, 42),
+    698: (66, 48),
+    414: (159, 103),
+    686: (170, 62),
+    348: (227, 126),
     0: (347, 139),
     3437: (547, 116),
     1912: (755, 133),
@@ -78,7 +82,7 @@ cols = { #center :(N, p)
 
 fig, axs = plt.subplots(
     len(metrics), len(cols),
-    figsize=(10, 2*len(metrics)),
+    figsize=(2*len(cols), 2*len(metrics)),
     sharey="row",
     sharex="col",
     squeeze=False,
@@ -104,7 +108,7 @@ for col, (center, (N, p)) in enumerate(cols.items()):
         ax.set_xticks([2, 4, 6, 8, 10])
         # ax.set_yscale("symlog", linthresh=0.001)
 
-        if row == 2:
+        if row == len(metrics)-1:
             ax.set_xlabel("$K$")
             ax.set_ylim(-0.06, 0.)
         if row == 0:
