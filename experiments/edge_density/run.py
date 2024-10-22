@@ -29,7 +29,7 @@ if __name__ == "__main__":
         "data.seed": [int(seed)],
         "data.n_nodes": [200],
         "data.p_cts": [0],
-        "data.p_bin": [1000],
+        "data.p_bin": [100],
         "data.latent_dim": [5],
         "data.latent_variance": [1.],
         "data.latent_mean": [0.],
