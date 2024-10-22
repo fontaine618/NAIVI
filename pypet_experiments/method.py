@@ -381,6 +381,7 @@ class Method:
                     edge_density=data.edge_density,
                     X_missing_prop=data.covariate_missing_prop,
                     elbo_covariates=vmp.elbo_covariates,
+                    elbo_terms=vmp.elbo(),
                     aic=vmp.aic,
                     bic=vmp.bic,
                     weights_entropy=vmp.weights_entropy,

@@ -23,7 +23,7 @@ class Logistic(Factor):
 	def __init__(self, dim: int, parent: Variable, method: str = "quadratic"):
 		super(Logistic, self).__init__(parent=parent)
 		self._elbo = self._quadrature_elbo
-		if parent.shape[0] > 5_000:
+		if parent.shape[0] > 2_000:
 			# quadrature elbo requires a lot of memory
 			self._elbo = self._quadratic_elbo
 		self._n_updates = -1

@@ -30,7 +30,7 @@ plt.rcParams.update({
 
 name = "email_selection"
 res_list = []
-for i in range(31):
+for i in range(10):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
@@ -38,9 +38,15 @@ for i in range(31):
     parameters = gather_parameters_to_DataFrame(traj)
     results = gather_results_to_DataFrame(traj)
     results = parameters.join(results)
+    results["data.seed"] = i
     res_list.append(results)
 
 results = pd.concat(res_list)
+
+
+# path because the experiment did not fifnish, so i think it does not store the parameters??
+results["model.latent_dim"] = list(range(2, 16)) * 10
+results["data.n_seeds"] = 5
 
 results["training.elbo_plus_entropy"] = results["training.elbo"] - \
                                         results["training.weights_entropy"]
@@ -58,7 +64,8 @@ fig, axs = plt.subplots(
     len(metrics), len(cols),
     figsize=(10, 2*len(metrics)),
     sharey="row",
-    sharex="col"
+    sharex="col",
+    squeeze=False
 )
 
 for col, n_seeds in enumerate(cols):

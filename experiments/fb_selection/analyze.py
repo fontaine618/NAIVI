@@ -30,7 +30,7 @@ plt.rcParams.update({
 
 name = "fb_selection"
 res_list = []
-for i in range(31):
+for i in range(10):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
@@ -38,10 +38,10 @@ for i in range(31):
     parameters = gather_parameters_to_DataFrame(traj)
     results = gather_results_to_DataFrame(traj)
     results = parameters.join(results)
+    results["data.seed"] = i
     res_list.append(results)
 
 results = pd.concat(res_list)
-
 
 
 results["training.elbo_plus_entropy"] = results["training.elbo"] - \
@@ -49,12 +49,12 @@ results["training.elbo_plus_entropy"] = results["training.elbo"] - \
 results["training.elbo_covariates_plus_entropy"] = results["training.elbo_covariates"] - \
                                         results["training.weights_entropy"]
 
-metrics = { # colname: (display_name, higher_is_better)
-    "training.elbo": ("ELBO", True),
-    "training.elbo_plus_entropy": ("ELBO - H(B)", True),
-    "training.elbo_covariates": ("Cov. ELBO", True),
-    "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True),
-    "testing.auroc_binary": ("AuROC", True),
+metrics = { # colname: (display_name, higher_is_better, rescale)
+    "training.elbo": ("ELBO", True, True),
+    "training.elbo_plus_entropy": ("ELBO - H(B)", True, True),
+    # "training.elbo_covariates": ("Cov. ELBO", True),
+    # "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True),
+    "testing.auroc_binary": ("AuROC", True, False),
 }
 
 cols = { #center :(N, p)
@@ -72,7 +72,9 @@ cols = { #center :(N, p)
 
 
 
-
+# path because the experiment did not fifnish, so i think it does not store the parameters??
+results["data.facebook_center"] = sorted(list(cols.keys()) * 9) * 10
+results["model.latent_dim"] = list(range(2, 11)) * 100
 
 
 
@@ -90,7 +92,7 @@ fig, axs = plt.subplots(
 
 for col, (center, (N, p)) in enumerate(cols.items()):
     res_exp = results.loc[results["data.facebook_center"] == center]
-    for row, (metric, (metric_name, higher_is_better)) in enumerate(metrics.items()):
+    for row, (metric, (metric_name, higher_is_better, rescale)) in enumerate(metrics.items()):
         ax = axs[row, col]
 
         res_exp_metric = res_exp[[metric, "data.seed", "model.latent_dim"]]
@@ -99,7 +101,9 @@ for col, (center, (N, p)) in enumerate(cols.items()):
             xs = res_exp_metric.loc[res_exp_metric["data.seed"] == i]["model.latent_dim"]
             ys = res_exp_metric.loc[res_exp_metric["data.seed"] == i][metric]
             val = (ys.max() if higher_is_better else ys.min())
-            ys = (ys-val)/val
+            ys = ys-val
+            if rescale:
+                ys = ys/val
             ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
             whichmin = ys.abs().values.argmin()
             # ax.plot(xs[whichmin], ys[whichmin],
@@ -110,10 +114,10 @@ for col, (center, (N, p)) in enumerate(cols.items()):
 
         if row == len(metrics)-1:
             ax.set_xlabel("$K$")
-            ax.set_ylim(-0.06, 0.)
+            # ax.set_ylim(-0.06, 0.)
         if row == 0:
             ax.set_title(f"{center} ($N={N}$, $p={p}$)")
-            ax.set_ylim(0., 0.2)
+            # ax.set_ylim(0., 0.2)
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()

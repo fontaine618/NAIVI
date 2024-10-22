@@ -89,6 +89,8 @@ class MultivariateNormalPrior(Factor):
 		diff = m0 - mq
 		quad = torch.einsum("ik, kj, ij->i", diff, p0, diff)
 		kl = trace + quad - logdetq + logdet0 - self.dim
+		if kl.isnan().any():
+			which = kl.isnan()
 		return - 0.5 * kl.sum()
 
 	# def elbo_mc(self):

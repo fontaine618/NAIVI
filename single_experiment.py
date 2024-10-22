@@ -9,8 +9,8 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 # DATA SETTINGS
 traj = Trajectory(name="test")
 data_parms = {
-    "dataset": "synthetic", # synthetic, email, facebook or cora
-    "facebook_center": 348,
+    "dataset": "facebook", # synthetic, email, facebook or cora
+    "facebook_center": 3980,
     "n_seeds": 5, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/facebook/",
     "n_nodes": 200,
@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim":5,
+    "latent_dim":6,
     # "heterogeneity_prior_mean": -2.,
     # "heterogeneity_prior_variance": 0.2,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -67,7 +67,7 @@ fit_parms = {
     "mle.max_iter": 1000,
     "mle.eps": 1e-5,
     "mle.optimizer": "Rprop",
-    "mice.max_iter": 1,
+    "mice.max_iter": 10,
     "mice.rel_tol": 1e-3,
     "knn.n_neighbors": 10,
     "gcn.lr": 0.01,

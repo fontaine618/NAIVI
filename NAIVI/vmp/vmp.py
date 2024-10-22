@@ -287,8 +287,8 @@ class VMP:
             p_id = self.variables["latent"].id
             dim = self.variables["left_latent"].shape
             k = dim[-1]
-            precision = torch.eye(k).expand(*dim, k)*0.01
-            mean_times_precision = torch.randn(dim)
+            precision = torch.eye(k).expand(*dim, k)*0.001
+            mean_times_precision = torch.randn(dim)*0.001
             msg = MultivariateNormal(precision, mean_times_precision)
             self.factors["select_left_latent"].messages_to_parents[p_id].message_to_variable = msg
         if VMP_OPTIONS["logging"]: print(f"{prefix}Symmetry broken")
@@ -372,6 +372,13 @@ class VMP:
 
     def elbo(self) -> float:
         return sum([factor.elbo() for factor in self.factors.values()]).item()
+        # e = 0.
+        # for factor in self.factors.values():
+        #     ef = factor.elbo().item()
+        #     if math.isnan(ef):
+        #         print(f"-------------------ELBO is nan! Elbo term: {repr(factor)}")
+        #     e += ef
+        # return e
 
     def _elbo(self):
         return {
