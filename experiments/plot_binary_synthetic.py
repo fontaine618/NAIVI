@@ -58,8 +58,8 @@ experiments = {
     # "experiment_name": ("group_by", "display_var", "display_name", logx?)
     "n_nodes_binary": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
     "n_attributes_binary": ("data.p_bin", "data.p_bin", "Nb. attributes", True),
-    "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
-    "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
+    # "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
+    # "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
 }
 seeds = range(30)
 
@@ -69,7 +69,7 @@ curves_by = "method"
 cols_by = "experiment"
 
 # performance metric
-metric = "testing.auroc_binary"
+metric = "testing.auroc_binary_weighted_average"
 yaxis = "Pred. AuROC"
 
 full_df_list = []
@@ -80,7 +80,7 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     res_list = []
     for i in seeds:
         file = f"./experiments/{name}/results/seed{i}.hdf5"
-        tname = name
+        tname = name + "_seed" + str(i)
         traj = Trajectory(name=tname)
         traj.f_load(filename=file, load_results=2, force=True)
 

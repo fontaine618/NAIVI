@@ -2,7 +2,8 @@ import numpy as np
 import torch
 import sys
 import os
-sys.path.insert(1, '/home/simfont/Documents/NAIVI/')
+sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
+# sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
@@ -13,7 +14,7 @@ if __name__ == "__main__":
     os.makedirs(f"results/", exist_ok=True)
 
     env = Environment(
-        trajectory="edge_density",
+        trajectory=f"edge_density_binary_seed{seed}",
         filename=f"./results/seed{seed}.hdf5",
         overwrite_file=True,
         multiproc=True,
@@ -28,7 +29,7 @@ if __name__ == "__main__":
         "data.seed": [int(seed)],
         "data.n_nodes": [200],
         "data.p_cts": [0],
-        "data.p_bin": [100],
+        "data.p_bin": [1000],
         "data.latent_dim": [5],
         "data.latent_variance": [1.],
         "data.latent_mean": [0.],
@@ -39,14 +40,11 @@ if __name__ == "__main__":
         "data.missing_edge_rate": [0.],
         "data.missing_mechanism": ["row_deletion", "uniform"],
         "model.latent_dim": [5],
-        "model.heterogeneity_prior_mean": [0.],
-        "model.heterogeneity_prior_variance": [4.],
+        "model.heterogeneity_prior_mean": [float("nan")],
+        "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
         "method": ["Mean", "KNN", "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "Oracle", "MICE"],
-        "fit.vmp.max_iter": [100],
-        "fit.vmp.rel_tol": [1e-5],
-        "fit.vmp.cv_folds": [0],
     }))
 
     env.run(run)
