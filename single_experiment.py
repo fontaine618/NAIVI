@@ -126,4 +126,4 @@ from NAIVI.vmp.distributions import Normal
 # vmp.factors["cts_observed"].values.values
 # par=traj.data
 
-
+((alpha+1) @ (alpha+1).T  -(alpha-1) @ (alpha-1).T) / 2
