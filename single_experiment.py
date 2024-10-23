@@ -13,11 +13,11 @@ data_parms = {
     "facebook_center": 3980,
     "n_seeds": 5, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/facebook/",
-    "n_nodes": 200,
-    "p_cts": 0,
-    "p_bin": 100,
+    "n_nodes": 30,
+    "p_cts": 20,
+    "p_bin": 2,
     "seed": 3,
-    "latent_dim": 5,
+    "latent_dim": 3,
     "latent_variance": 1.,
     "latent_mean": 0.,
     "latent": "continuous",
@@ -29,14 +29,14 @@ data_parms = {
     "missing_edge_rate": 0.,
     "missing_mechanism": "uniform",
     "latent_dim_attributes": 0,
-    "attribute_model": "distance",
-    "edge_model": "distance"
+    "attribute_model": "inner_product",
+    "edge_model": "inner_product"
 }
 for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim": 5,
+    "latent_dim": 3,
     # "heterogeneity_prior_mean": -2.,
     # "heterogeneity_prior_variance": 0.2,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -91,7 +91,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "VMP"
+traj.method = "MLE"
 
 
 # get data instance (this could be loaded data or synthetic data)
