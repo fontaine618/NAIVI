@@ -135,7 +135,7 @@ class Dataset:
         if par.attribute_model == "inner_product":
             theta_X = latent @ weights + bias
         elif par.attribute_model == "distance":
-            theta_X = bias - torch.cdist(latent, weights.T, p=2).pow(2.) / par.latent_dim
+            theta_X = 2. + bias - torch.cdist(latent, weights.T, p=2).pow(2.) / par.latent_dim
         else:
             raise ValueError("Unknown attribute model: " + par.attribute_model)
         mean_cts, logit_bin = theta_X[:, :par.p_cts], theta_X[:, par.p_cts:]

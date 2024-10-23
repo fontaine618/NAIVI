@@ -13,7 +13,7 @@ data_parms = {
     "facebook_center": 3980,
     "n_seeds": 5, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/facebook/",
-    "n_nodes": 500,
+    "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 100,
     "seed": 3,
@@ -29,8 +29,8 @@ data_parms = {
     "missing_edge_rate": 0.,
     "missing_mechanism": "uniform",
     "latent_dim_attributes": 0,
-    "attribute_model": "inner_product",
-    "edge_model": "inner_product"
+    "attribute_model": "distance",
+    "edge_model": "distance"
 }
 for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
