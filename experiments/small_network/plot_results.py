@@ -10,6 +10,7 @@ from scipy.stats import wilcoxon
 from matplotlib.lines import Line2D
 from itertools import product
 import math
+import matplotlib
 
 torch.set_default_tensor_type(torch.cuda.FloatTensor)
 plt.rcParams.update(plt.rcParamsDefault)
@@ -178,7 +179,8 @@ for i, row in enumerate(rows):
         for _, curve in enumerate(curves):
             df = full_df.loc[(full_df[rows_by] == row) & (full_df[cols_by] == col) & (full_df[curves_by] == curve)]
             df = df.sort_values(by="x_value")
-            ax.plot(df["x_value"], np.sqrt(df[metric]),
+            # ax.plot(df["x_value"], np.sqrt(df[metric]),
+            ax.plot(df["x_value"], df[metric],
                     label=methods[curve][0], color=methods[curve][1],
                     linestyle=methods[curve][2], marker=methods[curve][3],
                     markerfacecolor='none')
@@ -193,7 +195,9 @@ for i, row in enumerate(rows):
             #     ax.yaxis.set_label_position("right")
             #     ax.set_ylabel(f"{missing_mechanisms[row]}", rotation=270, labelpad=15)
             # ax.set_ylim(0.95, 2.55)
-        ax.set_ylim(0.95, 3.05)
+        ax.set_ylim(0.9, 10.)
+        # square root y scale
+        ax.set_yscale(matplotlib.scale.FuncScale(ax, (lambda e: e**0.5, lambda e: e**2)))
         # wilcoxon p-values
         ax = axs[2*i+1, j]
         ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)

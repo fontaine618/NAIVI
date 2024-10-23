@@ -71,7 +71,7 @@ models = {
 }
 
 # performance metric
-metric = "testing.auroc_binary"
+metric = "testing.auroc_binary_weighted_average"
 yaxis = "Pred. AuROC"
 
 
@@ -185,7 +185,7 @@ for i, row in enumerate(rows):
         for _, curve in enumerate(curves):
             df = full_df.loc[(full_df[rows_by] == row) & (full_df[cols_by] == col) & (full_df[curves_by] == curve)]
             df = df.sort_values(by="x_value")
-            ax.plot(df["x_value"], np.sqrt(df[metric]),
+            ax.plot(df["x_value"], df[metric],
                     label=methods[curve][0], color=methods[curve][1],
                     linestyle=methods[curve][2], marker=methods[curve][3],
                     markerfacecolor='none')
@@ -193,7 +193,6 @@ for i, row in enumerate(rows):
             #     ax.set_xlabel(col)
             if i == 0:
                 ax.set_title(col)
-            # ax.set_xscale("log" if logx else "linear")
             if j == 0:
                 ax.set_ylabel(yaxis)
             if j == len(cols)-1:
@@ -202,6 +201,7 @@ for i, row in enumerate(rows):
             # ax.set_ylim(0.95, 2.55)
         # wilcoxon p-values
         ax = axs[2*i+1, j]
+
         ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)
         ax.axhline(y=0, color="black", linestyle="-", alpha=0.5)
         ax.axhline(y=-np.log10(0.05), color="black", linestyle="--", alpha=0.5)
@@ -215,14 +215,16 @@ for i, row in enumerate(rows):
                     linestyle="none", marker=methods[curve][3],
                     # linestyle=methods[curve][2], marker=methods[curve][3],
                     markerfacecolor='none')
-            for name, (group_by, display_var, display_name, logx) in experiments.items():
-                if col == display_name:
-                    ax.set_xscale("log" if logx else "linear")
             if i == len(rows)-1:
                 ax.set_xlabel("Nb. nodes")
             # ax.set_yscale("log")
             if j == 0:
                 ax.set_ylabel("Signed -log $p$-value \n NAIVI vs. Other")
+        ax.set_xscale("log")
+        ax.set_xticks([100, 200, 500], minor=False)
+        ax.set_xticklabels([100, 200, 500], minor=False)
+        ax.set_xticklabels([], minor=True)
+
 
 # legend
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')

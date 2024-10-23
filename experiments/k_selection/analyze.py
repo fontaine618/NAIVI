@@ -30,7 +30,7 @@ plt.rcParams.update({
 
 name = "k_selection"
 res_list = []
-for i in range(31):
+for i in range(30):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
@@ -48,7 +48,7 @@ results["training.elbo_plus_entropy"] = results["training.elbo"] - \
 metrics = { # colname: (display_name, higher_is_better)
     "training.elbo": ("ELBO", True),
     "training.elbo_plus_entropy": ("ELBO - KL(B)", True),
-    "testing.auroc_binary": ("AuROC", True),
+    "testing.auroc_binary_weighted_average": ("Pred. AuROC", True),
 }
 
 cols = [ # N, p

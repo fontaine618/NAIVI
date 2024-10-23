@@ -13,11 +13,11 @@ data_parms = {
     "facebook_center": 3980,
     "n_seeds": 5, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/facebook/",
-    "n_nodes": 30,
+    "n_nodes": 200,
     "p_cts": 20,
-    "p_bin": 2,
+    "p_bin": 0,
     "seed": 3,
-    "latent_dim": 3,
+    "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
     "latent": "continuous",
@@ -27,7 +27,7 @@ data_parms = {
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "uniform",
+    "missing_mechanism": "row_deletion",
     "latent_dim_attributes": 0,
     "attribute_model": "inner_product",
     "edge_model": "inner_product"
@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim": 3,
+    "latent_dim": 5,
     # "heterogeneity_prior_mean": -2.,
     # "heterogeneity_prior_variance": 0.2,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -55,7 +55,7 @@ for k, v in model_parms.items():
 traj.f_add_parameter("method", data="VMP")
 # ESTIMATION SETTINGS
 fit_parms = {
-    "vmp.max_iter": 10000,
+    "vmp.max_iter": 200,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
     "vmp.damping": 0.7,
@@ -64,17 +64,17 @@ fit_parms = {
     "map.eps": 1e-5,
     "map.optimizer": "Rprop",
     "mle.lr": 0.01,
-    "mle.max_iter": 1000,
+    "mle.max_iter": 10000,
     "mle.eps": 1e-5,
     "mle.optimizer": "Rprop",
-    "mice.max_iter": 10,
+    "mice.max_iter": 20,
     "mice.rel_tol": 1e-3,
     "knn.n_neighbors": 10,
     "gcn.lr": 0.01,
     "gcn.max_iter": 500,
-    "gcn.weight_decay": 5e-4,
-    "mcmc.num_samples": 1000,
-    "mcmc.warmup_steps": 500,
+    "gcn.weight_decay": 0.001,
+    "mcmc.num_samples": 2000,
+    "mcmc.warmup_steps": 1000,
 }
 for k, v in fit_parms.items():
     traj.f_add_parameter(f"fit.{k}", data=v)
@@ -91,7 +91,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "MLE"
+traj.method = "MAP"
 
 
 # get data instance (this could be loaded data or synthetic data)

@@ -71,7 +71,7 @@ models = {
 }
 
 # performance metric
-metric = "testing.auroc_binary"
+metric = "testing.auroc_binary_weighted_average"
 yaxis = "Pred. AuROC"
 
 
@@ -185,7 +185,7 @@ for i, row in enumerate(rows):
         for _, curve in enumerate(curves):
             df = full_df.loc[(full_df[rows_by] == row) & (full_df[cols_by] == col) & (full_df[curves_by] == curve)]
             df = df.sort_values(by="x_value")
-            ax.plot(df["x_value"], np.sqrt(df[metric]),
+            ax.plot(df["x_value"], df[metric],
                     label=methods[curve][0], color=methods[curve][1],
                     linestyle=methods[curve][2], marker=methods[curve][3],
                     markerfacecolor='none')
