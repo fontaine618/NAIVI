@@ -14,8 +14,8 @@ data_parms = {
     "n_seeds": 5, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/facebook/",
     "n_nodes": 200,
-    "p_cts": 20,
-    "p_bin": 0,
+    "p_cts": 0,
+    "p_bin": 50,
     "seed": 3,
     "latent_dim": 5,
     "latent_variance": 1.,
@@ -27,7 +27,7 @@ data_parms = {
     "cts_noise": 1.,
     "missing_covariate_rate": 0.5,
     "missing_edge_rate": 0.,
-    "missing_mechanism": "row_deletion",
+    "missing_mechanism": "triangle",
     "latent_dim_attributes": 0,
     "attribute_model": "inner_product",
     "edge_model": "inner_product"
@@ -36,11 +36,11 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim": 5,
-    # "heterogeneity_prior_mean": -2.,
-    # "heterogeneity_prior_variance": 0.2,
-    "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
-    "heterogeneity_prior_variance": float("nan"), # nan for EB estimate
+    "latent_dim":10,
+    "heterogeneity_prior_mean": -2.,
+    "heterogeneity_prior_variance": 1.,
+    # "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
+    # "heterogeneity_prior_variance": float("nan"), # nan for EB estimate
     "latent_prior_mean": 0.,
     "latent_prior_variance": 1.,
     "mnar": False,
@@ -91,7 +91,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "MAP"
+traj.method = "VMP"
 
 
 # get data instance (this could be loaded data or synthetic data)
@@ -104,26 +104,5 @@ results: Results = method.fit(data, traj.fit)
 
 for k, v in results.to_dict().items():
     print(f"{k:<40}: {v}")
+# ================================================================================
 
-
-from pypet_experiments.method import _eb_heterogeneity_prior
-import time
-import math
-model_pararmeters = traj.model
-data_parameters = traj.data
-fit_parameters = traj.fit
-self = method
-covariates_only = False
-heterogeneity = True
-
-
-from NAIVI.vmp.messages import Message
-
-# set_damping(1.)
-# self = vmp.factors["cts_model"]
-from NAIVI.vmp.distributions import Normal
-#
-# vmp.factors["cts_observed"].values.values
-# par=traj.data
-
-((alpha+1) @ (alpha+1).T  -(alpha-1) @ (alpha-1).T) / 2

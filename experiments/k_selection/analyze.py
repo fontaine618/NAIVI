@@ -30,7 +30,7 @@ plt.rcParams.update({
 
 name = "k_selection"
 res_list = []
-for i in range(30):
+for i in range(10):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
@@ -44,21 +44,25 @@ results = pd.concat(res_list)
 
 results["training.elbo_plus_entropy"] = results["training.elbo"] - \
                                         results["training.weights_entropy"]
+results["training.elbo_covariates_plus_entropy"] = results["training.elbo_covariates"] - \
+                                        results["training.weights_entropy"]
 
-metrics = { # colname: (display_name, higher_is_better)
-    "training.elbo": ("ELBO", True),
-    "training.elbo_plus_entropy": ("ELBO - KL(B)", True),
-    "testing.auroc_binary_weighted_average": ("Pred. AuROC", True),
+metrics = { # colname: (display_name, higher_is_better, rescale)
+    "training.elbo": ("ELBO", True, True),
+    "training.elbo_plus_entropy": ("ELBO - H(B)", True, True),
+    "training.elbo_covariates": ("Cov. ELBO", True, True),
+    "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True, True),
+    "testing.auroc_binary": ("AuROC", True, False),
 }
 
 cols = [ # N, p
     (200, 50),
     (200, 200),
-    (1000, 50),
-    (1000, 200),
+    (500, 50),
+    (500, 200),
 ]
 
-K = 3
+K = 5
 resK = results.loc[results["data.latent_dim"] == K]
 
 fig, axs = plt.subplots(
@@ -73,7 +77,7 @@ for col, (N, p) in enumerate(cols):
         (resK["data.n_nodes"] == N)
         & (resK["data.p_bin"] == p)
     ]
-    for row, (metric, (metric_name, higher_is_better)) in enumerate(metrics.items()):
+    for row, (metric, (metric_name, higher_is_better, rescale)) in enumerate(metrics.items()):
         ax = axs[row, col]
 
         res_exp_metric = res_exp[[metric, "data.seed", "model.latent_dim"]]
