@@ -91,7 +91,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "VMP"
+traj.method = "MAP"
 
 
 # get data instance (this could be loaded data or synthetic data)

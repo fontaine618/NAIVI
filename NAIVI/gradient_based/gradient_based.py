@@ -273,28 +273,30 @@ class GradientBased:
         auc_mc = 0.
         auc_A = 0.
         if A is not None:
-            auc_A = auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().clamp_(0, 1).flatten(), task="binary").item()
+            auc_A = 0.5 #auroc(proba_adj.clamp_(0., 1.).flatten(), A.int().clamp_(0, 1).flatten(), task="binary").item()
         if X_cts is not None:
             which_cts = ~X_cts.isnan()
             mse = mean_squared_error(mean_cts[which_cts], X_cts[which_cts]).item()
         if X_bin is not None:
             which_bin = ~X_bin.isnan()
             if which_bin.sum() > 0.:
-                auc = auroc(
-                    proba_bin[which_bin].clamp_(0., 1.),
-                    X_bin.int()[which_bin],
-                    task="binary"
-                ).item()
+                auc = 0.5
+                # auroc(
+                #     proba_bin[which_bin].clamp_(0., 1.),
+                #     X_bin.int()[which_bin],
+                #     task="binary"
+                # ).item()
             which_rows = which_bin.sum(dim=1) > 0
             if which_rows.sum() > 0.:
                 proba_multiclass = proba_bin / proba_bin.sum(dim=1, keepdim=True)
                 obs_multiclass = (X_bin == 1.).int().clamp_(0, 1).argmax(dim=1)
-                auc_mc = auroc(
-                    proba_multiclass[which_rows, :],
-                    obs_multiclass[which_rows].int().clamp_(0, 1),
-                    task="multiclass", average="weighted",
-                    num_classes=proba_multiclass.shape[1]
-                ).item()
+                auc_mc = 0.5
+                # auroc(
+                #     proba_multiclass[which_rows, :],
+                #     obs_multiclass[which_rows].int().clamp_(0, 1),
+                #     task="multiclass", average="weighted",
+                #     num_classes=proba_multiclass.shape[1]
+                # ).item()
         return auc, auc_mc, mse, auc_A
 
     def batch_update(self, batch, optimizer, train, epoch):
