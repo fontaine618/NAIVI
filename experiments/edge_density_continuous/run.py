@@ -45,9 +45,6 @@ if __name__ == "__main__":
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
         "method": ["Mean", "KNN", "VMP", "FA", "MAP", "MLE", "NetworkSmoothing", "Oracle", "MICE"],
-        "fit.vmp.max_iter": [100],
-        "fit.vmp.rel_tol": [1e-5],
-        "fit.vmp.cv_folds": [0],
     }))
 
     env.run(run)

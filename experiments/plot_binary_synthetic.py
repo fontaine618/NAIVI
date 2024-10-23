@@ -58,8 +58,8 @@ experiments = {
     # "experiment_name": ("group_by", "display_var", "display_name", logx?)
     "n_nodes_binary": ("data.n_nodes", "data.n_nodes", "Nb. nodes", True),
     "n_attributes_binary": ("data.p_bin", "data.p_bin", "Nb. attributes", True),
-    # "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
-    # "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
+    "edge_density": ("data.heterogeneity_mean", "training.edge_density", "Edge density", False),
+    "missing_rate": ("data.missing_covariate_rate", "training.X_missing_prop", "Missing rate", False),
 }
 seeds = range(30)
 
@@ -70,6 +70,7 @@ cols_by = "experiment"
 
 # performance metric
 metric = "testing.auroc_binary_weighted_average"
+# metric = "testing.auroc_binary"
 yaxis = "Pred. AuROC"
 
 full_df_list = []
@@ -80,7 +81,10 @@ for name, (group_by, display_var, display_name, _) in experiments.items():
     res_list = []
     for i in seeds:
         file = f"./experiments/{name}/results/seed{i}.hdf5"
-        tname = name + "_seed" + str(i)
+        tname = name
+        if name in ["edge_density", "missing_rate"]:
+            tname += "_binary" # path some naming error
+        tname += "_seed" + str(i)
         traj = Trajectory(name=tname)
         traj.f_load(filename=file, load_results=2, force=True)
 
@@ -177,7 +181,7 @@ for i, row in enumerate(rows):
         for _, curve in enumerate(curves):
             df = full_df.loc[(full_df[rows_by] == row) & (full_df[cols_by] == col) & (full_df[curves_by] == curve)]
             df = df.sort_values(by="x_value")
-            ax.plot(df["x_value"], np.sqrt(df[metric]),
+            ax.plot(df["x_value"], df[metric],
                     label=methods[curve][0], color=methods[curve][1],
                     linestyle=methods[curve][2], marker=methods[curve][3],
                     markerfacecolor='none')
