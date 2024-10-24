@@ -72,9 +72,9 @@ cols = { #center :(N, p)
 
 
 
-# path because the experiment did not fifnish, so i think it does not store the parameters??
-results["data.facebook_center"] = sorted(list(cols.keys()) * 9) * 10
-results["model.latent_dim"] = list(range(2, 11)) * 100
+# # path because the experiment did not fifnish, so i think it does not store the parameters??
+# results["data.facebook_center"] = sorted(list(cols.keys()) * 9) * 10
+# results["model.latent_dim"] = list(range(2, 11)) * 100
 
 
 
