@@ -318,7 +318,7 @@ class Method:
             torch.random.manual_seed(0)
             set_damping(fit_parameters.vmp.damping)
             fit_parameters_dict = dict(
-                # min_iter=1,
+                min_iter=fit_parameters.vmp.min_iter,
                 max_iter=fit_parameters.vmp.max_iter,
                 rel_tol=fit_parameters.vmp.rel_tol,
             )

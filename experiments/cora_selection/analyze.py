@@ -30,7 +30,7 @@ plt.rcParams.update({
 
 name = "cora_selection"
 res_list = []
-for i in range(31):
+for i in range(1):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
     traj = Trajectory(name=name)
     traj.f_load(filename=file, load_results=2, force=True)
@@ -58,7 +58,8 @@ fig, axs = plt.subplots(
     len(metrics), len(cols),
     figsize=(10, 2*len(metrics)),
     sharey="row",
-    sharex="col"
+    sharex="col",
+    squeeze=False
 )
 
 for col, n_seeds in enumerate(cols):

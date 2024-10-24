@@ -36,6 +36,7 @@ if __name__ == "__main__":
         "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9, 10,],
         "method": ["VMP", ],
         "fit.vmp.max_iter": [2000],
+        "fit.vmp.min_iter": [20],
     }))
 
     env.run(run)
