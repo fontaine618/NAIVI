@@ -54,7 +54,7 @@ metrics = { # colname: (display_name, higher_is_better, rescale)
     "training.elbo_plus_entropy": ("ELBO - H(B)", True, True),
     # "training.elbo_covariates": ("Cov. ELBO", True),
     # "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True),
-    "testing.auroc_binary": ("AuROC", True, False),
+    "testing.auroc_binary_weighted_average": ("AuROC", True, False),
 }
 
 cols = { #center :(N, p)
@@ -63,23 +63,12 @@ cols = { #center :(N, p)
     414: (159, 103),
     686: (170, 62),
     348: (227, 126),
-    0: (347, 139),
-    3437: (547, 116),
-    1912: (755, 133),
-    1684: (792, 100),
-    107: (1045, 153)
+    # 0: (347, 139),
+    # 3437: (547, 116),
+    # 1912: (755, 133),
+    # 1684: (792, 100),
+    # 107: (1045, 153)
 }
-
-
-
-# # path because the experiment did not fifnish, so i think it does not store the parameters??
-# results["data.facebook_center"] = sorted(list(cols.keys()) * 11) * 10
-# results["model.latent_dim"] = list(range(2, 13)) * 100
-
-
-
-
-
 
 
 fig, axs = plt.subplots(
@@ -121,9 +110,6 @@ for col, (center, (N, p)) in enumerate(cols.items()):
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()
-# fig.subplots_adjust(top=0.90)
-# # plt.show()
-# plt.suptitle(f"Facebook ego centers", x=0.08,
-#              horizontalalignment='left')
 
-plt.savefig(f"./experiments/{name}/fb_selection_metrics_large.pdf")
+plt.savefig(f"./experiments/{name}/fb_selection_metrics_small.pdf")
+# plt.savefig(f"./experiments/{name}/fb_selection_metrics_large.pdf")
