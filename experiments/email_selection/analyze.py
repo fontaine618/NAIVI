@@ -44,9 +44,6 @@ for i in range(10):
 results = pd.concat(res_list)
 
 
-# path because the experiment did not fifnish, so i think it does not store the parameters??
-results["model.latent_dim"] = list(range(2, 16)) * 10
-results["data.n_seeds"] = 5
 
 results["training.elbo_plus_entropy"] = results["training.elbo"] - \
                                         results["training.weights_entropy"]
