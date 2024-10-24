@@ -36,6 +36,8 @@ if __name__ == "__main__":
         "model.latent_prior_variance": [1.],
         "method": ["Mean", "KNN",  "VMP", "VMP0", "FA", "MAP", "MLE", "NetworkSmoothing", "MICE", "GCN"],
         "fit.mice.max_iter": [10],
+        "fit.vmp.max_iter": [2000],
+        "fit.vmp.damping": [0.5],
     }))
 
     env.run(run)

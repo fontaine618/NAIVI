@@ -26,8 +26,6 @@ plt.rcParams.update({
     "ytick.labelsize": 9,
 })
 
-
-
 name = "cora_selection"
 res_list = []
 for i in range(10):
@@ -39,31 +37,50 @@ for i in range(10):
     results = gather_results_to_DataFrame(traj)
     results = parameters.join(results)
     res_list.append(results)
+cora = pd.concat(res_list)
+cora["training.elbo_plus_entropy"] = cora["training.elbo"] - cora["training.weights_entropy"]
+cora["dataset"] = "cora"
 
-results = pd.concat(res_list)
+name = "email_selection"
+res_list = []
+for i in range(10):
+    file = f"./experiments/{name}/results/seed{i}.hdf5"
+    traj = Trajectory(name=name)
+    traj.f_load(filename=file, load_results=2, force=True)
 
-results["training.elbo_plus_entropy"] = results["training.elbo"] - \
-                                        results["training.weights_entropy"]
+    parameters = gather_parameters_to_DataFrame(traj)
+    results = gather_results_to_DataFrame(traj)
+    results = parameters.join(results)
+    res_list.append(results)
+email = pd.concat(res_list)
+email["training.elbo_plus_entropy"] = email["training.elbo"] - email["training.weights_entropy"]
+email["dataset"] = "email"
+
+results = pd.concat([cora, email])
 
 metrics = { # colname: (display_name, higher_is_better)
     "training.elbo": ("ELBO", True),
     "training.elbo_plus_entropy": ("ELBO - KL(B)", True),
     "testing.f1_multiclass_weighted": ("F1 (weighted)", True),
-    # "testing.accuracy_multiclass": ("Accuracy", True),
 }
 
-cols = results["data.n_seeds"].unique()
+columns = { # name: xrange, xticks, display
+    "cora": ((5, 10), [6, 8, 10], "Cora"),
+    "email": ((3, 10), [4, 6, 8, 10], "Email"),
+}
+n_seeds = 5
+
 
 fig, axs = plt.subplots(
-    len(metrics), len(cols),
-    figsize=(10, 2*len(metrics)),
+    len(metrics), len(columns),
+    figsize=(5*len(columns), 2*len(metrics)),
     sharey="row",
     sharex="col",
     squeeze=False
 )
 
-for col, n_seeds in enumerate(cols):
-    res_exp = results.loc[results["data.n_seeds"] == n_seeds]
+for col, (dataset, (xrange, xticks, display)) in enumerate(columns.items()):
+    res_exp = results.loc[(results["data.n_seeds"] == n_seeds) & (results["dataset"] == dataset)]
     for row, (metric, (metric_name, higher_is_better)) in enumerate(metrics.items()):
         ax = axs[row, col]
 
@@ -76,26 +93,16 @@ for col, n_seeds in enumerate(cols):
             ys = (ys-val)/val
             ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
             whichmin = ys.abs().values.argmin()
-            # ax.plot(xs[whichmin], ys[whichmin],
-            #         marker="o", linestyle="none",
-            #         color="red", alpha=0.2, zorder=100)
-        ax.set_xticks([2, 4, 6, 8, 10])
-        # ax.set_yscale("symlog", linthresh=0.001)
+        ax.set_xticks(xticks)
+        ax.set_xlim(xrange)
 
         if row == len(metrics)-1:
             ax.set_xlabel("$K$")
-            # ax.set_ylim(-0.06, 0.)
         if row == 0:
-            ax.set_title(f"{n_seeds} seeds")
+            ax.set_title(display)
         if row == 0 or row == 1:
             ax.set_ylim(0., 0.07)
-        # ax.set_yscale("symlog", linthresh=0.01)
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()
-fig.subplots_adjust(top=0.90)
-# plt.show()
-plt.suptitle(f"Cora dataset", x=0.08,
-             horizontalalignment='left')
-
-plt.savefig(f"./experiments/{name}/cora_selection_metrics.pdf")
+plt.savefig(f"./experiments/ss_selection_metrics.pdf")
