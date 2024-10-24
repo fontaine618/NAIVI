@@ -50,9 +50,9 @@ results["training.elbo_covariates_plus_entropy"] = results["training.elbo_covari
 metrics = { # colname: (display_name, higher_is_better, rescale)
     "training.elbo": ("ELBO", True, True),
     "training.elbo_plus_entropy": ("ELBO - H(B)", True, True),
-    "training.elbo_covariates": ("Cov. ELBO", True, True),
-    "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True, True),
-    "testing.auroc_binary": ("AuROC", True, False),
+    # "training.elbo_covariates": ("Cov. ELBO", True, True),
+    # "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True, True),
+    "testing.auroc_binary_weighted_average": ("AuROC", True, False),
 }
 
 cols = [ # N, p
@@ -62,7 +62,7 @@ cols = [ # N, p
     (500, 200),
 ]
 
-K = 5
+K = 7
 resK = results.loc[results["data.latent_dim"] == K]
 
 fig, axs = plt.subplots(
