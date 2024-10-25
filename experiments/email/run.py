@@ -2,8 +2,8 @@ import numpy as np
 import torch
 import sys
 import os
-sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
-# sys.path.insert(1, '/home/simon/Documents/NAIVI/')
+# sys.path.insert(1, '/storage/home/spf5519/work/NAIVI/')
+sys.path.insert(1, '/home/simon/Documents/NAIVI/')
 from pypet import Environment, cartesian_product
 from pypet_experiments.run import run
 from pypet_experiments.utils import add_parameters
@@ -26,7 +26,8 @@ if __name__ == "__main__":
 
     traj.f_explore(cartesian_product({
         "data.dataset": ["email"],
-        "data.path": ["~/work/NAIVI/datasets/email/"],
+        "data.path": ["/home/simon/Documents/NAIVI/datasets/email/"],
+        # "data.path": ["~/work/NAIVI/datasets/email/"],
         "data.seed": [int(seed)],
         "data.n_seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "model.latent_dim": [7],
