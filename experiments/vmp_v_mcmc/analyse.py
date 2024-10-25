@@ -149,20 +149,20 @@ for r, (rname, (rdisp, rstat, robs, rmiss)) in enumerate(rows.items()):
             maxval = max(maxval, xmiss.max(), ymiss.max())
         axes[r, c].set_xlim(0, maxval)
         axes[r, c].set_ylim(0, maxval)
-        axes[r, c].axline((0, 0), (1, 1), color="black", linestyle="--", alpha=0.5)
+        axes[r, c].axline((0, 0), (1, 1), color="black", linestyle="--", alpha=0.5, zorder=-1)
         if rmiss is not None:
-            axes[r, c].scatter(xmiss, ymiss, alpha=0.1, label="Missing", color="blue", s=10)
-        axes[r, c].scatter(x, y, alpha=0.1, label="Observed", color="red", s=10)
+            axes[r, c].scatter(xmiss, ymiss, alpha=0.1, label="Missing", color="blue", s=10, marker="s")
+        axes[r, c].scatter(x, y, alpha=0.1, label="Observed", color="red", s=10, marker="o")
         if rmiss is not None:
             confidence_ellipse(xmiss, ymiss, axes[r, c], n_std=2, edgecolor="white", alpha=1.0,  linewidth=4)
             confidence_ellipse(xmiss, ymiss, axes[r, c], n_std=2, edgecolor="blue", alpha=1.0, linewidth=2)
         confidence_ellipse(x, y, axes[r, c], n_std=2, edgecolor="white", alpha=1.0, linewidth=4)
         confidence_ellipse(x, y, axes[r, c], n_std=2, edgecolor="red", alpha=1.0, linewidth=2)
         if rmiss is not None:
-            axes[r, c].scatter(xmiss.mean(), ymiss.mean(), color="white", marker=".", s=200)
-            axes[r, c].scatter(xmiss.mean(), ymiss.mean(), color="blue", marker=".", s=100)
-        axes[r, c].scatter(x.mean(), y.mean(), color="white", marker=".", s=200)
-        axes[r, c].scatter(x.mean(), y.mean(), color="red", marker=".", s=100)
+            axes[r, c].scatter(xmiss.mean(), ymiss.mean(), color="white", s=100, marker="s")
+            axes[r, c].scatter(xmiss.mean(), ymiss.mean(), color="blue", s=50, marker="s")
+        axes[r, c].scatter(x.mean(), y.mean(), color="white", s=100, marker="o")
+        axes[r, c].scatter(x.mean(), y.mean(), color="red", s=50, marker="o")
         if r==0:
             title = f"N={n_nodes}, P={p_cts}, K={latent_dim}"
             axes[r, c].set_title(title)

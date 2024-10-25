@@ -20,6 +20,9 @@ def run(traj: Trajectory):
     method: Method = Method.from_parameters(traj.method, traj.model)
     # run method on data and get results
     results: Results = method.fit(data, traj.fit)
+    # print results
+    for k, v in results.to_dict().items():
+        print(f"{k:<40}: {v}")
     # save results
     results_dict = results.to_dict()
     for k, v in results_dict.items():
