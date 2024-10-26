@@ -50,6 +50,10 @@ class Factor:
 		"""If not reimplemented, we assume there is no elbo contribution from this factor."""
 		return torch.Tensor([0.])
 
+	def elbo_exact(self):
+		"""Allows different computations of the ELBO. (Mostly for Logistic fragment)"""
+		return self.elbo()
+
 	def elbo_mc(self, n_samples: int = 1):
 		"""Approximates ELBO using MC from the samples.
 

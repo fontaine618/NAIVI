@@ -372,13 +372,6 @@ class VMP:
 
     def elbo(self) -> float:
         return sum([factor.elbo() for factor in self.factors.values()]).item()
-        # e = 0.
-        # for factor in self.factors.values():
-        #     ef = factor.elbo().item()
-        #     if math.isnan(ef):
-        #         print(f"-------------------ELBO is nan! Elbo term: {repr(factor)}")
-        #     e += ef
-        # return e
 
     def _elbo(self):
         return {
@@ -397,6 +390,15 @@ class VMP:
     def _elbo_mc(self, n_samples: int = 1) -> Dict[str, float]:
         return {
             fname: factor.elbo_mc(n_samples).item()
+            for fname, factor in self.factors.items()
+        }
+
+    def elbo_exact(self) -> float:
+        return sum([factor.elbo_exact() for factor in self.factors.values()]).item()
+
+    def _elbo_exact(self) -> Dict[str, float]:
+        return {
+            fname: factor.elbo_exact().item()
             for fname, factor in self.factors.items()
         }
 

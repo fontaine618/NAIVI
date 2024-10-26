@@ -382,6 +382,7 @@ class Method:
                     X_missing_prop=data.covariate_missing_prop,
                     elbo_covariates=vmp.elbo_covariates,
                     elbo_terms=vmp.elbo(),
+                    elbo_exact=vmp.elbo_exact(),
                     aic=vmp.aic,
                     bic=vmp.bic,
                     weights_entropy=vmp.weights_entropy,

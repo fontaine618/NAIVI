@@ -56,17 +56,18 @@ email = pd.concat(res_list)
 email["training.elbo_plus_entropy"] = email["training.elbo"] - email["training.weights_entropy"]
 email["dataset"] = "email"
 
-results = pd.concat([cora, email])
+results = pd.concat([email, cora])
 
-metrics = { # colname: (display_name, higher_is_better)
-    "training.elbo": ("ELBO", True),
-    "training.elbo_plus_entropy": ("ELBO - KL(B)", True),
-    "testing.f1_multiclass_weighted": ("F1 (weighted)", True),
+metrics = { # colname: (display_name, higher_is_better, std)
+    "training.elbo": ("ELBO", True, True),
+    "training.elbo_plus_entropy": ("ELBO - KL(B)", True, True),
+    "testing.f1_multiclass_weighted": ("F1 (weighted)", True, False),
+    "testing.auroc_binary_weighted_average": ("Pred. AuROC", True, False),
 }
 
 columns = { # name: xrange, xticks, display
+    "email": ((3, 12), [4, 6, 8, 10, 12], "Email"),
     "cora": ((5, 10), [6, 8, 10], "Cora"),
-    "email": ((3, 10), [4, 6, 8, 10], "Email"),
 }
 n_seeds = 5
 
@@ -81,18 +82,23 @@ fig, axs = plt.subplots(
 
 for col, (dataset, (xrange, xticks, display)) in enumerate(columns.items()):
     res_exp = results.loc[(results["data.n_seeds"] == n_seeds) & (results["dataset"] == dataset)]
-    for row, (metric, (metric_name, higher_is_better)) in enumerate(metrics.items()):
+    for row, (metric, (metric_name, higher_is_better, stadardize)) in enumerate(metrics.items()):
         ax = axs[row, col]
 
         res_exp_metric = res_exp[[metric, "data.seed", "model.latent_dim"]]
 
         for i in res_exp_metric["data.seed"].unique():
-            xs = res_exp_metric.loc[res_exp_metric["data.seed"] == i]["model.latent_dim"]
-            ys = res_exp_metric.loc[res_exp_metric["data.seed"] == i][metric]
+            xs = res_exp_metric.loc[res_exp_metric["data.seed"] == i]["model.latent_dim"].values.astype(float)
+            ys = res_exp_metric.loc[res_exp_metric["data.seed"] == i][metric].values.astype(float)
+            print(ys)
+            which = ~np.isinf(np.abs(ys)) * ~np.isnan(ys)
+            xs = xs[which]
+            ys = ys[which]
             val = (ys.max() if higher_is_better else ys.min())
-            # ys = (ys-val)/val
+            if stadardize:
+                ys = (ys-val)/val
+            print(ys)
             ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
-            whichmin = ys.abs().values.argmin()
         ax.set_xticks(xticks)
         ax.set_xlim(xrange)
 
@@ -100,8 +106,8 @@ for col, (dataset, (xrange, xticks, display)) in enumerate(columns.items()):
             ax.set_xlabel("$K$")
         if row == 0:
             ax.set_title(display)
-        if row == 0 or row == 1:
-            ax.set_ylim(0., 0.07)
+        # if row == 0 or row == 1:
+        #     ax.set_ylim(0., 0.07)
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()

@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim":10,
+    "latent_dim":5,
     # "heterogeneity_prior_mean": -3.,
     # "heterogeneity_prior_variance": 9.,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate

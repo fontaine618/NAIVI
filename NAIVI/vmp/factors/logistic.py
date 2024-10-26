@@ -29,6 +29,7 @@ class Logistic(Factor):
 		if reduce(lambda x, y: x*y, parent.shape) > 5e5:
 			self._elbo = self._quadratic_elbo
 		self._elbo = self._quadratic_elbo
+		self.elbo_exact = self._quadrature_elbo
 		self._n_updates = -1
 		i = self._name_to_id["parent"]
 		if method == "quadratic":
