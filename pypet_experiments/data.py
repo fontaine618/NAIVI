@@ -315,6 +315,7 @@ class Dataset:
         seeds = []
         for i in range(X_bin.shape[1]):
             rows = X_bin[:, i].nonzero().flatten()
+            rows = rows[not_orphan[rows]] # don't take orphans
             if rows.nelement() > 0:
                 seeds.append(rows[torch.randperm(len(rows))[:min(par.n_seeds, len(rows))]])
         seeds = torch.cat(seeds)

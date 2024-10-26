@@ -90,7 +90,7 @@ for col, (dataset, (xrange, xticks, display)) in enumerate(columns.items()):
             xs = res_exp_metric.loc[res_exp_metric["data.seed"] == i]["model.latent_dim"]
             ys = res_exp_metric.loc[res_exp_metric["data.seed"] == i][metric]
             val = (ys.max() if higher_is_better else ys.min())
-            ys = (ys-val)/val
+            # ys = (ys-val)/val
             ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
             whichmin = ys.abs().values.argmin()
         ax.set_xticks(xticks)

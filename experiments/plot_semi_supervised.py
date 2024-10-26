@@ -47,7 +47,7 @@ methods = {
     "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
 
-seeds = range(30)
+seeds = range(2)
 name = "email"
 res_list = []
 for i in seeds:
@@ -62,7 +62,7 @@ for i in seeds:
 
 email = pd.concat(res_list)
 
-seeds = range(12)
+seeds = range(2)
 name = "cora"
 res_list = []
 for i in seeds:
