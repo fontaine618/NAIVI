@@ -47,7 +47,7 @@ methods = {
     "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
 
-seeds = range(2)
+seeds = range(30)
 name = "email"
 res_list = []
 for i in seeds:
@@ -62,7 +62,7 @@ for i in seeds:
 
 email = pd.concat(res_list)
 
-seeds = range(2)
+seeds = range(10)
 name = "cora"
 res_list = []
 for i in seeds:
@@ -85,6 +85,7 @@ results = pd.concat([email, cora])
 
 metrics = {
     "testing.f1_multiclass_weighted": ("F1 (weighted)", ),
+    "testing.auroc_binary_weighted_average": ("F1 (weighted)", ),
     # "testing.accuracy_multiclass": ("Accuracy", ),
 }
 

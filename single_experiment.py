@@ -16,7 +16,7 @@ data_parms = {
     "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 50,
-    "seed": 3,
+    "seed": 5,
     "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim":11,
+    "latent_dim":10,
     # "heterogeneity_prior_mean": -3.,
     # "heterogeneity_prior_variance": 9.,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -60,7 +60,7 @@ fit_parms = {
     "vmp.rel_tol": 1e-6,
     "vmp.cv_folds": 0,
     "vmp.damping": 0.7,
-    "map.lr": 0.001,
+    "map.lr": 0.01,
     "map.max_iter": 1000,
     "map.eps": 1e-6,
     "map.optimizer": "Rprop",
@@ -92,7 +92,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "NetworkSmoothing"
+traj.method = "VMP"
 
 
 # get data instance (this could be loaded data or synthetic data)
