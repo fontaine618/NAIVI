@@ -31,11 +31,11 @@ if __name__ == "__main__":
         "data.facebook_center": [3980, 698, 686, 414, 348, 0, 3437, 1912, 1684, 107],
         "data.missing_covariate_rate": [0.5],
         "data.missing_mechanism": ["triangle"],
-        "model.latent_dim": [3, 4, 5, 6, 7, 8, 9, 10],
+        "model.latent_dim": [3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
         "model.heterogeneity_prior_mean": [float("nan")],  # EB
         "model.heterogeneity_prior_variance": [float("nan")],
         "method": ["VMP", ],
-        "fit.vmp.max_iter": [500],
+        "fit.vmp.max_iter": [200],
     }))
 
     env.run(run)

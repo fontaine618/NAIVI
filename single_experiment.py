@@ -9,10 +9,10 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 # DATA SETTINGS
 traj = Trajectory(name="test")
 data_parms = {
-    "dataset": "email", # synthetic, email, facebook or cora
-    "facebook_center": 3980,
+    "dataset": "facebook", # synthetic, email, facebook or cora
+    "facebook_center": 698,
     "n_seeds": 5, # for cora and email: number of seeds per class
-    "path": "~/Documents/NAIVI/datasets/email/",
+    "path": "~/Documents/NAIVI/datasets/facebook/",
     "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 50,
