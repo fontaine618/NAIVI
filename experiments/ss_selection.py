@@ -53,16 +53,16 @@ for i in range(10):
     results = parameters.join(results)
     res_list.append(results)
 email = pd.concat(res_list)
-email["training.elbo_plus_entropy"] = email["training.elbo"] - email["training.weights_entropy"]
+email["training.elbo_plus_entropy"] = email["training.elbo_exact"] - email["training.weights_entropy"]
 email["dataset"] = "email"
 
 results = pd.concat([email, cora])
 
 metrics = { # colname: (display_name, higher_is_better, std)
-    "training.elbo": ("ELBO", True, True),
+    "training.elbo_exact": ("ELBO", True, True),
     "training.elbo_plus_entropy": ("ELBO - KL(B)", True, True),
     "testing.f1_multiclass_weighted": ("F1 (weighted)", True, False),
-    "testing.auroc_binary_weighted_average": ("Pred. AuROC", True, False),
+    # "testing.auroc_binary_weighted_average": ("Pred. AuROC", True, False),
 }
 
 columns = { # name: xrange, xticks, display
@@ -71,7 +71,7 @@ columns = { # name: xrange, xticks, display
 }
 n_seeds = 5
 
-
+plt.gca()
 fig, axs = plt.subplots(
     len(metrics), len(columns),
     figsize=(5*len(columns), 2*len(metrics)),
@@ -90,15 +90,14 @@ for col, (dataset, (xrange, xticks, display)) in enumerate(columns.items()):
         for i in res_exp_metric["data.seed"].unique():
             xs = res_exp_metric.loc[res_exp_metric["data.seed"] == i]["model.latent_dim"].values.astype(float)
             ys = res_exp_metric.loc[res_exp_metric["data.seed"] == i][metric].values.astype(float)
-            print(ys)
             which = ~np.isinf(np.abs(ys)) * ~np.isnan(ys)
-            xs = xs[which]
-            ys = ys[which]
-            val = (ys.max() if higher_is_better else ys.min())
-            if stadardize:
-                ys = (ys-val)/val
-            print(ys)
-            ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
+            if which.any():
+                xs = xs[which]
+                ys = ys[which]
+                val = (ys.max() if higher_is_better else ys.min())
+                if stadardize:
+                    ys = (ys-val)/val
+                ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
         ax.set_xticks(xticks)
         ax.set_xlim(xrange)
 
