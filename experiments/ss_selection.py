@@ -38,7 +38,7 @@ for i in range(10):
     results = parameters.join(results)
     res_list.append(results)
 cora = pd.concat(res_list)
-cora["training.elbo_plus_entropy"] = cora["training.elbo"] - cora["training.weights_entropy"]
+cora["training.elbo_plus_entropy"] = cora["training.elbo_exact"] - cora["training.weights_entropy"]
 cora["dataset"] = "cora"
 
 name = "email_selection"

@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "method": ["VMP", ],
         "fit.vmp.max_iter": [2000],
         "fit.vmp.min_iter": [20],
-        "fit.vmp.damping": [0.7],
+        "fit.vmp.damping": [0.5],
     }))
 
     env.run(run)
