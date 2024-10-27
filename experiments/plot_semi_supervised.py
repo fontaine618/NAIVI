@@ -85,7 +85,7 @@ results = pd.concat([email, cora])
 
 metrics = {
     "testing.f1_multiclass_weighted": ("F1 (weighted)", ),
-    "testing.auroc_binary_weighted_average": ("F1 (weighted)", ),
+    "testing.auroc_binary_weighted_average": ("Pred. AuROC", ),
     # "testing.accuracy_multiclass": ("Accuracy", ),
 }
 
