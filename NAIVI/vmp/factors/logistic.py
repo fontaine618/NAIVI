@@ -23,12 +23,14 @@ class Logistic(Factor):
 
 	_name = "Logistic"
 
-	def __init__(self, dim: int, parent: Variable, method: str = "quadratic"):
+	def __init__(self, dim: int, parent: Variable, method: str = "quadratic", elbo: str = "quadratic"):
 		super(Logistic, self).__init__(parent=parent)
-		self._elbo = self._quadrature_elbo
-		if reduce(lambda x, y: x*y, parent.shape) > 5e5:
+		if elbo == "quadratic":
 			self._elbo = self._quadratic_elbo
-		self._elbo = self._quadratic_elbo
+		elif elbo == "quadrature":
+			self._elbo = self._quadrature_elbo
+		# if reduce(lambda x, y: x*y, parent.shape) > 5e5:
+		# 	self._elbo = self._quadratic_elbo
 		self.elbo_exact = self._quadrature_elbo
 		self._n_updates = -1
 		i = self._name_to_id["parent"]

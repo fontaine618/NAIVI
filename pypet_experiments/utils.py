@@ -35,6 +35,7 @@ _default_model_parameters = {
     "mnar": False,
     "regularization": 0.,
     "vmp.logistic_approximation": "quadratic",
+    "vmp.logistic_elbo": "quadratic",
     "gcn.n_hidden": 16,
     "gcn.dropout": 0.5,
 }
