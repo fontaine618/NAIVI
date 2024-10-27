@@ -44,13 +44,13 @@ for i in range(10):
 results = pd.concat(res_list)
 
 
-results["training.elbo_plus_entropy"] = results["training.elbo"] - \
+results["training.elbo_plus_entropy"] = results["training.elbo_exact"] - \
                                         results["training.weights_entropy"]
 results["training.elbo_covariates_plus_entropy"] = results["training.elbo_covariates"] - \
                                         results["training.weights_entropy"]
 
 metrics = { # colname: (display_name, higher_is_better, rescale)
-    "training.elbo": ("ELBO", True, True),
+    "training.elbo_exact": ("ELBO", True, True),
     "training.elbo_plus_entropy": ("ELBO - H(B)", True, True),
     # "training.elbo_covariates": ("Cov. ELBO", True),
     # "training.elbo_covariates_plus_entropy": ("Cov. ELBO - H(B)", True),
@@ -58,16 +58,16 @@ metrics = { # colname: (display_name, higher_is_better, rescale)
 }
 
 cols = { #center :(N, p)
-    3980: (59, 42),
-    698: (66, 48),
-    414: (159, 103),
-    686: (170, 62),
-    348: (227, 126),
-    # 0: (347, 139),
-    # 3437: (547, 116),
-    # 1912: (755, 133),
-    # 1684: (792, 100),
-    # 107: (1045, 153)
+    # 3980: (59, 42),
+    # 698: (66, 48),
+    # 414: (159, 103),
+    # 686: (170, 62),
+    # 348: (227, 126),
+    0: (347, 139),
+    3437: (547, 116),
+    1912: (755, 133),
+    1684: (792, 100),
+    107: (1045, 153)
 }
 
 
@@ -90,15 +90,14 @@ for col, (center, (N, p)) in enumerate(cols.items()):
             xs = res_exp_metric.loc[res_exp_metric["data.seed"] == i]["model.latent_dim"]
             ys = res_exp_metric.loc[res_exp_metric["data.seed"] == i][metric]
             val = (ys.max() if higher_is_better else ys.min())
-            ys = ys-val
             if rescale:
-                ys = ys/val
+                ys = (ys-val)/val
             ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
             whichmin = ys.abs().values.argmin()
             # ax.plot(xs[whichmin], ys[whichmin],
             #         marker="o", linestyle="none",
             #         color="red", alpha=0.2, zorder=100)
-        ax.set_xticks([2, 4, 6, 8, 10])
+        ax.set_xticks([2, 4, 6, 8, 10, 12])
         # ax.set_yscale("symlog", linthresh=0.001)
 
         if row == len(metrics)-1:
@@ -111,5 +110,5 @@ for col, (center, (N, p)) in enumerate(cols.items()):
             ax.set_ylabel(metric_name)
 plt.tight_layout()
 
-plt.savefig(f"./experiments/{name}/fb_selection_metrics_small.pdf")
-# plt.savefig(f"./experiments/{name}/fb_selection_metrics_large.pdf")
+# plt.savefig(f"./experiments/{name}/fb_selection_metrics_small.pdf")
+plt.savefig(f"./experiments/{name}/fb_selection_metrics_large.pdf")
