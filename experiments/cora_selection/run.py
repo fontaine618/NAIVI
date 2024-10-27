@@ -36,7 +36,7 @@ if __name__ == "__main__":
         "model.latent_dim": [7],
         "method": ["VMP", ],
         "fit.vmp.max_iter": [2000],
-        "fit.vmp.min_iter": [20],
+        "fit.vmp.min_iter": [5],
         "fit.vmp.damping": [0.5, 0.7, 0.9, 1.],
     }))
 
