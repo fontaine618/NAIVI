@@ -75,7 +75,7 @@ for i in range(30):
 results = pd.concat(res_list)
 metric = "testing.auroc_binary_weighted_average"
 # metric = "testing.auroc_binary"
-cols = { #center :(N, p)
+centers = { #center :(N, p)
     3980: (59, 42),
     698: (66, 48),
     414: (159, 103),

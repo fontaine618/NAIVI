@@ -37,7 +37,7 @@ if __name__ == "__main__":
         "model.vmp.logistic_elbo": ["quadratic", "quadrature"],
         "method": ["VMP", ],
         "fit.vmp.max_iter": [2000],
-        "fit.vmp.min_iter": [5],
+        "fit.vmp.min_iter": [5, 20, 50, 100],
         "fit.vmp.damping": [0.5, 0.7, 0.9, 1.],
     }))
 

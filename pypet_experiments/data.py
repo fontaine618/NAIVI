@@ -324,6 +324,9 @@ class Dataset:
 
         M_labels_wide = M_labels.unsqueeze(1).repeat(1, X_bin.shape[1])
         X_bin_missing = torch.where(M_labels_wide, X_bin, torch.full_like(X_bin, torch.nan))
+        # drop those outside the training set
+        with_label = X_bin_missing.eq(1.).sum(1).gt(0)
+        X_bin_missing[~with_label] = torch.nan
         X_bin = torch.where(M_labels_wide, torch.full_like(X_bin, torch.nan), X_bin)
 
         X_cts = torch.empty(n_nodes, 0)
