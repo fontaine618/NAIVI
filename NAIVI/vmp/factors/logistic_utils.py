@@ -55,6 +55,7 @@ def _log1p_exp(x: torch.Tensor) -> torch.Tensor:
 
 
 def _tilted_fixed_point(mean, variance, max_iter=20):
+	variance.clamp_max_(1e6)
 	a = torch.full_like(mean, 0.5)
 	for _ in range(max_iter):
 		a = torch.sigmoid(mean - (1 - 2 * a) * variance / 2)
@@ -64,7 +65,7 @@ def _tilted_fixed_point(mean, variance, max_iter=20):
 def _ms_expit_moment(degree: int, mean: torch.Tensor, variance: torch.Tensor):
 	n = len(mean.shape)
 	mean = mean.unsqueeze(-1)
-	variance = variance.unsqueeze(-1)
+	variance = variance.unsqueeze(-1).clamp_max(1e6)
 	device = mean.device
 	p = _p.to(device)
 	s = _s.to(device)

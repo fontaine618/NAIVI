@@ -34,8 +34,10 @@ _default_model_parameters = {
     "latent_prior_variance": 1.,
     "mnar": False,
     "regularization": 0.,
-    "vmp.logistic_approximation": "quadratic",
-    "vmp.logistic_elbo": "quadratic",
+    # "vmp.logistic_approximation": "quadratic",
+    # "vmp.logistic_elbo": "quadratic",
+    "vmp.logistic_approximation": "mk",
+    "vmp.logistic_elbo": "quadrature",
     "gcn.n_hidden": 16,
     "gcn.dropout": 0.5,
 }
