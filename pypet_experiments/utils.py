@@ -44,7 +44,7 @@ _default_model_parameters = {
 
 _default_fit_parameters = {
     "vmp.max_iter": 200,
-    "vmp.min_iter": 5,
+    "vmp.min_iter": 20,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
     "vmp.damping": 0.7,

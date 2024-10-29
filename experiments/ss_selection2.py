@@ -88,8 +88,8 @@ for col, n_seed in enumerate(n_seeds):
             ax.set_xlabel("$K$")
         if row == 0:
             ax.set_title(f"{display}: {n_seed} seeds")
-        # if row == 0 or row == 1:
-        #     ax.set_ylim(0., 0.07)
+        if row == 0 or row == 1:
+            ax.set_ylim(0., 0.07)
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()

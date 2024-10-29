@@ -94,20 +94,15 @@ for col, (center, (N, p)) in enumerate(cols.items()):
                 ys = (ys-val)/val
             ax.plot(xs, ys, marker="none", linestyle="solid", color="black", alpha=0.2)
             whichmin = ys.abs().values.argmin()
-            # ax.plot(xs[whichmin], ys[whichmin],
-            #         marker="o", linestyle="none",
-            #         color="red", alpha=0.2, zorder=100)
         ax.set_xticks([2, 4, 6, 8, 10, 12])
-        # ax.set_yscale("symlog", linthresh=0.001)
-
         if row == len(metrics)-1:
             ax.set_xlabel("$K$")
-            # ax.set_ylim(-0.06, 0.)
         if row == 0:
             ax.set_title(f"{center} ($N={N}$, $p={p}$)")
-            # ax.set_ylim(0., 0.2)
         if col == 0:
             ax.set_ylabel(metric_name)
+        if row == 0 or row == 1:
+            ax.set_ylim(0., 0.07)
 plt.tight_layout()
 
 # plt.savefig(f"./experiments/{name}/fb_selection_metrics_small.pdf")
