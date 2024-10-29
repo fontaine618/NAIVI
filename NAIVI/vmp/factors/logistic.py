@@ -147,7 +147,6 @@ class Logistic(Factor):
 		if self._n_updates < 10:
 			self._quadratic_update()
 		else:
-			i = self._name_to_id["parent"]
 			self._mk_update()
 
 	def _mk_update(self):

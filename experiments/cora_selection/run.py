@@ -38,8 +38,8 @@ if __name__ == "__main__":
         "model.latent_dim": [2, 5, 7, 10, 12],
         "method": ["VMP", ],
         "fit.vmp.max_iter": [2000],
-        "model.vmp.logistic_approximation": "adaptive",
-        "model.vmp.logistic_elbo": "quadrature",
+        "model.vmp.logistic_approximation": ["adaptive"],
+        "model.vmp.logistic_elbo": ["quadrature"],
     }))
 
     env.run(run)
