@@ -16,7 +16,7 @@ data_parms = {
     "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 50,
-    "seed": 5,
+    "seed": 8,
     "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim":5,
+    "latent_dim":7,
     # "heterogeneity_prior_mean": -3.,
     # "heterogeneity_prior_variance": 9.,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -45,8 +45,8 @@ model_parms = {
     "latent_prior_variance": 1.,
     "mnar": False,
     "regularization": 0.,
-    "vmp.logistic_approximation": "quadratic", # "quadratic" or "tilted" or "mk"
-    "vmp.logistic_elbo": "quadratic", # "quadratic" or "quadrature" or "tilted"
+    "vmp.logistic_approximation": "mk", # "quadratic" or "tilted" or "mk"
+    "vmp.logistic_elbo": "quadrature", # "quadratic" or "quadrature" or "tilted"
     "gcn.n_hidden": 16,
     "gcn.dropout": 0.5,
 }
@@ -60,7 +60,7 @@ fit_parms = {
     "vmp.min_iter": 5,
     "vmp.rel_tol": 1e-6,
     "vmp.cv_folds": 0,
-    "vmp.damping": 0.7,
+    "vmp.damping": 0.6,
     "map.lr": 0.01,
     "map.max_iter": 1000,
     "map.eps": 1e-6,
@@ -93,7 +93,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "VMP"
+traj.method = "NetworkSmoothing"
 
 
 # get data instance (this could be loaded data or synthetic data)
