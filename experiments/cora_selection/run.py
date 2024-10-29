@@ -33,7 +33,7 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "model.latent_dim": [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15],
         "method": ["VMP", ],
         "fit.vmp.max_iter": [2000],
     }))
