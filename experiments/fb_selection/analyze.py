@@ -58,16 +58,16 @@ metrics = { # colname: (display_name, higher_is_better, rescale)
 }
 
 cols = { #center :(N, p)
-    3980: (59, 42),
-    698: (66, 48),
-    414: (159, 103),
-    686: (170, 62),
-    348: (227, 126),
-    # 0: (347, 139),
-    # 3437: (547, 116),
-    # 1912: (755, 133),
-    # 1684: (792, 100),
-    # 107: (1045, 153)
+    # 3980: (59, 42),
+    # 698: (66, 48),
+    # 414: (159, 103),
+    # 686: (170, 62),
+    # 348: (227, 126),
+    0: (347, 139),
+    3437: (547, 116),
+    1912: (755, 133),
+    1684: (792, 100),
+    107: (1045, 153)
 }
 
 
@@ -105,5 +105,5 @@ for col, (center, (N, p)) in enumerate(cols.items()):
             ax.set_ylim(0., 0.07)
 plt.tight_layout()
 
-plt.savefig(f"./experiments/{name}/fb_selection_metrics_small.pdf")
-# plt.savefig(f"./experiments/{name}/fb_selection_metrics_large.pdf")
+# plt.savefig(f"./experiments/{name}/fb_selection_metrics_small.pdf")
+plt.savefig(f"./experiments/{name}/fb_selection_metrics_large.pdf")
