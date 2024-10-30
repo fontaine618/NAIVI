@@ -4,8 +4,8 @@
 #SBATCH --job-name=naivi_cora_selection
 #SBATCH --mail-type=BEGIN,END,FAIL
 #SBATCH --mail-user=simfont@umich.edu
-#SBATCH --time=10:00:00
-#SBATCH --array=0-9
+#SBATCH --time=20:00:00
+#SBATCH --array=0
 #SBATCH --account=open
 #SBATCH --partition=open
 #SBATCH --nodes=1
