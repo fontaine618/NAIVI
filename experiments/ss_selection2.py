@@ -49,7 +49,6 @@ metrics = { # colname: (display_name, higher_is_better, std)
     "training.elbo_exact": ("ELBO", True, True),
     "training.elbo_plus_entropy": ("ELBO - KL(B)", True, True),
     "testing.f1_multiclass_weighted": ("F1 (weighted)", True, False),
-    "testing.auroc_binary_weighted_average": ("Pred. AuROC", True, False),
 }
 
 n_seeds = [3, 5, 8]
