@@ -91,9 +91,11 @@ for col, (N, p) in enumerate(cols):
         ax.set_xticks([2, 4, 6, 8, 10])
         ax.axvline(x=K, linestyle="dashed", color="black", alpha=0.5)
 
-        if row == len(metrics):
+        if row == len(metrics)-1:
             ax.set_xlabel("$K$")
-            # ax.set_ylim(-0.06, 0.)
+            ax.set_ylim(-0.1, 0.01)
+        if row in [0, 1]:
+            ax.set_ylim(-0.01, 0.1)
         if row == 0:
             ax.set_title(f"$N={N}$, $p={p}$")
         if col == 0:

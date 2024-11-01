@@ -26,11 +26,11 @@ plt.rcParams.update({
     "ytick.labelsize": 9,
 })
 
-dataset = "email"
-display = "Email"
-name = "email_selection"
-xrange = (2, 12)
-xticks = [2, 4, 6, 8, 10, 12]
+dataset = "cora"
+display = "Cora"
+name = "cora_selection"
+xrange = (5, 15)
+xticks = [6, 8, 10, 12, 14]
 res_list = []
 for i in range(10):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
@@ -40,7 +40,15 @@ for i in range(10):
     parameters = gather_parameters_to_DataFrame(traj)
     results = gather_results_to_DataFrame(traj)
     results = parameters.join(results)
+
+    # FIX broken
+    results["data.n_seeds"] = [3]*14 + [5]*14 + [8]*14
+    results["data.seed"] = i
+    results["model.latent_dim"] = [2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]*3
+
     res_list.append(results)
+
+
 results = pd.concat(res_list)
 results["training.elbo_plus_entropy"] = results["training.elbo_exact"] - results["training.weights_entropy"]
 results["dataset"] = dataset
