@@ -34,8 +34,6 @@ _default_model_parameters = {
     "latent_prior_variance": 1.,
     "mnar": False,
     "regularization": 0.,
-    # "vmp.logistic_approximation": "quadratic",
-    # "vmp.logistic_elbo": "quadratic",
     "vmp.logistic_approximation": "mk",
     "vmp.logistic_elbo": "quadrature",
     "gcn.n_hidden": 16,
@@ -43,11 +41,11 @@ _default_model_parameters = {
 }
 
 _default_fit_parameters = {
-    "vmp.max_iter": 200,
+    "vmp.max_iter": 500,
     "vmp.min_iter": 20,
     "vmp.rel_tol": 1e-5,
     "vmp.cv_folds": 0,
-    "vmp.damping": 0.7,
+    "vmp.damping": 0.6,
     "map.lr": 0.01,
     "map.max_iter": 1000,
     "map.eps": 1e-5,

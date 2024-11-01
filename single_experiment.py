@@ -9,13 +9,13 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 # DATA SETTINGS
 traj = Trajectory(name="test")
 data_parms = {
-    "dataset": "facebook", # synthetic, email, facebook or cora
+    "dataset": "synthetic", # synthetic, email, facebook or cora
     "facebook_center": 698,
     "n_seeds": 5, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/facebook/",
     "n_nodes": 200,
     "p_cts": 0,
-    "p_bin": 50,
+    "p_bin": 100,
     "seed": 8,
     "latent_dim": 5,
     "latent_variance": 1.,
@@ -36,7 +36,7 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim":7,
+    "latent_dim":5,
     # "heterogeneity_prior_mean": -3.,
     # "heterogeneity_prior_variance": 9.,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -93,7 +93,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "NetworkSmoothing"
+traj.method = "VMP"
 
 
 # get data instance (this could be loaded data or synthetic data)
