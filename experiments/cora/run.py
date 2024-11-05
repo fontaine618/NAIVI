@@ -29,15 +29,17 @@ if __name__ == "__main__":
         "data.path": ["~/work/NAIVI/datasets/cora/"],
         "data.seed": [int(seed)],
         "data.n_seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
-        "model.latent_dim": [9],
+        "model.latent_dim": [14],
         "model.heterogeneity_prior_mean": [float("nan")],
         "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
         "method": ["Mean", "KNN",  "VMP", "VMP0", "FA", "MAP", "MLE", "NetworkSmoothing", "MICE", "GCN"],
         "fit.vmp.max_iter": [2000],
-        "fit.vmp.min_iter": [20],
-        "fit.vmp.damping": [0.5],
+        "fit.vmp.min_iter": [50],
+        "fit.vmp.damping": [0.6],
+        "model.vmp.logistic_approximation": ["adaptive"],
+        "model.vmp.logistic_elbo": ["quadrature"],
     }))
 
     env.run(run)
