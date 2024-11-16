@@ -37,8 +37,8 @@ for k, v in data_parms.items():
 # MODEL SETTINGS
 model_parms = {
     "latent_dim":5,
-    # "heterogeneity_prior_mean": -3.,
-    # "heterogeneity_prior_variance": 9.,
+    # "heterogeneity_prior_mean": -2.,
+    # "heterogeneity_prior_variance": 1.,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
     "heterogeneity_prior_variance": float("nan"), # nan for EB estimate
     "latent_prior_mean": 0.,
@@ -47,6 +47,7 @@ model_parms = {
     "regularization": 0.,
     "vmp.logistic_approximation": "mk", # "quadratic" or "tilted" or "mk"
     "vmp.logistic_elbo": "quadrature", # "quadratic" or "quadrature" or "tilted"
+    "vmp.init_precision": 0.,
     "gcn.n_hidden": 16,
     "gcn.dropout": 0.5,
 }

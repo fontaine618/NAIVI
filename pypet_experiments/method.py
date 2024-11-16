@@ -370,6 +370,7 @@ class Method:
                 edge_index_right=data.edge_index_right,
                 logistic_approximation=self.model_parameters.vmp.logistic_approximation,
                 logistic_elbo=self.model_parameters.vmp.logistic_elbo,
+                init_precision=self.model_parameters.vmp.init_precision,
             )
             vmp.fit(**fit_parameters_dict)
             model_output = MethodOutput(**vmp.output())

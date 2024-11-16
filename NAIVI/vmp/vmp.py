@@ -49,11 +49,13 @@ class VMP:
             edge_index_right: torch.Tensor | None,
             logistic_approximation: str = "quadratic",
             logistic_elbo: str = "quadratic",
+            init_precision: float = 0.001,
             **kwargs
     ):
         self._prepare_hyperparameters(**kwargs)
         self.latent_dim = latent_dim
         self.n_nodes = n_nodes
+        self._init_precision = init_precision
         self.factors = dict()
         self.variables = dict()
         self._vmp_sequence = list()
@@ -290,8 +292,8 @@ class VMP:
             p_id = self.variables["latent"].id
             dim = self.variables["left_latent"].shape
             k = dim[-1]
-            precision = torch.eye(k).expand(*dim, k)*0.001
-            mean_times_precision = torch.randn(dim)*0.001
+            precision = torch.eye(k).expand(*dim, k)*self._init_precision
+            mean_times_precision = torch.randn(dim)*self._init_precision
             msg = MultivariateNormal(precision, mean_times_precision)
             self.factors["select_left_latent"].messages_to_parents[p_id].message_to_variable = msg
         if VMP_OPTIONS["logging"]: print(f"{prefix}Symmetry broken")
