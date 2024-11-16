@@ -36,7 +36,7 @@ _default_model_parameters = {
     "regularization": 0.,
     "vmp.logistic_approximation": "mk",
     "vmp.logistic_elbo": "quadrature",
-    "vmp.init_precision": 0.001,
+    "vmp.init_precision": 0.,
     "gcn.n_hidden": 16,
     "gcn.dropout": 0.5,
 }
