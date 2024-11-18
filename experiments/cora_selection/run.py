@@ -28,7 +28,7 @@ if __name__ == "__main__":
         "data.dataset": ["cora"],
         "data.path": ["~/work/NAIVI/datasets/cora/"],
         "data.seed": [int(seed)],
-        "data.n_seeds": [5, 10, 20],
+        "data.n_seeds": [10, 20, 30],
         "model.heterogeneity_prior_mean": [float("nan")],
         "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],

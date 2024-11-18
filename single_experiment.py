@@ -11,12 +11,12 @@ traj = Trajectory(name="test")
 data_parms = {
     "dataset": "cora", # synthetic, email, facebook or cora
     "facebook_center": 698,
-    "n_seeds": 5, # for cora and email: number of seeds per class
+    "n_seeds": 10, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/cora/",
     "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 100,
-    "seed": 8,
+    "seed": 0,
     "latent_dim": 5,
     "latent_variance": 1.,
     "latent_mean": 0.,
@@ -94,7 +94,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "VMP"
+traj.method = "GCN"
 
 
 
