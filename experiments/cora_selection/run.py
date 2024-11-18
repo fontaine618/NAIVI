@@ -28,7 +28,7 @@ if __name__ == "__main__":
         "data.dataset": ["cora"],
         "data.path": ["~/work/NAIVI/datasets/cora/"],
         "data.seed": [int(seed)],
-        "data.n_seeds": [3, 5, 8],
+        "data.n_seeds": [5, 10, 20],
         "model.heterogeneity_prior_mean": [float("nan")],
         "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],
@@ -38,7 +38,7 @@ if __name__ == "__main__":
         "fit.vmp.max_iter": [2000],
         "fit.vmp.min_iter": [50],
         "fit.vmp.damping": [0.6],
-        "model.vmp.logistic_approximation": ["quadratic"],
+        "model.vmp.logistic_approximation": ["mk"],
         "model.vmp.logistic_elbo": ["quadrature"],
     }))
 

@@ -9,10 +9,10 @@ torch.set_default_tensor_type(torch.cuda.FloatTensor)
 # DATA SETTINGS
 traj = Trajectory(name="test")
 data_parms = {
-    "dataset": "synthetic", # synthetic, email, facebook or cora
+    "dataset": "cora", # synthetic, email, facebook or cora
     "facebook_center": 698,
     "n_seeds": 5, # for cora and email: number of seeds per class
-    "path": "~/Documents/NAIVI/datasets/facebook/",
+    "path": "~/Documents/NAIVI/datasets/cora/",
     "n_nodes": 200,
     "p_cts": 0,
     "p_bin": 100,
@@ -95,6 +95,7 @@ for k, v in fit_parms.items():
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
 traj.method = "VMP"
+
 
 
 # get data instance (this could be loaded data or synthetic data)
