@@ -29,8 +29,8 @@ plt.rcParams.update({
 dataset = "cora"
 display = "Cora"
 name = "cora_selection"
-xrange = (8, 16)
-xticks = [8, 10, 12, 14, 16]
+xrange = (8, 15)
+xticks = [8, 10, 12, 14, ]
 res_list = []
 for i in range(10):
     file = f"./experiments/{name}/results/seed{i}.hdf5"
@@ -54,7 +54,7 @@ metrics = { # colname: (display_name, higher_is_better, std)
     "testing.f1_multiclass_weighted": ("F1 (weighted)", True, False),
 }
 
-n_seeds = [3, 5, 8]
+n_seeds = [10, 20, 30]
 
 plt.gca()
 fig, axs = plt.subplots(
@@ -90,8 +90,10 @@ for col, n_seed in enumerate(n_seeds):
             ax.set_xlabel("$K$")
         if row == 0:
             ax.set_title(f"{display}: {n_seed} seeds")
-        if row == 0 or row == 1:
-            ax.set_ylim(0., 0.07)
+        # if row == 0 or row == 1:
+        #     ax.set_ylim(0., 0.15)
+        if row == 2:
+            ax.set_ylim(0.48, 0.82)
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()
