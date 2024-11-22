@@ -38,6 +38,8 @@ if __name__ == "__main__":
         "fit.vmp.max_iter": [2000],
         "fit.vmp.min_iter": [50],
         "fit.vmp.damping": [0.6],
+        "fit.mle.rel_tol": [1e-6],
+        "fit.map.rel_tol": [1e-6],
         "model.vmp.logistic_approximation": ["adaptive"],
         "model.vmp.logistic_elbo": ["quadrature"],
     }))
