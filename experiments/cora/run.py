@@ -39,8 +39,8 @@ if __name__ == "__main__":
         "fit.vmp.max_iter": [2000],
         "fit.vmp.min_iter": [50],
         "fit.vmp.damping": [0.6],
-        "fit.mle.eps": [1e-6],
-        "fit.map.eps": [1e-6],
+        "fit.map.eps": [1e-8],
+        "fit.mle.eps": [1e-8],
         "model.vmp.logistic_approximation": ["adaptive"],
         "model.vmp.logistic_elbo": ["quadrature"],
     }))
