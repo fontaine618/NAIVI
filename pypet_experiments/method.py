@@ -117,6 +117,8 @@ class Method:
                 return_log=True
             )
             K = self.model_parameters["latent_dim"]
+            if self.model_parameters["latent_dim_gb"] > 0:
+                K = self.model_parameters["latent_dim_gb"]
             if K == 0:
                 K = data.best_K
                 if K is None:
@@ -127,7 +129,7 @@ class Method:
                 "p_cts": data.p_cts,
                 "p_bin": data.p_bin,
                 "mnar": False,
-                "network_weight": 1.0,
+                "network_weight": self.model_parameters["network_weight"],
                 "position_prior": (
                     self.model_parameters["latent_prior_mean"],
                     self.model_parameters["latent_prior_variance"]
@@ -206,6 +208,8 @@ class Method:
                 return_log=True
             )
             K = self.model_parameters["latent_dim"]
+            if self.model_parameters["latent_dim_gb"] > 0:
+                K = self.model_parameters["latent_dim_gb"]
             if K == 0:
                 K = data.best_K
                 if K is None:
@@ -216,7 +220,7 @@ class Method:
                 "p_cts": data.p_cts,
                 "p_bin": data.p_bin,
                 "mnar": False,
-                "network_weight": 1.0,
+                "network_weight": self.model_parameters["network_weight"],
                 "position_prior": (
                     self.model_parameters["latent_prior_mean"],
                     self.model_parameters["latent_prior_variance"]

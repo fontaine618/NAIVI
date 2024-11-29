@@ -11,7 +11,7 @@ traj = Trajectory(name="test")
 data_parms = {
     "dataset": "cora", # synthetic, email, facebook or cora
     "facebook_center": 698,
-    "n_seeds": 10, # for cora and email: number of seeds per class
+    "n_seeds": 40, # for cora and email: number of seeds per class
     "path": "~/Documents/NAIVI/datasets/cora/",
     "n_nodes": 200,
     "p_cts": 0,
@@ -36,7 +36,8 @@ for k, v in data_parms.items():
     traj.f_add_parameter(f"data.{k}", data=v)
 # MODEL SETTINGS
 model_parms = {
-    "latent_dim":5,
+    "latent_dim":12,
+    "latent_dim_gb":7,
     # "heterogeneity_prior_mean": -2.,
     # "heterogeneity_prior_variance": 1.,
     "heterogeneity_prior_mean": float("nan"), # nan for EB estimate
@@ -50,6 +51,7 @@ model_parms = {
     "vmp.init_precision": 0.,
     "gcn.n_hidden": 16,
     "gcn.dropout": 0.5,
+    "network_weight": 50.0
 }
 for k, v in model_parms.items():
     traj.f_add_parameter(f"model.{k}", data=v)
@@ -64,11 +66,11 @@ fit_parms = {
     "vmp.damping": 0.6,
     "map.lr": 0.01,
     "map.max_iter": 1000,
-    "map.eps": 1e-6,
+    "map.eps": 1e-8,
     "map.optimizer": "Rprop",
     "mle.lr": 0.01,
-    "mle.max_iter": 10000,
-    "mle.eps": 1e-6,
+    "mle.max_iter": 1000,
+    "mle.eps": 1e-8,
     "mle.optimizer": "Rprop",
     "mice.max_iter": 20,
     "mice.rel_tol": 1e-3,
@@ -94,7 +96,7 @@ for k, v in fit_parms.items():
 # VMP0: VMP without heterogeneity
 # MCMC is very slow, avoid more than 50 nodes/50 attributes
 # GCN only works for the Cora dataset
-traj.method = "GCN"
+traj.method = "MLE"
 
 
 

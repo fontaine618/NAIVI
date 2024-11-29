@@ -62,7 +62,7 @@ for i in seeds:
 
 email = pd.concat(res_list)
 
-seeds = range(10)
+seeds = range(30)
 name = "cora"
 res_list = []
 for i in seeds:
@@ -85,7 +85,7 @@ results = pd.concat([email, cora])
 
 metrics = {
     "testing.f1_multiclass_weighted": ("F1 (weighted)", ),
-    "testing.auroc_binary_weighted_average": ("Pred. AuROC", ),
+    # "testing.auroc_binary_weighted_average": ("Pred. AuROC", ),
     # "testing.accuracy_multiclass": ("Accuracy", ),
 }
 
@@ -110,9 +110,11 @@ for col, (dataset, dataset_name) in enumerate([("email", "Email"), ("cora", "Cor
             ax.plot(xs, ys["median"], color=color, linestyle=linestyle,
                     marker=marker, label=method_name, markerfacecolor='none')
             # ax.fill_between(xs, ys["lower"], ys["upper"], color=color, alpha=0.2)
-        ax.set_xticks([2, 4, 6, 8, 10])
         if col == 0:
             ax.set_ylabel(metric_name, size=10)
+            ax.set_xticks([2, 4, 6, 8, 10])
+        if col == 1:
+            ax.set_xticks([10, 20, 30, 40])
         # wilcoxon
         ax = axs[2*row+1, col]
         ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)

@@ -35,14 +35,10 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["Mean", "KNN",  "VMP", "VMP0", "FA", "NetworkSmoothing", "MICE", "GCN"],
-        "fit.vmp.max_iter": [2000],
-        "fit.vmp.min_iter": [50],
-        "fit.vmp.damping": [0.6],
-        "fit.mle.eps": [1e-6],
-        "fit.map.eps": [1e-6],
-        "model.vmp.logistic_approximation": ["adaptive"],
-        "model.vmp.logistic_elbo": ["quadrature"],
+        "model.network_weight": [50.0],
+        "method": ["MAP", "MLE", ],
+        "fit.map.eps": [1e-8],
+        "fit.mle.eps": [1e-8],
     }))
 
     env.run(run)

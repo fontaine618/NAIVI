@@ -28,6 +28,7 @@ _default_data_parameters = {
 
 _default_model_parameters = {
     "latent_dim": 5,
+    "latent_dim_gb": 0,
     "heterogeneity_prior_mean": -2.,
     "heterogeneity_prior_variance": 1.,
     "latent_prior_mean": 0.,
@@ -39,6 +40,7 @@ _default_model_parameters = {
     "vmp.init_precision": 0.,
     "gcn.n_hidden": 16,
     "gcn.dropout": 0.5,
+    "network_weight": 1.
 }
 
 _default_fit_parameters = {
