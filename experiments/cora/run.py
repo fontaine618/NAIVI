@@ -35,7 +35,7 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [float("nan")],
         "model.latent_prior_mean": [0.],
         "model.latent_prior_variance": [1.],
-        "method": ["Mean", "KNN",  "VMP", "VMP0", "FA", "NetworkSmoothing", "MICE", "GCN"],
+        "method": ["Mean", "KNN",  "VMP", "VMP0", "FA", "NetworkSmoothing", "MICE", "GCN", "MLE", "MAP"],
         "fit.vmp.max_iter": [2000],
         "fit.vmp.min_iter": [50],
         "fit.vmp.damping": [0.6],
