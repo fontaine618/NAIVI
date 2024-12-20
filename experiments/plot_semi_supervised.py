@@ -73,10 +73,30 @@ for i in seeds:
     parameters = gather_parameters_to_DataFrame(traj)
     results = gather_results_to_DataFrame(traj)
     results = parameters.join(results)
-    # results = results.loc[results["method"] != "GCN"]
     res_list.append(results)
 
 cora = pd.concat(res_list)
+
+# patch for MLE and MAP
+name = "cora_gb"
+res_list = []
+for i in seeds:
+    file = f"./experiments/cora/results/gb_seed{i}.hdf5"
+    traj = Trajectory(name=name)
+    traj.f_load(filename=file, load_results=2, force=True)
+
+    parameters = gather_parameters_to_DataFrame(traj)
+    results = gather_results_to_DataFrame(traj)
+    results = parameters.join(results)
+    res_list.append(results)
+
+cora_gb = pd.concat(res_list)
+
+# MLE and MAP from original experiment
+cora = cora.loc[cora["method"] != "MLE"]
+cora = cora.loc[cora["method"] != "MAP"]
+# merge
+cora = cora.append(cora_gb)
 
 email["dataset"] = "email"
 cora["dataset"] = "cora"

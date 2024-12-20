@@ -36,7 +36,6 @@ if __name__ == "__main__":
         "model.heterogeneity_prior_variance": [float("nan")],
         "method": ["VMP", ],
         "fit.vmp.max_iter": [1000],
-        "fit.vmp.damping": [0.6],
     }))
 
     env.run(run)
