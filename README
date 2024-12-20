@@ -20,8 +20,10 @@ Contains the source code to run various node attribute imputation methods.
 
 - `vmp`: the proposed method (joint latent space model estimated with variational message passing)
 - `mle`: the joint latent space model estimated using either maximum likelihood estimation with projection (MLE) or maximum a posteriori estimation (MAP) using the prior
+- `mcmc`: the joint latent space model estimated using the NUTS sampler from Pyro
+- `smoothing`: local averaging
 - `mice`: imputation within the data matrix only using either MICE with linear models or KNN
-- `constant`: imputaiton using the mean
+- `constant`: imputation using the mean
 - `gcn`: imputation using a graph convolutional network
 
 ### Pypet experiments

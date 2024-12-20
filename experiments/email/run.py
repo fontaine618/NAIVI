@@ -33,11 +33,8 @@ if __name__ == "__main__":
         "model.latent_dim": [10],
         "model.heterogeneity_prior_mean": [float("nan")],
         "model.heterogeneity_prior_variance": [float("nan")],
-        "model.latent_prior_mean": [0.],
-        "model.latent_prior_variance": [1.],
         "method": ["Mean", "KNN",  "VMP", "VMP0", "FA", "MAP", "MLE", "NetworkSmoothing", "MICE", "GCN"],
         "fit.vmp.max_iter": [2000],
-        "fit.vmp.damping": [0.6],
     }))
 
     env.run(run)
