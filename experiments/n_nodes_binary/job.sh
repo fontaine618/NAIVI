@@ -10,7 +10,7 @@
 #SBATCH --partition=open
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=1
+#SBATCH --cpus-per-task=2
 #SBATCH --mem-per-cpu=16g
 # The application(s) to execute along with its input arguments and options:
 module load anaconda/2023.09
