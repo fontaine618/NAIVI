@@ -61,6 +61,8 @@ for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
         "cts_variance": (10., 10.)
     }
     # fit VMP
+    from NAIVI.vmp import enable_logging, set_damping
+    set_damping(0.6)
     vmp = VMP(
         latent_dim=latent_dim,
         n_nodes=n_nodes,
@@ -69,6 +71,9 @@ for name, (display, n_nodes, p_cts, p_bin, latent_dim) in experiments.items():
         edges=A.unsqueeze(1),
         edge_index_left=i0,
         edge_index_right=i1,
+        logistic_approximation="adaptive",
+        logistic_elbo="quadrature",
+        init_precision=0.,
         **h
     )
     vmp.fit()

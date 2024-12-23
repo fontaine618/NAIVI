@@ -32,7 +32,7 @@ plt.rcParams.update({
 methods = {
     # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
-    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
+    # "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
     # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
@@ -160,10 +160,12 @@ axs[3].set_xlabel("Ego network center (N, p)")
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')
          for _, (_, color, ltype, mtype) in methods.items()]
 labels = [name for _, (name, _, _, _) in methods.items()]
-fig.legend(lines, labels, loc=9, ncol=5)
+# fig.legend(lines, labels, loc=9, ncol=5)
+fig.legend(lines, labels, loc=9, ncol=8)
 plt.tight_layout()
 fig.subplots_adjust(top=0.90)
 plt.savefig(f"./experiments/{name}/facebook_metrics.pdf")
+# plt.savefig(f"./experiments/{name}/facebook_metrics0.pdf")
 
 
 

@@ -62,7 +62,7 @@ cols = [ # N, p
     (500, 200),
 ]
 
-K = 7
+K = 3
 resK = results.loc[results["data.latent_dim"] == K]
 
 fig, axs = plt.subplots(

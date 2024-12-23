@@ -175,7 +175,7 @@ curves_pdf = full_pdf[curves_by].unique()
 
 # plots
 plt.cla()
-fig, axs = plt.subplots(figsize=(12, 8), nrows=len(rows)*2, ncols=len(cols),
+fig, axs = plt.subplots(figsize=(10, 7), nrows=len(rows)*2, ncols=len(cols),
                         sharex="col", sharey="row", squeeze=False,
                         gridspec_kw={"height_ratios": [1, 0.4] * len(rows)})
 for i, row in enumerate(rows):

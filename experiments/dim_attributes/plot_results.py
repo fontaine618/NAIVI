@@ -32,7 +32,7 @@ plt.rcParams.update({
 methods = {
     # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
-    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
+    # "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
     # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
@@ -74,7 +74,7 @@ results = pd.concat(res_list)
 metric = "testing.auroc_binary_weighted_average"
 # metric = "testing.auroc_binary"
 
-fig, axs = plt.subplots(2, 2, figsize=(10, 6),
+fig, axs = plt.subplots(2, 2, figsize=(10, 5),
                         sharex="col", sharey="row", squeeze=False,
                         gridspec_kw={"height_ratios": [1, 0.4]})
 

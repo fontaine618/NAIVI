@@ -170,7 +170,7 @@ curves_pdf = full_pdf[curves_by].unique()
 
 # plots
 plt.cla()
-fig, axs = plt.subplots(figsize=(12, 10), nrows=len(rows)*2, ncols=len(cols),
+fig, axs = plt.subplots(figsize=(10, 8), nrows=len(rows)*2, ncols=len(cols),
                         sharex="col", sharey="row", squeeze=False,
                         gridspec_kw={"height_ratios": [1, 0.4] * len(rows)})
 for i, row in enumerate(rows):
@@ -232,7 +232,7 @@ labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
 fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-fig.subplots_adjust(top=0.93)
+fig.subplots_adjust(top=0.91)
 plt.savefig("experiments/synthetic_continuous.pdf")
 
 
