@@ -26,19 +26,19 @@ plt.rcParams.update({
     "ytick.labelsize": 9,
 })
 
-# dataset = "cora"
-# display = "Cora"
-# name = "cora_selection"
-# xrange = (8, 15)
-# xticks = [8, 10, 12, 14, ]
-# n_seeds = [10, 20, 30]
+dataset = "cora"
+display = "Cora"
+name = "cora_selection"
+xrange = (8, 15)
+xticks = [8, 10, 12, 14, ]
+n_seeds = [10, 20, 30]
 
-dataset = "email"
-display = "Email"
-name = "email_selection"
-xrange = (4, 12)
-xticks = [4, 6, 8, 10, 12]
-n_seeds = [3, 5, 8]
+# dataset = "email"
+# display = "Email"
+# name = "email_selection"
+# xrange = (4, 12)
+# xticks = [4, 6, 8, 10, 12]
+# n_seeds = [3, 5, 8]
 
 res_list = []
 for i in range(10):
@@ -67,7 +67,7 @@ metrics = { # colname: (display_name, higher_is_better, std)
 plt.gca()
 fig, axs = plt.subplots(
     len(metrics), len(n_seeds),
-    figsize=(3*len(n_seeds), 2*len(metrics)),
+    figsize=(10, 2*len(metrics)),
     sharey="row",
     sharex="col",
     squeeze=False
@@ -100,8 +100,8 @@ for col, n_seed in enumerate(n_seeds):
             ax.set_title(f"{display}: {n_seed} seeds")
         # if row == 0 or row == 1:
         #     ax.set_ylim(0., 0.15)
-        # if row == 2:
-            # ax.set_ylim(0.48, 0.82)
+        if row == 2:
+            ax.set_ylim(0.6, 0.82)
         if col == 0:
             ax.set_ylabel(metric_name)
 plt.tight_layout()

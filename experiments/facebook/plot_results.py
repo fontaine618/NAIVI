@@ -32,19 +32,19 @@ plt.rcParams.update({
 methods = {
     # "Oracle":           ("Oracle",      "#000000", "solid", "s"),
 
-    # "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
+    "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
     # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
-    "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
-    "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
-    "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
+    # "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
+    # "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
+    # "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
 
-    "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
-    "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
-    "MICE":             ("MICE",        "#88ff88", "dashed", "s"),
+    # "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
+    # "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
+    # "MICE":             ("MICE",        "#88ff88", "dashed", "s"),
 
-    "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
+    # "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
 
 # missing mechanisms
@@ -161,11 +161,11 @@ lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerface
          for _, (_, color, ltype, mtype) in methods.items()]
 labels = [name for _, (name, _, _, _) in methods.items()]
 # fig.legend(lines, labels, loc=9, ncol=5)
-fig.legend(lines, labels, loc=9, ncol=8)
+fig.legend(lines, labels, loc=9, ncol=2)
 plt.tight_layout()
 fig.subplots_adjust(top=0.90)
-plt.savefig(f"./experiments/{name}/facebook_metrics.pdf")
-# plt.savefig(f"./experiments/{name}/facebook_metrics0.pdf")
+# plt.savefig(f"./experiments/{name}/facebook_metrics.pdf")
+plt.savefig(f"./experiments/{name}/facebook_metrics0.pdf")
 
 
 

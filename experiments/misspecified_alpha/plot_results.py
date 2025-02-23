@@ -35,17 +35,17 @@ methods = {
 
     "VMP0":             ("NAIVI-0",     "#9966ff", "dotted", "v"),
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
-    "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
+    # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
-    "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
-    "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
+    # "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
+    # "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
     "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
 
     "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
-    "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
-    "MICE":             ("MICE",        "#88ff88", "dashed", "s"),
+    # "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
+    # "MICE":             ("MICE",        "#88ff88", "dashed", "s"),
 
-    "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
+    # "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
 
 # missing mechanisms
@@ -166,6 +166,7 @@ rows = full_df[rows_by].unique()
 cols = full_df[cols_by].unique()
 cols = [c for c in cols if not math.isnan(c)]
 curves = full_df[curves_by].unique()
+curves = methods.keys()
 curves_pdf = full_pdf[curves_by].unique()
 
 # plots
@@ -187,7 +188,10 @@ for i, row in enumerate(rows):
             # if i == len(rows)-1:
             #     ax.set_xlabel(col)
             if i == 0:
-                ax.set_title(f"Heterogeneity mean={col}")
+                if j==0:
+                    ax.set_title(f"Density=12%")
+                if j==1:
+                    ax.set_title(f"Density=50%")
             # ax.set_xscale("log" if logx else "linear")
             if j == 0:
                 ax.set_ylabel(yaxis)
@@ -200,7 +204,7 @@ for i, row in enumerate(rows):
         ax.axhline(y=np.log10(0.05), color="black", linestyle="--", alpha=0.5)
         ax.axhline(y=0, color="black", linestyle="-", alpha=0.5)
         ax.axhline(y=-np.log10(0.05), color="black", linestyle="--", alpha=0.5)
-        for _, curve in enumerate(curves_pdf):
+        for _, curve in enumerate(curves):
             pdf = full_pdf.loc[(full_pdf[rows_by] == row) & (full_pdf[cols_by] == col) & (full_pdf[curves_by] == curve)]
             pdf = pdf.sort_values(by="x_value")
             sign = (pdf["p_value_greater"] > pdf["p_value_less"])*1.
@@ -224,9 +228,9 @@ lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerface
          for nm, (name, color, ltype, mtype) in methods.items() if nm in curves]
 labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
-fig.legend(lines, labels, loc=9, ncol=5)
+fig.legend(lines, labels, loc=9, ncol=7)
 plt.tight_layout()
-fig.subplots_adjust(top=0.80)
+fig.subplots_adjust(top=0.88)
 plt.savefig(f"experiments/{name}/results.pdf")
 
 

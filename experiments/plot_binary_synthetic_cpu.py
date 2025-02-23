@@ -114,7 +114,7 @@ curves = full_df[curves_by].unique()
 
 # plots
 plt.cla()
-fig, axs = plt.subplots(figsize=(8, 5), nrows=len(rows), ncols=len(cols),
+fig, axs = plt.subplots(figsize=(10, 5), nrows=len(rows), ncols=len(cols),
                         sharex="col", sharey="row", squeeze=False)
 for i, row in enumerate(rows):
     for j, col in enumerate(cols):
@@ -153,9 +153,9 @@ lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerface
          for nm, (name, color, ltype, mtype) in methods.items() if nm in curves]
 labels = [name for nm, (name, _, _, _) in methods.items() if nm in curves]
 
-fig.legend(lines, labels, loc=9, ncol=5)
+fig.legend(lines, labels, loc=9, ncol=9)
 plt.tight_layout()
-fig.subplots_adjust(top=0.8)
+fig.subplots_adjust(top=0.85)
 plt.savefig("experiments/synthetic_cputime.pdf")
 
 

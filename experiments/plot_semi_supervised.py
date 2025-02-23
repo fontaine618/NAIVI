@@ -35,16 +35,16 @@ methods = {
     "VMP":              ("NAIVI",       "#3366ff", "solid", "o"),
     # "MCMC":             ("MCMC",       "#3366ff", "dotted", "s"),
 
-    "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
-    "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
-    "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
-    "GCN": ("GCN", "#8833ff", "dashed", "v"),
-
-    "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
-    "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
-    "MICE":             ("MICE",        "#88ff88", "dashed", "s"),
-
-    "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
+    # "MAP":              ("MAP",         "#3333ff", "dotted", "s"),
+    # "MLE":              ("MLE",         "#3333ff", "dotted", "v"),
+    # "NetworkSmoothing": ("Smooth",      "#6633ff", "dashed", "s"),
+    # "GCN": ("GCN", "#8833ff", "dashed", "v"),
+    #
+    # "FA":               ("GLFM",        "#99cc66", "dotted", "o"),
+    # "KNN":              ("KNN",         "#88ff88", "dashed", "v"),
+    # "MICE":             ("MICE",        "#88ff88", "dashed", "s"),
+    #
+    # "Mean":             ("Mean",        "#55cc55", "dotted", "s"),
 }
 
 seeds = range(30)
@@ -168,9 +168,11 @@ for col, (dataset, dataset_name) in enumerate([("email", "Email"), ("cora", "Cor
 lines = [Line2D([0], [0], color=color, linestyle=ltype, marker=mtype, markerfacecolor='none')
          for _, (_, color, ltype, mtype) in methods.items()]
 labels = [name for _, (name, _, _, _) in methods.items()]
-fig.legend(lines, labels, loc=9, ncol=9)
+# fig.legend(lines, labels, loc=9, ncol=9)
+fig.legend(lines, labels, loc=9, ncol=2)
 plt.tight_layout()
 fig.subplots_adjust(top=0.85)
 # plt.show()
 
-plt.savefig(f"./experiments/semi_supervised_metrics.pdf")
+# plt.savefig(f"./experiments/semi_supervised_metrics.pdf")
+plt.savefig(f"./experiments/semi_supervised_metrics0.pdf")
